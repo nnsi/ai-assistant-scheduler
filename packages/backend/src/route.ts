@@ -8,9 +8,12 @@ type Bindings = {
   OPENROUTER_API_KEY: string;
 };
 
-export const apiRoutes = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings }>();
 
 // 各featureのルートを集約
-apiRoutes.route("/schedules", scheduleRoute);
-apiRoutes.route("/supplements", supplementRoute);
-apiRoutes.route("/ai", aiRoute);
+export const apiRoutes = app
+  .route("/schedules", scheduleRoute)
+  .route("/supplements", supplementRoute)
+  .route("/ai", aiRoute);
+
+export type ApiRoutes = typeof apiRoutes;

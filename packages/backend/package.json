@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./client": {
+      "types": "./src/route.ts"
+    }
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -16,6 +21,7 @@
   "dependencies": {
     "@ai-scheduler/shared": "workspace:*",
     "@ai-sdk/openai": "^1.1.9",
+    "@hono/zod-validator": "^0.7.6",
     "@mastra/core": "^0.10.1",
     "drizzle-orm": "^0.38.3",
     "hono": "^4.6.16",

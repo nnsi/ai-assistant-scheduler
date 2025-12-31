@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { suggestKeywordsInputSchema, searchInputSchema } from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
@@ -7,8 +9,8 @@ import { createAiService } from "../../infra/mastra/aiService";
 import { createMockAiService } from "../../infra/mock/aiService";
 import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
 import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
-import { createSuggestKeywordsHandler } from "./handler/suggestKeywordsHandler";
-import { createSearchHandler } from "./handler/searchHandler";
+import { createValidationError } from "../../shared/errors";
+import { getStatusCode } from "../../shared/http";
 
 type Bindings = {
   DB: D1Database;
@@ -21,13 +23,13 @@ type Variables = {
   searchWithKeywords: ReturnType<typeof createSearchWithKeywordsUseCase>;
 };
 
-export const aiRoute = new Hono<{
+const app = new Hono<{
   Bindings: Bindings;
   Variables: Variables;
 }>();
 
 // ミドルウェアでDIを解決
-aiRoute.use("*", async (c, next) => {
+app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const scheduleRepo = createScheduleRepo(db);
   const supplementRepo = createSupplementRepo(db);
@@ -50,14 +52,47 @@ aiRoute.use("*", async (c, next) => {
   await next();
 });
 
-// POST /ai/suggest-keywords
-aiRoute.post("/suggest-keywords", async (c) => {
-  const handler = createSuggestKeywordsHandler(c.get("suggestKeywords"));
-  return handler(c);
-});
+export const aiRoute = app
+  // POST /ai/suggest-keywords
+  .post(
+    "/suggest-keywords",
+    zValidator("json", suggestKeywordsInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { title, startAt } = c.req.valid("json");
+      const result = await c.get("suggestKeywords")(title, startAt);
 
-// POST /ai/search
-aiRoute.post("/search", async (c) => {
-  const handler = createSearchHandler(c.get("searchWithKeywords"));
-  return handler(c);
-});
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json({ keywords: result.value });
+    }
+  )
+  // POST /ai/search
+  .post(
+    "/search",
+    zValidator("json", searchInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { scheduleId, title, startAt, keywords } = c.req.valid("json");
+      const result = await c.get("searchWithKeywords")(
+        scheduleId,
+        title,
+        startAt,
+        keywords
+      );
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json({ result: result.value.aiResult });
+    }
+  );

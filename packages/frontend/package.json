@@ -16,6 +16,7 @@
     "@ai-scheduler/shared": "workspace:*",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "hono": "^4.11.3",
     "lucide-react": "^0.469.0",
     "marked": "^15.0.4",
     "react": "^19.0.0",
@@ -24,6 +25,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@ai-scheduler/backend": "workspace:*",
+    "@cloudflare/workers-types": "^4.20251231.0",
     "@playwright/test": "^1.57.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

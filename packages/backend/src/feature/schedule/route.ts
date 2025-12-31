@@ -1,4 +1,10 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import {
+  createScheduleInputSchema,
+  updateScheduleInputSchema,
+} from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
@@ -7,11 +13,8 @@ import { createGetSchedulesUseCase } from "./usecase/getSchedules";
 import { createGetScheduleByIdUseCase } from "./usecase/getScheduleById";
 import { createUpdateScheduleUseCase } from "./usecase/updateSchedule";
 import { createDeleteScheduleUseCase } from "./usecase/deleteSchedule";
-import { createCreateScheduleHandler } from "./handler/createScheduleHandler";
-import { createGetSchedulesHandler } from "./handler/getSchedulesHandler";
-import { createGetScheduleByIdHandler } from "./handler/getScheduleByIdHandler";
-import { createUpdateScheduleHandler } from "./handler/updateScheduleHandler";
-import { createDeleteScheduleHandler } from "./handler/deleteScheduleHandler";
+import { createValidationError } from "../../shared/errors";
+import { getStatusCode } from "../../shared/http";
 
 type Bindings = {
   DB: D1Database;
@@ -25,52 +28,110 @@ type Variables = {
   deleteSchedule: ReturnType<typeof createDeleteScheduleUseCase>;
 };
 
-export const scheduleRoute = new Hono<{
+const app = new Hono<{
   Bindings: Bindings;
   Variables: Variables;
 }>();
 
 // ミドルウェアでDIを解決
-scheduleRoute.use("*", async (c, next) => {
+app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const scheduleRepo = createScheduleRepo(db);
   const supplementRepo = createSupplementRepo(db);
 
   c.set("createSchedule", createCreateScheduleUseCase(scheduleRepo));
   c.set("getSchedules", createGetSchedulesUseCase(scheduleRepo));
-  c.set("getScheduleById", createGetScheduleByIdUseCase(scheduleRepo, supplementRepo));
+  c.set(
+    "getScheduleById",
+    createGetScheduleByIdUseCase(scheduleRepo, supplementRepo)
+  );
   c.set("updateSchedule", createUpdateScheduleUseCase(scheduleRepo));
   c.set("deleteSchedule", createDeleteScheduleUseCase(scheduleRepo));
 
   await next();
 });
 
-// GET /schedules
-scheduleRoute.get("/", async (c) => {
-  const handler = createGetSchedulesHandler(c.get("getSchedules"));
-  return handler(c);
+const getSchedulesQuerySchema = z.object({
+  year: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : undefined)),
+  month: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : undefined)),
 });
 
-// POST /schedules
-scheduleRoute.post("/", async (c) => {
-  const handler = createCreateScheduleHandler(c.get("createSchedule"));
-  return handler(c);
-});
+export const scheduleRoute = app
+  // GET /schedules
+  .get("/", zValidator("query", getSchedulesQuerySchema), async (c) => {
+    const { year, month } = c.req.valid("query");
+    const result = await c.get("getSchedules")(year, month);
 
-// GET /schedules/:id
-scheduleRoute.get("/:id", async (c) => {
-  const handler = createGetScheduleByIdHandler(c.get("getScheduleById"));
-  return handler(c);
-});
+    if (!result.ok) {
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
 
-// PUT /schedules/:id
-scheduleRoute.put("/:id", async (c) => {
-  const handler = createUpdateScheduleHandler(c.get("updateSchedule"));
-  return handler(c);
-});
+    return c.json(result.value);
+  })
+  // POST /schedules
+  .post(
+    "/",
+    zValidator("json", createScheduleInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const input = c.req.valid("json");
+      const result = await c.get("createSchedule")(input);
 
-// DELETE /schedules/:id
-scheduleRoute.delete("/:id", async (c) => {
-  const handler = createDeleteScheduleHandler(c.get("deleteSchedule"));
-  return handler(c);
-});
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 201);
+    }
+  )
+  // GET /schedules/:id
+  .get("/:id", async (c) => {
+    const id = c.req.param("id");
+    const result = await c.get("getScheduleById")(id);
+
+    if (!result.ok) {
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
+
+    return c.json(result.value);
+  })
+  // PUT /schedules/:id
+  .put(
+    "/:id",
+    zValidator("json", updateScheduleInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const id = c.req.param("id");
+      const input = c.req.valid("json");
+      const result = await c.get("updateSchedule")(id, input);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value);
+    }
+  )
+  // DELETE /schedules/:id
+  .delete("/:id", async (c) => {
+    const id = c.req.param("id");
+    const result = await c.get("deleteSchedule")(id);
+
+    if (!result.ok) {
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
+
+    return c.body(null, 204);
+  });
