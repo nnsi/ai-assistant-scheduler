@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/cn";
 
 type MarkdownRendererProps = {
@@ -12,7 +13,8 @@ export const MarkdownRenderer = ({
   className,
 }: MarkdownRendererProps) => {
   const html = useMemo(() => {
-    return marked.parse(content, { async: false }) as string;
+    const rawHtml = marked.parse(content, { async: false }) as string;
+    return DOMPurify.sanitize(rawHtml);
   }, [content]);
 
   return (

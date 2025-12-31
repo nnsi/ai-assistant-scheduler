@@ -31,11 +31,23 @@ export const createSupplementRepo = (db: Database): SupplementRepo => ({
   },
 });
 
+// JSON文字列を安全にパースする
+const safeParseJsonArray = (jsonString: string | null): string[] => {
+  if (!jsonString) return [];
+  try {
+    const parsed = JSON.parse(jsonString);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    console.error("Failed to parse keywords JSON:", jsonString);
+    return [];
+  }
+};
+
 // Row → Entity 変換
 const toSupplement = (row: SupplementRow): Supplement => ({
   id: row.id,
   scheduleId: row.scheduleId,
-  keywords: row.keywords ? JSON.parse(row.keywords) : [],
+  keywords: safeParseJsonArray(row.keywords),
   aiResult: row.aiResult,
   userMemo: row.userMemo,
   createdAt: row.createdAt,

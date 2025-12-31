@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createScheduleInputSchema } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
-import { formatDate } from "@/lib/date";
+import { formatDate, getTimezoneOffset } from "@/lib/date";
 
 type ScheduleFormProps = {
   defaultDate?: Date;
@@ -27,7 +27,7 @@ export const ScheduleForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const startAt = `${date}T${time}:00+09:00`;
+    const startAt = `${date}T${time}:00${getTimezoneOffset()}`;
     const data = { title, startAt };
 
     const result = createScheduleInputSchema.safeParse(data);

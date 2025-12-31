@@ -5,21 +5,26 @@ import {
   type UpdateScheduleInput,
 } from "../../../domain/model/schedule";
 import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError } from "../../../shared/errors";
+import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
 
 export const createUpdateScheduleUseCase = (repo: ScheduleRepo) => {
   return async (
     id: string,
     input: UpdateScheduleInput
   ): Promise<Result<Schedule>> => {
-    const existing = await repo.findById(id);
-    if (!existing) {
-      return err(createNotFoundError("スケジュール"));
-    }
+    try {
+      const existing = await repo.findById(id);
+      if (!existing) {
+        return err(createNotFoundError("スケジュール"));
+      }
 
-    const updated = updateScheduleEntity(existing, input);
-    await repo.update(updated);
-    return ok(updated);
+      const updated = updateScheduleEntity(existing, input);
+      await repo.update(updated);
+      return ok(updated);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return err(createDatabaseError(message));
+    }
   };
 };
 

@@ -41,3 +41,17 @@ export const getWeekDayLabels = (): string[] => [
 ];
 
 export { isSameMonth, isSameDay, addMonths, subMonths, parseISO };
+
+/**
+ * ブラウザのタイムゾーンオフセットを取得する
+ * 例: "+09:00" (日本), "-05:00" (米国東部)
+ */
+export const getTimezoneOffset = (): string => {
+  const offset = new Date().getTimezoneOffset();
+  const sign = offset <= 0 ? "+" : "-";
+  const hours = Math.floor(Math.abs(offset) / 60)
+    .toString()
+    .padStart(2, "0");
+  const minutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
+  return `${sign}${hours}:${minutes}`;
+};

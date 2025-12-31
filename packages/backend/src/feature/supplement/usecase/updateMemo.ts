@@ -5,21 +5,26 @@ import {
   type UpdateMemoInput,
 } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError } from "../../../shared/errors";
+import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
 
 export const createUpdateMemoUseCase = (supplementRepo: SupplementRepo) => {
   return async (
     scheduleId: string,
     input: UpdateMemoInput
   ): Promise<Result<Supplement>> => {
-    const existing = await supplementRepo.findByScheduleId(scheduleId);
-    if (!existing) {
-      return err(createNotFoundError("補足情報"));
-    }
+    try {
+      const existing = await supplementRepo.findByScheduleId(scheduleId);
+      if (!existing) {
+        return err(createNotFoundError("補足情報"));
+      }
 
-    const updated = updateSupplementMemo(existing, input);
-    await supplementRepo.update(updated);
-    return ok(updated);
+      const updated = updateSupplementMemo(existing, input);
+      await supplementRepo.update(updated);
+      return ok(updated);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return err(createDatabaseError(message));
+    }
   };
 };
 

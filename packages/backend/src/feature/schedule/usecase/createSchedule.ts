@@ -6,27 +6,33 @@ import {
   type CreateScheduleInput,
 } from "../../../domain/model/schedule";
 import { createSupplement } from "../../../domain/model/supplement";
-import { type Result, ok } from "../../../shared/result";
+import { type Result, ok, err } from "../../../shared/result";
+import { createDatabaseError } from "../../../shared/errors";
 
 export const createCreateScheduleUseCase = (
   scheduleRepo: ScheduleRepo,
   supplementRepo: SupplementRepo
 ) => {
   return async (input: CreateScheduleInput): Promise<Result<Schedule>> => {
-    const schedule = createScheduleEntity(input);
-    await scheduleRepo.save(schedule);
+    try {
+      const schedule = createScheduleEntity(input);
+      await scheduleRepo.save(schedule);
 
-    // AI検索結果がある場合は補足情報も作成
-    if (input.keywords && input.aiResult) {
-      const supplement = createSupplement({
-        scheduleId: schedule.id,
-        keywords: input.keywords,
-        aiResult: input.aiResult,
-      });
-      await supplementRepo.save(supplement);
+      // AI検索結果がある場合は補足情報も作成
+      if (input.keywords && input.aiResult) {
+        const supplement = createSupplement({
+          scheduleId: schedule.id,
+          keywords: input.keywords,
+          aiResult: input.aiResult,
+        });
+        await supplementRepo.save(supplement);
+      }
+
+      return ok(schedule);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return err(createDatabaseError(message));
     }
-
-    return ok(schedule);
   };
 };
 
