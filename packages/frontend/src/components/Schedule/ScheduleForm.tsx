@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createScheduleInputSchema } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
+import { formatDate } from "@/lib/date";
 
 type ScheduleFormProps = {
   defaultDate?: Date;
@@ -18,8 +19,7 @@ export const ScheduleForm = ({
 }: ScheduleFormProps) => {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(
-    defaultDate?.toISOString().split("T")[0] ||
-      new Date().toISOString().split("T")[0]
+    formatDate(defaultDate || new Date(), "yyyy-MM-dd")
   );
   const [time, setTime] = useState("12:00");
   const [errors, setErrors] = useState<Record<string, string>>({});

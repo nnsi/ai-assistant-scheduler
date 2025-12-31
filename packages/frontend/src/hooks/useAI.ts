@@ -27,7 +27,6 @@ export const useAI = () => {
   };
 
   const search = async (
-    scheduleId: string,
     title: string,
     startAt: string,
     selectedKeywords: string[]
@@ -35,12 +34,7 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchWithKeywords(
-        scheduleId,
-        title,
-        startAt,
-        selectedKeywords
-      );
+      const result = await api.searchWithKeywords(title, startAt, selectedKeywords);
       setSearchResult(result);
       return result;
     } catch (e) {

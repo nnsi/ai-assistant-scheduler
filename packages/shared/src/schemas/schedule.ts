@@ -5,6 +5,9 @@ export const createScheduleInputSchema = z.object({
   title: z.string().min(1, "タイトルは必須です").max(100, "タイトルは100文字以内です"),
   startAt: z.string().datetime({ offset: true, message: "有効な日時形式で入力してください" }),
   endAt: z.string().datetime({ offset: true }).optional(),
+  // AI検索結果（オプショナル）
+  keywords: z.array(z.string()).optional(),
+  aiResult: z.string().optional(),
 });
 
 export type CreateScheduleInput = z.infer<typeof createScheduleInputSchema>;

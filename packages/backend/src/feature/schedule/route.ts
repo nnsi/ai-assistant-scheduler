@@ -39,7 +39,7 @@ app.use("*", async (c, next) => {
   const scheduleRepo = createScheduleRepo(db);
   const supplementRepo = createSupplementRepo(db);
 
-  c.set("createSchedule", createCreateScheduleUseCase(scheduleRepo));
+  c.set("createSchedule", createCreateScheduleUseCase(scheduleRepo, supplementRepo));
   c.set("getSchedules", createGetSchedulesUseCase(scheduleRepo));
   c.set(
     "getScheduleById",

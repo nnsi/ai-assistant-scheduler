@@ -139,13 +139,12 @@ export const suggestKeywords = async (
 };
 
 export const searchWithKeywords = async (
-  scheduleId: string,
   title: string,
   startAt: string,
   keywords: string[]
 ): Promise<string> => {
   const res = await client.ai.search.$post({
-    json: { scheduleId, title, startAt, keywords },
+    json: { title, startAt, keywords },
   });
 
   const data = await handleResponse(res, searchResponseSchema);

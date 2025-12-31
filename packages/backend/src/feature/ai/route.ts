@@ -1,9 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { suggestKeywordsInputSchema, searchInputSchema } from "@ai-scheduler/shared";
-import { createDb } from "../../infra/drizzle/client";
-import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
-import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
 import { createKeywordAgent, createSearchAgent } from "../../infra/mastra/agents";
 import { createAiService } from "../../infra/mastra/aiService";
 import { createMockAiService } from "../../infra/mock/aiService";
@@ -30,10 +27,6 @@ const app = new Hono<{
 
 // ミドルウェアでDIを解決
 app.use("*", async (c, next) => {
-  const db = createDb(c.env.DB);
-  const scheduleRepo = createScheduleRepo(db);
-  const supplementRepo = createSupplementRepo(db);
-
   // USE_MOCK_AI が "true" の場合はモックを使用
   const useMock = c.env.USE_MOCK_AI === "true";
   const aiService = useMock
@@ -44,10 +37,7 @@ app.use("*", async (c, next) => {
       );
 
   c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService));
-  c.set(
-    "searchWithKeywords",
-    createSearchWithKeywordsUseCase(aiService, supplementRepo, scheduleRepo)
-  );
+  c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService));
 
   await next();
 });
@@ -81,18 +71,13 @@ export const aiRoute = app
       }
     }),
     async (c) => {
-      const { scheduleId, title, startAt, keywords } = c.req.valid("json");
-      const result = await c.get("searchWithKeywords")(
-        scheduleId,
-        title,
-        startAt,
-        keywords
-      );
+      const { title, startAt, keywords } = c.req.valid("json");
+      const result = await c.get("searchWithKeywords")(title, startAt, keywords);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ result: result.value.aiResult }, 200);
+      return c.json({ result: result.value }, 200);
     }
   );

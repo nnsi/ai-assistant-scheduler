@@ -5,6 +5,7 @@ import {
   getWeekDayLabels,
   isSameMonth,
   isSameDay,
+  formatDate,
 } from "@/lib/date";
 import type { Schedule } from "@ai-scheduler/shared";
 
@@ -37,7 +38,7 @@ export const Calendar = ({
   }, [schedules]);
 
   const getSchedulesForDate = (date: Date): Schedule[] => {
-    const dateKey = date.toISOString().split("T")[0];
+    const dateKey = formatDate(date, "yyyy-MM-dd");
     return schedulesByDate.get(dateKey) || [];
   };
 
