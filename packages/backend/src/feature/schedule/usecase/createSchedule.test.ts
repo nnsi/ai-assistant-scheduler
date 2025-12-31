@@ -5,9 +5,10 @@ import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 
 describe("createScheduleUseCase", () => {
   const createMockScheduleRepo = (): ScheduleRepo => ({
-    findAll: vi.fn(),
-    findByMonth: vi.fn(),
+    findAllByUserId: vi.fn(),
+    findByMonthAndUserId: vi.fn(),
     findById: vi.fn(),
+    findByIdAndUserId: vi.fn(),
     save: vi.fn().mockResolvedValue(undefined),
     update: vi.fn(),
     delete: vi.fn(),
@@ -20,15 +21,20 @@ describe("createScheduleUseCase", () => {
     delete: vi.fn(),
   });
 
+  const testUserId = "test-user-id";
+
   it("should create and save a schedule", async () => {
     const mockScheduleRepo = createMockScheduleRepo();
     const mockSupplementRepo = createMockSupplementRepo();
     const createSchedule = createCreateScheduleUseCase(mockScheduleRepo, mockSupplementRepo);
 
-    const result = await createSchedule({
-      title: "テスト予定",
-      startAt: "2025-01-10T12:00:00+09:00",
-    });
+    const result = await createSchedule(
+      {
+        title: "テスト予定",
+        startAt: "2025-01-10T12:00:00+09:00",
+      },
+      testUserId
+    );
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -37,7 +43,7 @@ describe("createScheduleUseCase", () => {
       expect(result.value.id).toBeDefined();
     }
     expect(mockScheduleRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "テスト予定" })
+      expect.objectContaining({ title: "テスト予定", userId: testUserId })
     );
   });
 
@@ -46,10 +52,13 @@ describe("createScheduleUseCase", () => {
     const mockSupplementRepo = createMockSupplementRepo();
     const createSchedule = createCreateScheduleUseCase(mockScheduleRepo, mockSupplementRepo);
 
-    const result = await createSchedule({
-      title: "テスト予定",
-      startAt: "2025-01-10T12:00:00+09:00",
-    });
+    const result = await createSchedule(
+      {
+        title: "テスト予定",
+        startAt: "2025-01-10T12:00:00+09:00",
+      },
+      testUserId
+    );
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -62,11 +71,14 @@ describe("createScheduleUseCase", () => {
     const mockSupplementRepo = createMockSupplementRepo();
     const createSchedule = createCreateScheduleUseCase(mockScheduleRepo, mockSupplementRepo);
 
-    const result = await createSchedule({
-      title: "テスト予定",
-      startAt: "2025-01-10T12:00:00+09:00",
-      endAt: "2025-01-10T14:00:00+09:00",
-    });
+    const result = await createSchedule(
+      {
+        title: "テスト予定",
+        startAt: "2025-01-10T12:00:00+09:00",
+        endAt: "2025-01-10T14:00:00+09:00",
+      },
+      testUserId
+    );
 
     expect(result.ok).toBe(true);
     if (result.ok) {

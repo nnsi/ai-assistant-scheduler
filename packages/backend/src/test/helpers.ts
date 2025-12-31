@@ -8,13 +8,24 @@ export const createTestDb = () => {
 
   // テーブルを作成
   sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id text PRIMARY KEY NOT NULL,
+      email text NOT NULL UNIQUE,
+      name text NOT NULL,
+      picture text,
+      google_id text NOT NULL UNIQUE,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS schedules (
       id text PRIMARY KEY NOT NULL,
+      user_id text NOT NULL,
       title text NOT NULL,
       start_at text NOT NULL,
       end_at text,
       created_at text NOT NULL,
-      updated_at text NOT NULL
+      updated_at text NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS schedule_supplements (
       id text PRIMARY KEY NOT NULL,
@@ -26,6 +37,9 @@ export const createTestDb = () => {
       updated_at text NOT NULL,
       FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
     );
+    CREATE INDEX IF NOT EXISTS idx_users_google_id ON users (google_id);
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+    CREATE INDEX IF NOT EXISTS idx_schedules_user_id ON schedules (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_start_at ON schedules (start_at);
     CREATE INDEX IF NOT EXISTS idx_supplements_schedule_id ON schedule_supplements (schedule_id);
   `);
@@ -38,9 +52,36 @@ export const createTestDb = () => {
 
 export type TestDb = BetterSQLite3Database<typeof schema>;
 
+// テスト用のユーザーを作成
+export const createTestUser = async (
+  db: TestDb,
+  data?: {
+    id?: string;
+    email?: string;
+    name?: string;
+    picture?: string;
+    googleId?: string;
+  }
+) => {
+  const now = new Date().toISOString();
+  const user = {
+    id: data?.id ?? `user-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    email: data?.email ?? "test@example.com",
+    name: data?.name ?? "テストユーザー",
+    picture: data?.picture ?? null,
+    googleId: data?.googleId ?? `google-${Date.now()}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await db.insert(schema.users).values(user);
+  return user;
+};
+
 // テスト用のスケジュールを作成
 export const createTestSchedule = async (
   db: TestDb,
+  userId: string,
   data?: {
     id?: string;
     title?: string;
@@ -51,6 +92,7 @@ export const createTestSchedule = async (
   const now = new Date().toISOString();
   const schedule = {
     id: data?.id ?? `test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    userId,
     title: data?.title ?? "テスト予定",
     startAt: data?.startAt ?? "2025-01-15T12:00:00+09:00",
     endAt: data?.endAt ?? null,
@@ -92,4 +134,5 @@ export const createTestSupplement = async (
 export const resetDatabase = async (db: TestDb) => {
   await db.delete(schema.scheduleSupplements);
   await db.delete(schema.schedules);
+  await db.delete(schema.users);
 };

@@ -13,7 +13,12 @@ migrations_dir = "drizzle"
 FRONTEND_URL = "http://localhost:5173"
 # モックAIを使用する場合は "true"（開発時のデフォルト）
 USE_MOCK_AI = "true"
+# ローカル開発用（本番では wrangler secret put で設定）
+JWT_SECRET = "dev-jwt-secret-change-in-production"
 
 # 本番環境用（wrangler secret putで設定）
 # OPENROUTER_API_KEY = "sk-or-v1-xxx"
 # USE_MOCK_AI = "false"
+# GOOGLE_CLIENT_ID = "xxx.apps.googleusercontent.com"
+# GOOGLE_CLIENT_SECRET = "GOCSPX-xxx"
+# JWT_SECRET = "your-secret-key-here"

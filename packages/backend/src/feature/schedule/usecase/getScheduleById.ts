@@ -1,6 +1,7 @@
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
-import type { Schedule } from "../../../domain/model/schedule";
+import { toPublicSchedule } from "../../../domain/model/schedule";
+import type { Schedule } from "@ai-scheduler/shared";
 import type { Supplement } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
 import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
@@ -13,9 +14,12 @@ export const createGetScheduleByIdUseCase = (
   scheduleRepo: ScheduleRepo,
   supplementRepo: SupplementRepo
 ) => {
-  return async (id: string): Promise<Result<ScheduleWithSupplement>> => {
+  return async (
+    id: string,
+    userId: string
+  ): Promise<Result<ScheduleWithSupplement>> => {
     try {
-      const schedule = await scheduleRepo.findById(id);
+      const schedule = await scheduleRepo.findByIdAndUserId(id, userId);
       if (!schedule) {
         return err(createNotFoundError("スケジュール"));
       }
@@ -23,7 +27,7 @@ export const createGetScheduleByIdUseCase = (
       const supplement = await supplementRepo.findByScheduleId(id);
 
       return ok({
-        ...schedule,
+        ...toPublicSchedule(schedule),
         supplement,
       });
     } catch (error) {

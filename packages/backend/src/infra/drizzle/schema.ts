@@ -1,7 +1,20 @@
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  picture: text("picture"),
+  googleId: text("google_id").notNull().unique(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export const schedules = sqliteTable("schedules", {
   id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   startAt: text("start_at").notNull(),
   endAt: text("end_at"),
@@ -22,6 +35,8 @@ export const scheduleSupplements = sqliteTable("schedule_supplements", {
 });
 
 // 型エクスポート
+export type UserRow = typeof users.$inferSelect;
+export type UserInsert = typeof users.$inferInsert;
 export type ScheduleRow = typeof schedules.$inferSelect;
 export type ScheduleInsert = typeof schedules.$inferInsert;
 export type SupplementRow = typeof scheduleSupplements.$inferSelect;

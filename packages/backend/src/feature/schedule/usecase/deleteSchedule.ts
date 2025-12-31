@@ -3,9 +3,9 @@ import { type Result, ok, err } from "../../../shared/result";
 import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
 
 export const createDeleteScheduleUseCase = (repo: ScheduleRepo) => {
-  return async (id: string): Promise<Result<void>> => {
+  return async (id: string, userId: string): Promise<Result<void>> => {
     try {
-      const existing = await repo.findById(id);
+      const existing = await repo.findByIdAndUserId(id, userId);
       if (!existing) {
         return err(createNotFoundError("スケジュール"));
       }

@@ -15,12 +15,16 @@ import { createUpdateScheduleUseCase } from "./usecase/updateSchedule";
 import { createDeleteScheduleUseCase } from "./usecase/deleteSchedule";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
+import { authMiddleware } from "../../middleware/auth";
 
 type Bindings = {
   DB: D1Database;
+  JWT_SECRET: string;
 };
 
 type Variables = {
+  userId: string;
+  userEmail: string;
   createSchedule: ReturnType<typeof createCreateScheduleUseCase>;
   getSchedules: ReturnType<typeof createGetSchedulesUseCase>;
   getScheduleById: ReturnType<typeof createGetScheduleByIdUseCase>;
@@ -33,7 +37,10 @@ const app = new Hono<{
   Variables: Variables;
 }>();
 
-// ミドルウェアでDIを解決
+// 認証ミドルウェアを適用
+app.use("*", authMiddleware);
+
+// DIミドルウェア
 app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const scheduleRepo = createScheduleRepo(db);
@@ -66,7 +73,8 @@ export const scheduleRoute = app
   // GET /schedules
   .get("/", zValidator("query", getSchedulesQuerySchema), async (c) => {
     const { year, month } = c.req.valid("query");
-    const result = await c.get("getSchedules")(year, month);
+    const userId = c.get("userId");
+    const result = await c.get("getSchedules")(userId, year, month);
 
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));
@@ -84,7 +92,8 @@ export const scheduleRoute = app
     }),
     async (c) => {
       const input = c.req.valid("json");
-      const result = await c.get("createSchedule")(input);
+      const userId = c.get("userId");
+      const result = await c.get("createSchedule")(input, userId);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
@@ -96,7 +105,8 @@ export const scheduleRoute = app
   // GET /schedules/:id
   .get("/:id", async (c) => {
     const id = c.req.param("id");
-    const result = await c.get("getScheduleById")(id);
+    const userId = c.get("userId");
+    const result = await c.get("getScheduleById")(id, userId);
 
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));
@@ -114,8 +124,9 @@ export const scheduleRoute = app
     }),
     async (c) => {
       const id = c.req.param("id");
+      const userId = c.get("userId");
       const input = c.req.valid("json");
-      const result = await c.get("updateSchedule")(id, input);
+      const result = await c.get("updateSchedule")(id, userId, input);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
@@ -127,7 +138,8 @@ export const scheduleRoute = app
   // DELETE /schedules/:id
   .delete("/:id", async (c) => {
     const id = c.req.param("id");
-    const result = await c.get("deleteSchedule")(id);
+    const userId = c.get("userId");
+    const result = await c.get("deleteSchedule")(id, userId);
 
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));

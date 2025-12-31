@@ -13,6 +13,8 @@ import { z } from "zod";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
+const TOKEN_KEY = "auth_token";
+
 class ApiClientError extends Error {
   constructor(
     public code: string,
@@ -24,8 +26,27 @@ class ApiClientError extends Error {
   }
 }
 
-// Hono RPC Client
-const client = hc<ApiRoutes>(API_BASE_URL);
+// 認証トークンを取得
+const getAuthToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+// 認証ヘッダーを追加するfetchラッパー
+const fetchWithAuth: typeof fetch = async (input, init) => {
+  const token = getAuthToken();
+  const headers = new Headers(init?.headers);
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return fetch(input, { ...init, headers });
+};
+
+// Hono RPC Client with auth
+const client = hc<ApiRoutes>(API_BASE_URL, {
+  fetch: fetchWithAuth,
+});
 
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
@@ -42,6 +63,14 @@ async function handleResponse<T>(
   if (!res.ok) {
     const errorResult = apiErrorSchema.safeParse(json);
     if (errorResult.success) {
+      // 認証エラーの場合は特別なエラーコードを設定
+      if (res.status === 401) {
+        throw new ApiClientError(
+          "UNAUTHORIZED",
+          errorResult.data.message,
+          errorResult.data.details
+        );
+      }
       throw new ApiClientError(
         errorResult.data.code,
         errorResult.data.message,

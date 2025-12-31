@@ -18,8 +18,8 @@ import { createValidationError } from "../shared/errors";
 import { getStatusCode } from "../shared/http";
 import type { TestDb } from "./helpers";
 
-// テスト用のHonoアプリを作成
-export const createTestApp = (db: TestDb) => {
+// テスト用のHonoアプリを作成（userIdはテスト用に固定）
+export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") => {
   const app = new Hono();
 
   // Drizzleのdbをschedule/supplementリポジトリが期待する形式に変換
@@ -46,7 +46,7 @@ export const createTestApp = (db: TestDb) => {
 
   app.get("/api/schedules", zValidator("query", getSchedulesQuerySchema), async (c) => {
     const { year, month } = c.req.valid("query");
-    const result = await getSchedules(year, month);
+    const result = await getSchedules(testUserId, year, month);
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));
     }
@@ -63,7 +63,7 @@ export const createTestApp = (db: TestDb) => {
     }),
     async (c) => {
       const input = c.req.valid("json");
-      const result = await createSchedule(input);
+      const result = await createSchedule(input, testUserId);
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
       }
@@ -74,7 +74,7 @@ export const createTestApp = (db: TestDb) => {
   // GET /api/schedules/:id
   app.get("/api/schedules/:id", async (c) => {
     const id = c.req.param("id");
-    const result = await getScheduleById(id);
+    const result = await getScheduleById(id, testUserId);
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));
     }
@@ -92,7 +92,7 @@ export const createTestApp = (db: TestDb) => {
     async (c) => {
       const id = c.req.param("id");
       const input = c.req.valid("json");
-      const result = await updateSchedule(id, input);
+      const result = await updateSchedule(id, testUserId, input);
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
       }
@@ -103,7 +103,7 @@ export const createTestApp = (db: TestDb) => {
   // DELETE /api/schedules/:id
   app.delete("/api/schedules/:id", async (c) => {
     const id = c.req.param("id");
-    const result = await deleteSchedule(id);
+    const result = await deleteSchedule(id, testUserId);
     if (!result.ok) {
       return c.json(result.error, getStatusCode(result.error.code));
     }

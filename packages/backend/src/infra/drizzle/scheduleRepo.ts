@@ -2,22 +2,32 @@ import { eq, and, gte, lt } from "drizzle-orm";
 import type { Database } from "./client";
 import { schedules, type ScheduleRow } from "./schema";
 import type { ScheduleRepo } from "../../domain/infra/scheduleRepo";
-import type { Schedule } from "../../domain/model/schedule";
+import type { ScheduleEntity } from "../../domain/model/schedule";
 
 export const createScheduleRepo = (db: Database): ScheduleRepo => ({
-  findAll: async () => {
-    const rows = await db.select().from(schedules).orderBy(schedules.startAt);
+  findAllByUserId: async (userId) => {
+    const rows = await db
+      .select()
+      .from(schedules)
+      .where(eq(schedules.userId, userId))
+      .orderBy(schedules.startAt);
     return rows.map(toSchedule);
   },
 
-  findByMonth: async (year: number, month: number) => {
+  findByMonthAndUserId: async (year: number, month: number, userId: string) => {
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 1).toISOString();
 
     const rows = await db
       .select()
       .from(schedules)
-      .where(and(gte(schedules.startAt, startDate), lt(schedules.startAt, endDate)))
+      .where(
+        and(
+          eq(schedules.userId, userId),
+          gte(schedules.startAt, startDate),
+          lt(schedules.startAt, endDate)
+        )
+      )
       .orderBy(schedules.startAt);
 
     return rows.map(toSchedule);
@@ -25,6 +35,14 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
 
   findById: async (id) => {
     const rows = await db.select().from(schedules).where(eq(schedules.id, id));
+    return rows[0] ? toSchedule(rows[0]) : null;
+  },
+
+  findByIdAndUserId: async (id, userId) => {
+    const rows = await db
+      .select()
+      .from(schedules)
+      .where(and(eq(schedules.id, id), eq(schedules.userId, userId)));
     return rows[0] ? toSchedule(rows[0]) : null;
   },
 
@@ -45,8 +63,9 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
 });
 
 // Row → Entity 変換
-const toSchedule = (row: ScheduleRow): Schedule => ({
+const toSchedule = (row: ScheduleRow): ScheduleEntity => ({
   id: row.id,
+  userId: row.userId,
   title: row.title,
   startAt: row.startAt,
   endAt: row.endAt,
@@ -55,8 +74,9 @@ const toSchedule = (row: ScheduleRow): Schedule => ({
 });
 
 // Entity → Row 変換
-const toRow = (schedule: Schedule): ScheduleRow => ({
+const toRow = (schedule: ScheduleEntity): ScheduleRow => ({
   id: schedule.id,
+  userId: schedule.userId,
   title: schedule.title,
   startAt: schedule.startAt,
   endAt: schedule.endAt,

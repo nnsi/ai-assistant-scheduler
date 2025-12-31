@@ -36,3 +36,8 @@ export const createInternalError = (message: string): AppError => ({
   code: "INTERNAL_ERROR",
   message: `内部エラー: ${message}`,
 });
+
+export const createUnauthorizedError = (message?: string): AppError => ({
+  code: "UNAUTHORIZED",
+  message: message || "認証が必要です",
+});

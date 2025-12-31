@@ -7,6 +7,8 @@ export const getStatusCode = (code: ErrorCode): ContentfulStatusCode => {
       return 400;
     case "NOT_FOUND":
       return 404;
+    case "UNAUTHORIZED":
+      return 401;
     case "AI_ERROR":
       return 502;
     case "DATABASE_ERROR":
