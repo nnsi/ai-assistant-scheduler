@@ -48,6 +48,6 @@ export const supplementRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json(result.value);
+      return c.json(result.value, 200);
     }
   );

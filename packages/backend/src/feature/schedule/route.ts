@@ -72,7 +72,7 @@ export const scheduleRoute = app
       return c.json(result.error, getStatusCode(result.error.code));
     }
 
-    return c.json(result.value);
+    return c.json(result.value, 200);
   })
   // POST /schedules
   .post(
@@ -102,7 +102,7 @@ export const scheduleRoute = app
       return c.json(result.error, getStatusCode(result.error.code));
     }
 
-    return c.json(result.value);
+    return c.json(result.value, 200);
   })
   // PUT /schedules/:id
   .put(
@@ -121,7 +121,7 @@ export const scheduleRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json(result.value);
+      return c.json(result.value, 200);
     }
   )
   // DELETE /schedules/:id

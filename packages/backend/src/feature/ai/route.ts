@@ -69,7 +69,7 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ keywords: result.value });
+      return c.json({ keywords: result.value }, 200);
     }
   )
   // POST /ai/search
@@ -93,6 +93,6 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ result: result.value.aiResult });
+      return c.json({ result: result.value.aiResult }, 200);
     }
   );

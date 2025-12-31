@@ -1,12 +1,15 @@
 import { hc } from "hono/client";
 import type { ApiRoutes } from "@ai-scheduler/backend/client";
-import type {
-  Schedule,
-  ScheduleWithSupplement,
-  CreateScheduleInput,
-  UpdateScheduleInput,
-  ApiError,
+import {
+  scheduleSchema,
+  scheduleWithSupplementSchema,
+  apiErrorSchema,
+  type Schedule,
+  type ScheduleWithSupplement,
+  type CreateScheduleInput,
+  type UpdateScheduleInput,
 } from "@ai-scheduler/shared";
+import { z } from "zod";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -24,10 +27,37 @@ class ApiClientError extends Error {
 // Hono RPC Client
 const client = hc<ApiRoutes>(API_BASE_URL);
 
-// エラーハンドリングヘルパー
-const handleError = (error: ApiError): never => {
-  throw new ApiClientError(error.code, error.message, error.details);
-};
+// レスポンススキーマ
+const scheduleArraySchema = z.array(scheduleSchema);
+const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
+const searchResponseSchema = z.object({ result: z.string() });
+
+// レスポンスを処理してエラーならthrow、成功ならデータを返す
+async function handleResponse<T>(
+  res: Response,
+  schema: z.ZodType<T>
+): Promise<T> {
+  const json: unknown = await res.json();
+
+  if (!res.ok) {
+    const errorResult = apiErrorSchema.safeParse(json);
+    if (errorResult.success) {
+      throw new ApiClientError(
+        errorResult.data.code,
+        errorResult.data.message,
+        errorResult.data.details
+      );
+    }
+    throw new Error("Unknown error");
+  }
+
+  const result = schema.safeParse(json);
+  if (!result.success) {
+    throw new Error(`Invalid response format: ${result.error.message}`);
+  }
+
+  return result.data;
+}
 
 // Schedule API
 export const fetchSchedules = async (
@@ -41,13 +71,7 @@ export const fetchSchedules = async (
     },
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return data as Schedule[];
+  return handleResponse(res, scheduleArraySchema);
 };
 
 export const fetchScheduleById = async (
@@ -57,13 +81,7 @@ export const fetchScheduleById = async (
     param: { id },
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return data as ScheduleWithSupplement;
+  return handleResponse(res, scheduleWithSupplementSchema);
 };
 
 export const createSchedule = async (
@@ -73,13 +91,7 @@ export const createSchedule = async (
     json: input,
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return data as Schedule;
+  return handleResponse(res, scheduleSchema);
 };
 
 export const updateSchedule = async (
@@ -91,13 +103,7 @@ export const updateSchedule = async (
     json: input,
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return data as Schedule;
+  return handleResponse(res, scheduleSchema);
 };
 
 export const deleteSchedule = async (id: string): Promise<void> => {
@@ -106,8 +112,16 @@ export const deleteSchedule = async (id: string): Promise<void> => {
   });
 
   if (!res.ok) {
-    const data = await res.json();
-    handleError(data as ApiError);
+    const json: unknown = await res.json();
+    const errorResult = apiErrorSchema.safeParse(json);
+    if (errorResult.success) {
+      throw new ApiClientError(
+        errorResult.data.code,
+        errorResult.data.message,
+        errorResult.data.details
+      );
+    }
+    throw new Error("Unknown error");
   }
 };
 
@@ -120,13 +134,8 @@ export const suggestKeywords = async (
     json: { title, startAt },
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return (data as { keywords: string[] }).keywords;
+  const data = await handleResponse(res, keywordsResponseSchema);
+  return data.keywords;
 };
 
 export const searchWithKeywords = async (
@@ -139,13 +148,8 @@ export const searchWithKeywords = async (
     json: { scheduleId, title, startAt, keywords },
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    handleError(data as ApiError);
-  }
-
-  return (data as { result: string }).result;
+  const data = await handleResponse(res, searchResponseSchema);
+  return data.result;
 };
 
 // Supplement API
@@ -159,8 +163,16 @@ export const updateMemo = async (
   });
 
   if (!res.ok) {
-    const data = await res.json();
-    handleError(data as ApiError);
+    const json: unknown = await res.json();
+    const errorResult = apiErrorSchema.safeParse(json);
+    if (errorResult.success) {
+      throw new ApiClientError(
+        errorResult.data.code,
+        errorResult.data.message,
+        errorResult.data.details
+      );
+    }
+    throw new Error("Unknown error");
   }
 };
 
