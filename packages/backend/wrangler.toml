@@ -1,0 +1,19 @@
+name = "ai-scheduler-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-scheduler-db"
+database_id = "local"
+migrations_dir = "drizzle"
+
+[vars]
+FRONTEND_URL = "http://localhost:5173"
+# モックAIを使用する場合は "true"（開発時のデフォルト）
+USE_MOCK_AI = "true"
+
+# 本番環境用（wrangler secret putで設定）
+# OPENROUTER_API_KEY = "sk-or-v1-xxx"
+# USE_MOCK_AI = "false"
