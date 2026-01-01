@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { googleAuthCallbackSchema } from "@ai-scheduler/shared";
+import { googleAuthCallbackSchema, refreshTokenSchema } from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createGoogleAuthService } from "../../infra/auth/google";
 import { createJwtService } from "../../infra/auth/jwt";
 import { createGoogleAuthUseCase } from "./usecase/googleAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
+import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 
@@ -20,6 +21,7 @@ type Bindings = {
 type Variables = {
   googleAuth: ReturnType<typeof createGoogleAuthUseCase>;
   getCurrentUser: ReturnType<typeof createGetCurrentUserUseCase>;
+  refreshToken: ReturnType<typeof createRefreshTokenUseCase>;
   jwtService: ReturnType<typeof createJwtService>;
 };
 
@@ -40,6 +42,7 @@ app.use("*", async (c, next) => {
 
   c.set("googleAuth", createGoogleAuthUseCase(userRepo, googleAuthService, jwtService));
   c.set("getCurrentUser", createGetCurrentUserUseCase(userRepo));
+  c.set("refreshToken", createRefreshTokenUseCase(userRepo, jwtService));
   c.set("jwtService", jwtService);
 
   await next();
@@ -75,7 +78,7 @@ export const authRoute = app
 
     const token = authHeader.substring(7);
     const jwtService = c.get("jwtService");
-    const payload = await jwtService.verifyToken(token);
+    const payload = await jwtService.verifyAccessToken(token);
 
     if (!payload) {
       return c.json(createUnauthorizedError("無効なトークンです"), 401);
@@ -89,6 +92,25 @@ export const authRoute = app
 
     return c.json({ user: result.value }, 200);
   })
+  // POST /auth/refresh - トークンリフレッシュ
+  .post(
+    "/refresh",
+    zValidator("json", refreshTokenSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { refreshToken } = c.req.valid("json");
+      const result = await c.get("refreshToken")(refreshToken);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  )
   // POST /auth/logout - ログアウト（クライアント側でトークンを削除）
   .post("/logout", async (c) => {
     // JWTはステートレスなので、サーバー側では特に処理なし

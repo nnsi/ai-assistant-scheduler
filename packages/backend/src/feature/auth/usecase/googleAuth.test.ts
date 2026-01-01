@@ -30,15 +30,19 @@ describe("googleAuthUseCase", () => {
   });
 
   const createMockJwtService = (): JwtService => ({
-    generateToken: vi.fn(),
+    generateAccessToken: vi.fn(),
+    generateRefreshToken: vi.fn(),
+    generateTokens: vi.fn(),
     verifyToken: vi.fn(),
+    verifyAccessToken: vi.fn(),
+    verifyRefreshToken: vi.fn(),
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should create new user and return token when user does not exist", async () => {
+  it("should create new user and return tokens when user does not exist", async () => {
     const userRepo = createMockUserRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
@@ -57,7 +61,10 @@ describe("googleAuthUseCase", () => {
       },
     });
     vi.mocked(userRepo.findByGoogleId).mockResolvedValue(null);
-    vi.mocked(jwtService.generateToken).mockResolvedValue("jwt-token");
+    vi.mocked(jwtService.generateTokens).mockResolvedValue({
+      accessToken: "jwt-access-token",
+      refreshToken: "jwt-refresh-token",
+    });
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
@@ -68,7 +75,8 @@ describe("googleAuthUseCase", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.token).toBe("jwt-token");
+      expect(result.value.accessToken).toBe("jwt-access-token");
+      expect(result.value.refreshToken).toBe("jwt-refresh-token");
       expect(result.value.user.email).toBe("new@example.com");
       expect(result.value.user.name).toBe("New User");
     }
@@ -76,7 +84,7 @@ describe("googleAuthUseCase", () => {
     expect(userRepo.update).not.toHaveBeenCalled();
   });
 
-  it("should update existing user and return token", async () => {
+  it("should update existing user and return tokens", async () => {
     const userRepo = createMockUserRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
@@ -95,7 +103,10 @@ describe("googleAuthUseCase", () => {
       },
     });
     vi.mocked(userRepo.findByGoogleId).mockResolvedValue(mockUser);
-    vi.mocked(jwtService.generateToken).mockResolvedValue("jwt-token");
+    vi.mocked(jwtService.generateTokens).mockResolvedValue({
+      accessToken: "jwt-access-token",
+      refreshToken: "jwt-refresh-token",
+    });
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
@@ -106,7 +117,8 @@ describe("googleAuthUseCase", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.token).toBe("jwt-token");
+      expect(result.value.accessToken).toBe("jwt-access-token");
+      expect(result.value.refreshToken).toBe("jwt-refresh-token");
       expect(result.value.user.name).toBe("Updated Name");
     }
     expect(userRepo.save).not.toHaveBeenCalled();

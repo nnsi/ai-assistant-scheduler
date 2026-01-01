@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { createJwtService, type JwtPayload } from "../infra/auth/jwt";
+import { createJwtService } from "../infra/auth/jwt";
 import { createUnauthorizedError } from "../shared/errors";
 
 type Bindings = {
@@ -11,7 +11,7 @@ type Variables = {
   userEmail: string;
 };
 
-// 認証必須ミドルウェア
+// 認証必須ミドルウェア（アクセストークンのみ許可）
 export const authMiddleware = createMiddleware<{
   Bindings: Bindings;
   Variables: Variables;
@@ -24,15 +24,10 @@ export const authMiddleware = createMiddleware<{
 
   const token = authHeader.substring(7);
   const jwtService = createJwtService(c.env.JWT_SECRET);
-  const payload = await jwtService.verifyToken(token);
+  const payload = await jwtService.verifyAccessToken(token);
 
   if (!payload) {
     return c.json(createUnauthorizedError("無効なトークンです"), 401);
-  }
-
-  // トークンの有効期限チェック
-  if (payload.exp < Math.floor(Date.now() / 1000)) {
-    return c.json(createUnauthorizedError("トークンの有効期限が切れています"), 401);
   }
 
   // ユーザー情報をコンテキストに設定
@@ -52,9 +47,9 @@ export const optionalAuthMiddleware = createMiddleware<{
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     const jwtService = createJwtService(c.env.JWT_SECRET);
-    const payload = await jwtService.verifyToken(token);
+    const payload = await jwtService.verifyAccessToken(token);
 
-    if (payload && payload.exp >= Math.floor(Date.now() / 1000)) {
+    if (payload) {
       c.set("userId", payload.sub);
       c.set("userEmail", payload.email);
     }

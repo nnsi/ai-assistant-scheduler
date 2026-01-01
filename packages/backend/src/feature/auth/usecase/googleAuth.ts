@@ -55,8 +55,8 @@ export const createGoogleAuthUseCase =
       await userRepo.save(user);
     }
 
-    // 4. JWTトークンを生成
-    const token = await jwtService.generateToken(user);
+    // 4. JWTトークンを生成（アクセストークン + リフレッシュトークン）
+    const tokens = await jwtService.generateTokens(user);
 
     return {
       ok: true,
@@ -67,7 +67,8 @@ export const createGoogleAuthUseCase =
           name: user.name,
           picture: user.picture,
         },
-        token,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       },
     };
   };

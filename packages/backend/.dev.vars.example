@@ -1,0 +1,19 @@
+# Backend Environment Variables
+# Copy this file to .dev.vars and fill in the values
+
+# Google OAuth (required for authentication)
+# Create credentials at https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+
+# JWT Secret (required)
+# Generate a secure random string for production
+JWT_SECRET=your-secret-key-change-in-production
+
+# OpenRouter API Key (required for AI features)
+# Get your key at https://openrouter.ai/keys
+OPENROUTER_API_KEY=sk-or-v1-your-key
+
+# Set to "false" to use real AI (OpenRouter)
+# Set to "true" to use mock AI responses (development)
+USE_MOCK_AI=true

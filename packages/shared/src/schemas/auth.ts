@@ -21,10 +21,26 @@ export type GoogleAuthCallback = z.infer<typeof googleAuthCallbackSchema>;
 // 認証レスポンス
 export const authResponseSchema = z.object({
   user: userSchema,
-  token: z.string(),
+  accessToken: z.string(),
+  refreshToken: z.string(),
 });
 
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+
+// トークンリフレッシュリクエスト
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, "リフレッシュトークンが必要です"),
+});
+
+export type RefreshTokenRequest = z.infer<typeof refreshTokenSchema>;
+
+// トークンリフレッシュレスポンス
+export const tokenResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+});
+
+export type TokenResponse = z.infer<typeof tokenResponseSchema>;
 
 // 現在のユーザー情報レスポンス
 export const meResponseSchema = z.object({

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { googleAuthCallbackSchema } from "@ai-scheduler/shared";
+import { googleAuthCallbackSchema, refreshTokenSchema } from "@ai-scheduler/shared";
 import {
   createTestDb,
   createTestUser,
@@ -12,6 +12,7 @@ import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createJwtService } from "../../infra/auth/jwt";
 import { createGoogleAuthUseCase } from "./usecase/googleAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
+import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import type { GoogleAuthService } from "../../infra/auth/google";
@@ -48,6 +49,7 @@ const createTestAuthApp = (
     jwtService
   );
   const getCurrentUser = createGetCurrentUserUseCase(userRepo);
+  const refreshToken = createRefreshTokenUseCase(userRepo, jwtService);
 
   // POST /auth/google
   app.post(
@@ -77,7 +79,7 @@ const createTestAuthApp = (
     }
 
     const token = authHeader.substring(7);
-    const payload = await jwtService.verifyToken(token);
+    const payload = await jwtService.verifyAccessToken(token);
 
     if (!payload) {
       return c.json(createUnauthorizedError("無効なトークンです"), 401);
@@ -91,6 +93,26 @@ const createTestAuthApp = (
 
     return c.json({ user: result.value }, 200);
   });
+
+  // POST /auth/refresh
+  app.post(
+    "/auth/refresh",
+    zValidator("json", refreshTokenSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { refreshToken: token } = c.req.valid("json");
+      const result = await refreshToken(token);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  );
 
   // POST /auth/logout
   app.post("/auth/logout", async (c) => {
@@ -135,7 +157,7 @@ describe("Auth API Integration Tests", () => {
   });
 
   describe("POST /auth/google", () => {
-    it("should create new user and return token", async () => {
+    it("should create new user and return tokens", async () => {
       const res = await app.request("/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,9 +170,11 @@ describe("Auth API Integration Tests", () => {
       expect(res.status).toBe(200);
       const data = (await res.json()) as {
         user: { id: string; email: string; name: string };
-        token: string;
+        accessToken: string;
+        refreshToken: string;
       };
-      expect(data.token).toBeDefined();
+      expect(data.accessToken).toBeDefined();
+      expect(data.refreshToken).toBeDefined();
       expect(data.user.email).toBe("mock@example.com");
       expect(data.user.name).toBe("Mock User");
     });
@@ -179,7 +203,8 @@ describe("Auth API Integration Tests", () => {
       expect(res.status).toBe(200);
       const data = (await res.json()) as {
         user: { id: string; email: string };
-        token: string;
+        accessToken: string;
+        refreshToken: string;
       };
       expect(data.user.email).toBe("mock@example.com");
     });
@@ -229,7 +254,7 @@ describe("Auth API Integration Tests", () => {
   });
 
   describe("GET /auth/me", () => {
-    it("should return current user with valid token", async () => {
+    it("should return current user with valid access token", async () => {
       // まずログインしてトークンを取得
       const loginRes = await app.request("/auth/google", {
         method: "POST",
@@ -239,12 +264,12 @@ describe("Auth API Integration Tests", () => {
           redirectUri: "http://localhost:5173/auth/callback",
         }),
       });
-      const loginData = (await loginRes.json()) as { token: string };
+      const loginData = (await loginRes.json()) as { accessToken: string };
 
-      // トークンを使って/auth/meにアクセス
+      // アクセストークンを使って/auth/meにアクセス
       const res = await app.request("/auth/me", {
         headers: {
-          Authorization: `Bearer ${loginData.token}`,
+          Authorization: `Bearer ${loginData.accessToken}`,
         },
       });
 
@@ -254,6 +279,28 @@ describe("Auth API Integration Tests", () => {
       };
       expect(data.user.email).toBe("mock@example.com");
       expect(data.user.name).toBe("Mock User");
+    });
+
+    it("should return 401 when using refresh token instead of access token", async () => {
+      // ログインしてリフレッシュトークンを取得
+      const loginRes = await app.request("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "valid-auth-code",
+          redirectUri: "http://localhost:5173/auth/callback",
+        }),
+      });
+      const loginData = (await loginRes.json()) as { refreshToken: string };
+
+      // リフレッシュトークンを使って/auth/meにアクセス（失敗するはず）
+      const res = await app.request("/auth/me", {
+        headers: {
+          Authorization: `Bearer ${loginData.refreshToken}`,
+        },
+      });
+
+      expect(res.status).toBe(401);
     });
 
     it("should return 401 without Authorization header", async () => {
@@ -282,6 +329,84 @@ describe("Auth API Integration Tests", () => {
       });
 
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe("POST /auth/refresh", () => {
+    it("should return new tokens with valid refresh token", async () => {
+      // ログインしてリフレッシュトークンを取得
+      const loginRes = await app.request("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "valid-auth-code",
+          redirectUri: "http://localhost:5173/auth/callback",
+        }),
+      });
+      const loginData = (await loginRes.json()) as { refreshToken: string };
+
+      // リフレッシュトークンを使って新しいトークンを取得
+      const res = await app.request("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: loginData.refreshToken,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as {
+        accessToken: string;
+        refreshToken: string;
+      };
+      expect(data.accessToken).toBeDefined();
+      expect(data.refreshToken).toBeDefined();
+    });
+
+    it("should return 401 with invalid refresh token", async () => {
+      const res = await app.request("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: "invalid-refresh-token",
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 401 when using access token instead of refresh token", async () => {
+      // ログインしてアクセストークンを取得
+      const loginRes = await app.request("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "valid-auth-code",
+          redirectUri: "http://localhost:5173/auth/callback",
+        }),
+      });
+      const loginData = (await loginRes.json()) as { accessToken: string };
+
+      // アクセストークンをリフレッシュに使う（失敗するはず）
+      const res = await app.request("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: loginData.accessToken,
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 400 for missing refresh token", async () => {
+      const res = await app.request("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(400);
     });
   });
 
