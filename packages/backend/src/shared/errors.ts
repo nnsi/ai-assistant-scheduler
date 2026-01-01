@@ -41,3 +41,8 @@ export const createUnauthorizedError = (message?: string): AppError => ({
   code: "UNAUTHORIZED",
   message: message || "認証が必要です",
 });
+
+export const createConflictError = (message: string): AppError => ({
+  code: "CONFLICT",
+  message,
+});

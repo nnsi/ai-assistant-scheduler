@@ -12,7 +12,8 @@ describe("userRepo", () => {
     email: "test@example.com",
     name: "Test User",
     picture: "https://example.com/photo.jpg",
-    googleId: "google-123",
+    provider: "google",
+    providerId: "google-123",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
@@ -52,17 +53,18 @@ describe("userRepo", () => {
     });
   });
 
-  describe("findByGoogleId", () => {
-    it("should find user by googleId", async () => {
+  describe("findByProviderId", () => {
+    it("should find user by provider and providerId", async () => {
       await userRepo.save(testUser);
 
-      const found = await userRepo.findByGoogleId("google-123");
+      const found = await userRepo.findByProviderId("google", "google-123");
       expect(found).not.toBeNull();
-      expect(found?.googleId).toBe("google-123");
+      expect(found?.providerId).toBe("google-123");
+      expect(found?.provider).toBe("google");
     });
 
-    it("should return null when googleId not found", async () => {
-      const found = await userRepo.findByGoogleId("non-existent");
+    it("should return null when providerId not found", async () => {
+      const found = await userRepo.findByProviderId("google", "non-existent");
       expect(found).toBeNull();
     });
   });

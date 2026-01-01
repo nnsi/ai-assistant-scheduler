@@ -8,7 +8,8 @@ describe("JwtService", () => {
     email: "test@example.com",
     name: "Test User",
     picture: "https://example.com/photo.jpg",
-    googleId: "google-123",
+    provider: "google",
+    providerId: "google-123",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
@@ -80,7 +81,7 @@ describe("JwtService", () => {
 
     it("should return null for refresh token", async () => {
       const jwtService = createJwtService(secret);
-      const refreshToken = await jwtService.generateRefreshToken(testUser);
+      const refreshToken = await jwtService.generateRefreshToken(testUser, "test-jti");
       const payload = await jwtService.verifyAccessToken(refreshToken);
 
       expect(payload).toBeNull();

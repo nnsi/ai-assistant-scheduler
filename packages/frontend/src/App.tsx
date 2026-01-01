@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar } from "@/components/Calendar/Calendar";
 import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
 import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
 import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
-import { LoginPage, AuthCallback } from "@/components/Auth";
+import { LoginPage, AuthCallback, ReconnectCallback, ProfileSettingsModal } from "@/components/Auth";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useAuth } from "@/contexts/AuthContext";
 import { addMonths, subMonths } from "@/lib/date";
@@ -18,6 +18,30 @@ function MainApp() {
   );
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // URLパラメータから通知を取得
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("success");
+    const error = params.get("error");
+    if (success) {
+      setNotification({ type: 'success', message: decodeURIComponent(success) });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error) {
+      setNotification({ type: 'error', message: decodeURIComponent(error) });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // 通知を3秒後に自動で消す
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth() + 1;
@@ -63,6 +87,25 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 通知バー */}
+      {notification && (
+        <div
+          className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center ${
+            notification.type === 'success'
+              ? 'bg-green-500 text-white'
+              : 'bg-red-500 text-white'
+          }`}
+        >
+          {notification.message}
+          <button
+            onClick={() => setNotification(null)}
+            className="ml-4 text-white/80 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">
@@ -71,7 +114,10 @@ function MainApp() {
           <div className="flex items-center gap-4">
             {user && (
               <>
-                <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+                >
                   {user.picture && (
                     <img
                       src={user.picture}
@@ -80,7 +126,7 @@ function MainApp() {
                     />
                   )}
                   <span className="text-sm text-gray-700">{user.name}</span>
-                </div>
+                </button>
                 <button
                   onClick={logout}
                   className="text-sm text-gray-500 hover:text-gray-700"
@@ -122,6 +168,11 @@ function MainApp() {
         onEdit={handleScheduleEdit}
         onDelete={handleScheduleDelete}
       />
+
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }
@@ -132,6 +183,11 @@ function App() {
   // OAuth コールバックのルーティング
   if (window.location.pathname === "/auth/callback") {
     return <AuthCallback />;
+  }
+
+  // Google再認証コールバックのルーティング
+  if (window.location.pathname === "/auth/reconnect-callback") {
+    return <ReconnectCallback />;
   }
 
   // 読み込み中

@@ -55,3 +55,25 @@ export const logoutSchema = z.object({
 });
 
 export type LogoutRequest = z.infer<typeof logoutSchema>;
+
+// メールアドレス更新リクエスト
+export const updateEmailSchema = z.object({
+  email: z.string().email("有効なメールアドレスを入力してください"),
+});
+
+export type UpdateEmailRequest = z.infer<typeof updateEmailSchema>;
+
+// Google認証再設定リクエスト
+export const reconnectGoogleSchema = z.object({
+  code: z.string().min(1, "認証コードが必要です"),
+  redirectUri: z.string().url("有効なリダイレクトURIが必要です"),
+});
+
+export type ReconnectGoogleRequest = z.infer<typeof reconnectGoogleSchema>;
+
+// プロファイル更新レスポンス
+export const updateProfileResponseSchema = z.object({
+  user: userSchema,
+});
+
+export type UpdateProfileResponse = z.infer<typeof updateProfileResponseSchema>;
