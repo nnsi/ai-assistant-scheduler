@@ -33,7 +33,7 @@ export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") =
   const getScheduleById = createGetScheduleByIdUseCase(scheduleRepo, supplementRepo);
   const updateSchedule = createUpdateScheduleUseCase(scheduleRepo);
   const deleteSchedule = createDeleteScheduleUseCase(scheduleRepo);
-  const updateMemo = createUpdateMemoUseCase(supplementRepo);
+  const updateMemo = createUpdateMemoUseCase(supplementRepo, scheduleRepo);
 
   // ヘルスチェック
   app.get("/health", (c) => c.json({ status: "ok" }));
@@ -121,7 +121,7 @@ export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") =
     async (c) => {
       const scheduleId = c.req.param("scheduleId");
       const input = c.req.valid("json");
-      const result = await updateMemo(scheduleId, input);
+      const result = await updateMemo(scheduleId, input, testUserId);
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
       }

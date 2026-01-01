@@ -34,7 +34,10 @@ export const ScheduleForm = ({
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
-        fieldErrors[err.path[0] as string] = err.message;
+        const fieldName = err.path[0];
+        if (typeof fieldName === "string") {
+          fieldErrors[fieldName] = err.message;
+        }
       });
       setErrors(fieldErrors);
       return;

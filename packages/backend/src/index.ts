@@ -19,7 +19,15 @@ app.use(
   cors({
     origin: (origin, c) => {
       const frontendUrl = c.env.FRONTEND_URL || "http://localhost:5173";
-      return origin === frontendUrl ? origin : frontendUrl;
+      // 許可されたoriginのみを返す。マッチしない場合はnullを返して拒否
+      if (!origin || origin === frontendUrl) {
+        return frontendUrl;
+      }
+      // 開発環境では localhost を許可
+      if (origin.startsWith("http://localhost:")) {
+        return origin;
+      }
+      return null;
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],

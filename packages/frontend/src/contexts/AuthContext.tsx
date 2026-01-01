@@ -38,7 +38,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem(USER_KEY);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as User;
+    } catch {
+      // localStorageのデータが破損している場合は削除
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
   });
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     return localStorage.getItem(ACCESS_TOKEN_KEY);

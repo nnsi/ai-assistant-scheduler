@@ -19,7 +19,8 @@ export const useAI = () => {
       setKeywords(result);
       return result;
     } catch (e) {
-      setError(e as Error);
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(error);
       return [];
     } finally {
       setIsLoadingKeywords(false);
@@ -38,7 +39,8 @@ export const useAI = () => {
       setSearchResult(result);
       return result;
     } catch (e) {
-      setError(e as Error);
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(error);
       return "";
     } finally {
       setIsLoadingSearch(false);
