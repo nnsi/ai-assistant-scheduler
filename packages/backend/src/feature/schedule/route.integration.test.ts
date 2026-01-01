@@ -4,6 +4,7 @@ import {
   createTestDb,
   createTestSchedule,
   createTestSupplement,
+  createTestUser,
   resetDatabase,
   type TestDb,
 } from "../../test/helpers";
@@ -11,14 +12,17 @@ import {
 describe("Schedule API Integration Tests", () => {
   let db: TestDb;
   let app: ReturnType<typeof createTestApp>;
+  const testUserId = "test-user-id";
 
-  beforeAll(() => {
+  beforeAll(async () => {
     db = createTestDb();
-    app = createTestApp(db);
+    app = createTestApp(db, testUserId);
   });
 
   beforeEach(async () => {
     await resetDatabase(db);
+    // テストユーザーを作成
+    await createTestUser(db, { id: testUserId });
   });
 
   describe("GET /api/schedules", () => {
@@ -31,8 +35,8 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should return all schedules", async () => {
-      await createTestSchedule(db, { id: "1", title: "予定1" });
-      await createTestSchedule(db, { id: "2", title: "予定2" });
+      await createTestSchedule(db, testUserId, { id: "1", title: "予定1" });
+      await createTestSchedule(db, testUserId, { id: "2", title: "予定2" });
 
       const res = await app.request("/api/schedules");
       expect(res.status).toBe(200);
@@ -44,12 +48,12 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should filter schedules by year and month", async () => {
-      await createTestSchedule(db, {
+      await createTestSchedule(db, testUserId, {
         id: "1",
         title: "1月の予定",
         startAt: "2025-01-15T12:00:00+09:00",
       });
-      await createTestSchedule(db, {
+      await createTestSchedule(db, testUserId, {
         id: "2",
         title: "2月の予定",
         startAt: "2025-02-15T12:00:00+09:00",
@@ -144,7 +148,7 @@ describe("Schedule API Integration Tests", () => {
 
   describe("GET /api/schedules/:id", () => {
     it("should return schedule with supplement", async () => {
-      const schedule = await createTestSchedule(db, { id: "test-1", title: "詳細テスト" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "test-1", title: "詳細テスト" });
       await createTestSupplement(db, schedule.id, {
         keywords: ["キーワード1"],
         aiResult: "AI結果",
@@ -172,7 +176,7 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should return schedule without supplement", async () => {
-      const schedule = await createTestSchedule(db, { id: "test-2" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "test-2" });
 
       const res = await app.request(`/api/schedules/${schedule.id}`);
       expect(res.status).toBe(200);
@@ -192,7 +196,7 @@ describe("Schedule API Integration Tests", () => {
 
   describe("PUT /api/schedules/:id", () => {
     it("should update schedule title", async () => {
-      const schedule = await createTestSchedule(db, { id: "update-1", title: "元のタイトル" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "update-1", title: "元のタイトル" });
 
       const res = await app.request(`/api/schedules/${schedule.id}`, {
         method: "PUT",
@@ -206,7 +210,7 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should update schedule startAt", async () => {
-      const schedule = await createTestSchedule(db, { id: "update-2" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "update-2" });
 
       const res = await app.request(`/api/schedules/${schedule.id}`, {
         method: "PUT",
@@ -231,7 +235,7 @@ describe("Schedule API Integration Tests", () => {
 
   describe("DELETE /api/schedules/:id", () => {
     it("should delete schedule", async () => {
-      const schedule = await createTestSchedule(db, { id: "delete-1" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "delete-1" });
 
       const res = await app.request(`/api/schedules/${schedule.id}`, {
         method: "DELETE",
@@ -244,7 +248,7 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should cascade delete supplements", async () => {
-      const schedule = await createTestSchedule(db, { id: "delete-2" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "delete-2" });
       await createTestSupplement(db, schedule.id, { keywords: ["test"] });
 
       const res = await app.request(`/api/schedules/${schedule.id}`, {

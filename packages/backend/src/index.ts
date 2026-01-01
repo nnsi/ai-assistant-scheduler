@@ -5,6 +5,9 @@ import { apiRoutes } from "./route";
 type Bindings = {
   DB: D1Database;
   OPENROUTER_API_KEY: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  JWT_SECRET: string;
   FRONTEND_URL?: string;
 };
 
@@ -19,7 +22,8 @@ app.use(
       return origin === frontendUrl ? origin : frontendUrl;
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 

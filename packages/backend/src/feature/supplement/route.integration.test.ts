@@ -4,6 +4,7 @@ import {
   createTestDb,
   createTestSchedule,
   createTestSupplement,
+  createTestUser,
   resetDatabase,
   type TestDb,
 } from "../../test/helpers";
@@ -11,19 +12,21 @@ import {
 describe("Supplement API Integration Tests", () => {
   let db: TestDb;
   let app: ReturnType<typeof createTestApp>;
+  const testUserId = "test-user-id";
 
   beforeAll(() => {
     db = createTestDb();
-    app = createTestApp(db);
+    app = createTestApp(db, testUserId);
   });
 
   beforeEach(async () => {
     await resetDatabase(db);
+    await createTestUser(db, { id: testUserId });
   });
 
   describe("PUT /api/supplements/:scheduleId/memo", () => {
     it("should update user memo", async () => {
-      const schedule = await createTestSchedule(db, { id: "memo-1" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "memo-1" });
       await createTestSupplement(db, schedule.id, {
         keywords: ["テスト"],
         aiResult: "AI結果",
@@ -44,7 +47,7 @@ describe("Supplement API Integration Tests", () => {
     });
 
     it("should update existing memo", async () => {
-      const schedule = await createTestSchedule(db, { id: "memo-2" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "memo-2" });
       await createTestSupplement(db, schedule.id, {
         keywords: ["テスト"],
         userMemo: "元のメモ",
@@ -65,7 +68,7 @@ describe("Supplement API Integration Tests", () => {
     });
 
     it("should clear memo with empty string", async () => {
-      const schedule = await createTestSchedule(db, { id: "memo-3" });
+      const schedule = await createTestSchedule(db, testUserId, { id: "memo-3" });
       await createTestSupplement(db, schedule.id, {
         keywords: ["テスト"],
         userMemo: "メモあり",
@@ -87,7 +90,7 @@ describe("Supplement API Integration Tests", () => {
 
     it("should return 404 when supplement does not exist", async () => {
       // スケジュールはあるがサプリメントがない場合
-      await createTestSchedule(db, { id: "memo-4" });
+      await createTestSchedule(db, testUserId, { id: "memo-4" });
 
       const res = await app.request(
         "/api/supplements/memo-4/memo",

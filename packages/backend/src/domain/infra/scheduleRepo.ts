@@ -1,11 +1,16 @@
-import type { Schedule } from "../model/schedule";
+import type { ScheduleEntity } from "../model/schedule";
 
 // リポジトリ型定義
 export type ScheduleRepo = {
-  findAll: () => Promise<Schedule[]>;
-  findByMonth: (year: number, month: number) => Promise<Schedule[]>;
-  findById: (id: string) => Promise<Schedule | null>;
-  save: (schedule: Schedule) => Promise<void>;
-  update: (schedule: Schedule) => Promise<void>;
+  findAllByUserId: (userId: string) => Promise<ScheduleEntity[]>;
+  findByMonthAndUserId: (
+    year: number,
+    month: number,
+    userId: string
+  ) => Promise<ScheduleEntity[]>;
+  findById: (id: string) => Promise<ScheduleEntity | null>;
+  findByIdAndUserId: (id: string, userId: string) => Promise<ScheduleEntity | null>;
+  save: (schedule: ScheduleEntity) => Promise<void>;
+  update: (schedule: ScheduleEntity) => Promise<void>;
   delete: (id: string) => Promise<void>;
 };

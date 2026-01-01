@@ -4,6 +4,7 @@ import {
   scheduleSchema,
   scheduleWithSupplementSchema,
   apiErrorSchema,
+  tokenResponseSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
@@ -12,6 +13,9 @@ import {
 import { z } from "zod";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
+const ACCESS_TOKEN_KEY = "auth_access_token";
+const REFRESH_TOKEN_KEY = "auth_refresh_token";
 
 class ApiClientError extends Error {
   constructor(
@@ -24,8 +28,93 @@ class ApiClientError extends Error {
   }
 }
 
-// Hono RPC Client
-const client = hc<ApiRoutes>(API_BASE_URL);
+// トークン管理
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+const getAccessToken = (): string | null => {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};
+
+const getRefreshToken = (): string | null => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+};
+
+// リフレッシュトークンを使ってアクセストークンを更新
+const refreshAccessToken = async (): Promise<string | null> => {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!res.ok) {
+        // リフレッシュ失敗時はトークンをクリア
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        return null;
+      }
+
+      const json: unknown = await res.json();
+      const result = tokenResponseSchema.safeParse(json);
+      if (!result.success) {
+        return null;
+      }
+      localStorage.setItem(ACCESS_TOKEN_KEY, result.data.accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refreshToken);
+      return result.data.accessToken;
+    } catch {
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+// 認証ヘッダーを追加するfetchラッパー（自動リフレッシュ付き）
+const fetchWithAuth: typeof fetch = async (input, init) => {
+  const token = getAccessToken();
+  const headers = new Headers(init?.headers);
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(input, { ...init, headers });
+
+  // 401エラーの場合、トークンをリフレッシュしてリトライ
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      headers.set("Authorization", `Bearer ${newToken}`);
+      return fetch(input, { ...init, headers });
+    }
+  }
+
+  return res;
+};
+
+// Hono RPC Client with auth
+const client = hc<ApiRoutes>(API_BASE_URL, {
+  fetch: fetchWithAuth,
+});
 
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
@@ -42,6 +131,14 @@ async function handleResponse<T>(
   if (!res.ok) {
     const errorResult = apiErrorSchema.safeParse(json);
     if (errorResult.success) {
+      // 認証エラーの場合は特別なエラーコードを設定
+      if (res.status === 401) {
+        throw new ApiClientError(
+          "UNAUTHORIZED",
+          errorResult.data.message,
+          errorResult.data.details
+        );
+      }
       throw new ApiClientError(
         errorResult.data.code,
         errorResult.data.message,

@@ -2,12 +2,15 @@ import { describe, it, expect, vi } from "vitest";
 import { createGetScheduleByIdUseCase } from "./getScheduleById";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
-import type { Schedule } from "../../../domain/model/schedule";
+import type { ScheduleEntity } from "../../../domain/model/schedule";
 import type { Supplement } from "../../../domain/model/supplement";
 
 describe("getScheduleByIdUseCase", () => {
-  const mockSchedule: Schedule = {
+  const testUserId = "test-user-id";
+
+  const mockSchedule: ScheduleEntity = {
     id: "1",
+    userId: testUserId,
     title: "テスト予定",
     startAt: "2025-01-10T12:00:00+09:00",
     endAt: null,
@@ -27,9 +30,10 @@ describe("getScheduleByIdUseCase", () => {
 
   const createMockRepos = () => ({
     scheduleRepo: {
-      findAll: vi.fn(),
-      findByMonth: vi.fn(),
+      findAllByUserId: vi.fn(),
+      findByMonthAndUserId: vi.fn(),
       findById: vi.fn().mockResolvedValue(mockSchedule),
+      findByIdAndUserId: vi.fn().mockResolvedValue(mockSchedule),
       save: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -49,7 +53,7 @@ describe("getScheduleByIdUseCase", () => {
       supplementRepo
     );
 
-    const result = await getScheduleById("1");
+    const result = await getScheduleById("1", testUserId);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -61,6 +65,7 @@ describe("getScheduleByIdUseCase", () => {
         "キーワード2",
       ]);
     }
+    expect(scheduleRepo.findByIdAndUserId).toHaveBeenCalledWith("1", testUserId);
   });
 
   it("should return schedule without supplement when no supplement exists", async () => {
@@ -72,7 +77,7 @@ describe("getScheduleByIdUseCase", () => {
       supplementRepo
     );
 
-    const result = await getScheduleById("1");
+    const result = await getScheduleById("1", testUserId);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -82,14 +87,14 @@ describe("getScheduleByIdUseCase", () => {
 
   it("should return error when schedule not found", async () => {
     const { scheduleRepo, supplementRepo } = createMockRepos();
-    vi.mocked(scheduleRepo.findById).mockResolvedValue(null);
+    vi.mocked(scheduleRepo.findByIdAndUserId).mockResolvedValue(null);
 
     const getScheduleById = createGetScheduleByIdUseCase(
       scheduleRepo,
       supplementRepo
     );
 
-    const result = await getScheduleById("nonexistent");
+    const result = await getScheduleById("nonexistent", testUserId);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
