@@ -11,6 +11,7 @@ import {
   authResponseSchema,
   tokenResponseSchema,
   meResponseSchema,
+  updateProfileResponseSchema,
   type User,
 } from "@ai-scheduler/shared";
 
@@ -22,6 +23,8 @@ type AuthContextType = {
   login: (code: string, redirectUri: string) => Promise<void>;
   logout: () => void;
   refreshAccessToken: () => Promise<string | null>;
+  updateEmail: (email: string) => Promise<void>;
+  reconnectGoogle: (code: string, redirectUri: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -202,6 +205,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateEmail = useCallback(async (email: string) => {
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) {
+      throw new Error("認証が必要です");
+    }
+
+    const res = await fetch(`${API_BASE_URL}/auth/email`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const errorJson: unknown = await res.json();
+      const errorMessage =
+        typeof errorJson === "object" &&
+        errorJson !== null &&
+        "message" in errorJson &&
+        typeof errorJson.message === "string"
+          ? errorJson.message
+          : "メールアドレスの更新に失敗しました";
+      throw new Error(errorMessage);
+    }
+
+    const json: unknown = await res.json();
+    const result = updateProfileResponseSchema.safeParse(json);
+    if (!result.success) {
+      throw new Error("レスポンスの形式が不正です");
+    }
+    setUser(result.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
+  }, []);
+
+  const reconnectGoogle = useCallback(async (code: string, redirectUri: string) => {
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) {
+      throw new Error("認証が必要です");
+    }
+
+    const res = await fetch(`${API_BASE_URL}/auth/reconnect-google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ code, redirectUri }),
+    });
+
+    if (!res.ok) {
+      const errorJson: unknown = await res.json();
+      const errorMessage =
+        typeof errorJson === "object" &&
+        errorJson !== null &&
+        "message" in errorJson &&
+        typeof errorJson.message === "string"
+          ? errorJson.message
+          : "Googleアカウントの再設定に失敗しました";
+      throw new Error(errorMessage);
+    }
+
+    const json: unknown = await res.json();
+    const result = updateProfileResponseSchema.safeParse(json);
+    if (!result.success) {
+      throw new Error("レスポンスの形式が不正です");
+    }
+    setUser(result.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -212,6 +287,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshAccessToken,
+        updateEmail,
+        reconnectGoogle,
       }}
     >
       {children}
