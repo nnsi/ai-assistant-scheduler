@@ -121,14 +121,10 @@ const scheduleArraySchema = z.array(scheduleSchema);
 const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
 const searchResponseSchema = z.object({ result: z.string() });
 
-// レスポンスを処理してエラーならthrow、成功ならデータを返す
-async function handleResponse<T>(
-  res: Response,
-  schema: z.ZodType<T>
-): Promise<T> {
-  const json: unknown = await res.json();
-
-  if (!res.ok) {
+// エラーレスポンスをパースしてスロー
+async function handleErrorResponse(res: Response): Promise<never> {
+  try {
+    const json: unknown = await res.json();
     const errorResult = apiErrorSchema.safeParse(json);
     if (errorResult.success) {
       // 認証エラーの場合は特別なエラーコードを設定
@@ -145,15 +141,36 @@ async function handleResponse<T>(
         errorResult.data.details
       );
     }
-    throw new Error("Unknown error");
+  } catch (e) {
+    if (e instanceof ApiClientError) throw e;
+    // JSONパース失敗時はステータスコードベースのエラー
+  }
+  throw new Error(`HTTP Error: ${res.status} ${res.statusText}`);
+}
+
+// レスポンスを処理してエラーならthrow、成功ならデータを返す
+async function handleResponse<T>(
+  res: Response,
+  schema: z.ZodType<T>
+): Promise<T> {
+  if (!res.ok) {
+    await handleErrorResponse(res);
   }
 
+  const json: unknown = await res.json();
   const result = schema.safeParse(json);
   if (!result.success) {
     throw new Error(`Invalid response format: ${result.error.message}`);
   }
 
   return result.data;
+}
+
+// voidレスポンス用ハンドラ（204 No Contentなど）
+async function handleVoidResponse(res: Response): Promise<void> {
+  if (!res.ok) {
+    await handleErrorResponse(res);
+  }
 }
 
 // Schedule API
@@ -208,18 +225,7 @@ export const deleteSchedule = async (id: string): Promise<void> => {
     param: { id },
   });
 
-  if (!res.ok) {
-    const json: unknown = await res.json();
-    const errorResult = apiErrorSchema.safeParse(json);
-    if (errorResult.success) {
-      throw new ApiClientError(
-        errorResult.data.code,
-        errorResult.data.message,
-        errorResult.data.details
-      );
-    }
-    throw new Error("Unknown error");
-  }
+  await handleVoidResponse(res);
 };
 
 // AI API
@@ -258,18 +264,7 @@ export const updateMemo = async (
     json: { userMemo },
   });
 
-  if (!res.ok) {
-    const json: unknown = await res.json();
-    const errorResult = apiErrorSchema.safeParse(json);
-    if (errorResult.success) {
-      throw new ApiClientError(
-        errorResult.data.code,
-        errorResult.data.message,
-        errorResult.data.details
-      );
-    }
-    throw new Error("Unknown error");
-  }
+  await handleVoidResponse(res);
 };
 
 export { ApiClientError };

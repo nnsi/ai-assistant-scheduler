@@ -62,16 +62,29 @@ const getSchedulesQuerySchema = z.object({
   year: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : undefined)),
+    .transform((v) => (v ? parseInt(v, 10) : undefined))
+    .refine((v) => v === undefined || (!Number.isNaN(v) && v >= 1 && v <= 9999), {
+      message: "年は1〜9999の整数で指定してください",
+    }),
   month: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : undefined)),
+    .transform((v) => (v ? parseInt(v, 10) : undefined))
+    .refine((v) => v === undefined || (!Number.isNaN(v) && v >= 1 && v <= 12), {
+      message: "月は1〜12の整数で指定してください",
+    }),
 });
 
 export const scheduleRoute = app
   // GET /schedules
-  .get("/", zValidator("query", getSchedulesQuerySchema), async (c) => {
+  .get(
+    "/",
+    zValidator("query", getSchedulesQuerySchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
     const { year, month } = c.req.valid("query");
     const userId = c.get("userId");
     const result = await c.get("getSchedules")(userId, year, month);

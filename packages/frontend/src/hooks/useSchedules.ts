@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import * as api from "@/lib/api";
-import type { Schedule, CreateScheduleInput } from "@ai-scheduler/shared";
+import type { Schedule, CreateScheduleInput, UpdateScheduleInput } from "@ai-scheduler/shared";
 
 export const useSchedules = (year?: number, month?: number) => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -32,7 +32,7 @@ export const useSchedules = (year?: number, month?: number) => {
 
   const update = async (
     id: string,
-    input: Partial<CreateScheduleInput>
+    input: UpdateScheduleInput
   ): Promise<Schedule> => {
     const schedule = await api.updateSchedule(id, input);
     setSchedules((prev) =>
