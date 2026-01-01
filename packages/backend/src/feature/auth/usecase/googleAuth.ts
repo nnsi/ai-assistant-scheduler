@@ -1,13 +1,18 @@
 import type { Result } from "../../../shared/result";
 import type { AppError } from "../../../shared/errors";
 import type { UserRepo } from "../../../domain/infra/userRepo";
+import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
 import type { GoogleAuthService } from "../../../infra/auth/google";
-import type { JwtService } from "../../../infra/auth/jwt";
+import {
+  type JwtService,
+  REFRESH_TOKEN_EXPIRY_SECONDS,
+} from "../../../infra/auth/jwt";
 import {
   createUser,
   updateUserFromGoogle,
   type UserEntity,
 } from "../../../domain/model/user";
+import { createRefreshToken } from "../../../domain/model/refreshToken";
 import type { AuthResponse } from "@ai-scheduler/shared";
 
 export type GoogleAuthUseCase = (
@@ -18,6 +23,7 @@ export type GoogleAuthUseCase = (
 export const createGoogleAuthUseCase =
   (
     userRepo: UserRepo,
+    refreshTokenRepo: RefreshTokenRepo,
     googleAuthService: GoogleAuthService,
     jwtService: JwtService
   ): GoogleAuthUseCase =>
@@ -55,8 +61,15 @@ export const createGoogleAuthUseCase =
       await userRepo.save(user);
     }
 
-    // 4. JWTトークンを生成（アクセストークン + リフレッシュトークン）
-    const tokens = await jwtService.generateTokens(user);
+    // 4. リフレッシュトークンをDBに保存
+    const expiresAt = new Date(
+      Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000
+    );
+    const refreshTokenEntity = createRefreshToken(user.id, expiresAt);
+    await refreshTokenRepo.save(refreshTokenEntity);
+
+    // 5. JWTトークンを生成（アクセストークン + リフレッシュトークン）
+    const tokens = await jwtService.generateTokens(user, refreshTokenEntity.id);
 
     return {
       ok: true,

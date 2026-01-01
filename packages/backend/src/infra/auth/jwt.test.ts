@@ -35,24 +35,34 @@ describe("JwtService", () => {
   });
 
   describe("generateRefreshToken", () => {
-    it("should generate a valid JWT refresh token", async () => {
+    it("should generate a valid JWT refresh token with jti", async () => {
       const jwtService = createJwtService(secret);
-      const token = await jwtService.generateRefreshToken(testUser);
+      const jti = "test-token-id";
+      const token = await jwtService.generateRefreshToken(testUser, jti);
 
       expect(token).toBeDefined();
       expect(typeof token).toBe("string");
       expect(token.split(".")).toHaveLength(3);
+
+      // Verify jti is in the payload
+      const payload = await jwtService.verifyRefreshToken(token);
+      expect(payload?.jti).toBe(jti);
     });
   });
 
   describe("generateTokens", () => {
     it("should generate both access and refresh tokens", async () => {
       const jwtService = createJwtService(secret);
-      const tokens = await jwtService.generateTokens(testUser);
+      const refreshTokenId = "test-refresh-token-id";
+      const tokens = await jwtService.generateTokens(testUser, refreshTokenId);
 
       expect(tokens.accessToken).toBeDefined();
       expect(tokens.refreshToken).toBeDefined();
       expect(tokens.accessToken).not.toBe(tokens.refreshToken);
+
+      // Verify refresh token has jti
+      const payload = await jwtService.verifyRefreshToken(tokens.refreshToken);
+      expect(payload?.jti).toBe(refreshTokenId);
     });
   });
 
@@ -87,12 +97,14 @@ describe("JwtService", () => {
   describe("verifyRefreshToken", () => {
     it("should verify a valid refresh token and return payload", async () => {
       const jwtService = createJwtService(secret);
-      const token = await jwtService.generateRefreshToken(testUser);
+      const jti = "test-jti";
+      const token = await jwtService.generateRefreshToken(testUser, jti);
       const payload = await jwtService.verifyRefreshToken(token);
 
       expect(payload).not.toBeNull();
       expect(payload?.sub).toBe("user-123");
       expect(payload?.type).toBe("refresh");
+      expect(payload?.jti).toBe(jti);
     });
 
     it("should return null for access token", async () => {
@@ -108,7 +120,7 @@ describe("JwtService", () => {
     it("should verify any valid token", async () => {
       const jwtService = createJwtService(secret);
       const accessToken = await jwtService.generateAccessToken(testUser);
-      const refreshToken = await jwtService.generateRefreshToken(testUser);
+      const refreshToken = await jwtService.generateRefreshToken(testUser, "test-jti");
 
       const accessPayload = await jwtService.verifyToken(accessToken);
       const refreshPayload = await jwtService.verifyToken(refreshToken);

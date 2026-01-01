@@ -84,6 +84,15 @@ export const createGoogleAuthService = (
       }
 
       const data = (await response.json()) as GoogleUserInfoResponse;
+
+      // 未検証メールアドレスでのログインを拒否
+      if (!data.verified_email) {
+        return {
+          ok: false,
+          error: createInternalError("メールアドレスが未検証です"),
+        };
+      }
+
       return {
         ok: true,
         value: {

@@ -6,10 +6,11 @@ export type JwtPayload = {
   email: string;
   exp: number;
   type: "access" | "refresh";
+  jti?: string; // JWT ID (リフレッシュトークン用)
 };
 
-const ACCESS_TOKEN_EXPIRY_SECONDS = 60 * 60; // 1時間
-const REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30日間
+export const ACCESS_TOKEN_EXPIRY_SECONDS = 60 * 60; // 1時間
+export const REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30日間
 
 export const createJwtService = (secret: string) => {
   const service = {
@@ -24,24 +25,29 @@ export const createJwtService = (secret: string) => {
       return sign(payload, secret);
     },
 
-    // リフレッシュトークン生成
-    generateRefreshToken: async (user: UserEntity): Promise<string> => {
+    // リフレッシュトークン生成 (jtiを外部から受け取る)
+    generateRefreshToken: async (
+      user: UserEntity,
+      jti: string
+    ): Promise<string> => {
       const payload: JwtPayload = {
         sub: user.id,
         email: user.email,
         exp: Math.floor(Date.now() / 1000) + REFRESH_TOKEN_EXPIRY_SECONDS,
         type: "refresh",
+        jti,
       };
       return sign(payload, secret);
     },
 
-    // 両方のトークンを生成
+    // 両方のトークンを生成 (リフレッシュトークン用のjtiを外部から受け取る)
     generateTokens: async (
-      user: UserEntity
+      user: UserEntity,
+      refreshTokenId: string
     ): Promise<{ accessToken: string; refreshToken: string }> => {
       const [accessToken, refreshToken] = await Promise.all([
         service.generateAccessToken(user),
-        service.generateRefreshToken(user),
+        service.generateRefreshToken(user, refreshTokenId),
       ]);
       return { accessToken, refreshToken };
     },

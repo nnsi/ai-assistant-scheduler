@@ -48,3 +48,10 @@ export const meResponseSchema = z.object({
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;
+
+// ログアウトリクエスト
+export const logoutSchema = z.object({
+  refreshToken: z.string().min(1, "リフレッシュトークンが必要です"),
+});
+
+export type LogoutRequest = z.infer<typeof logoutSchema>;

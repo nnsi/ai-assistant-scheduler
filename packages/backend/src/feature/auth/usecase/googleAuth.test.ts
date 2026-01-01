@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createGoogleAuthUseCase } from "./googleAuth";
 import type { UserRepo } from "../../../domain/infra/userRepo";
+import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
 import type { GoogleAuthService } from "../../../infra/auth/google";
 import type { JwtService } from "../../../infra/auth/jwt";
 import type { UserEntity } from "../../../domain/model/user";
@@ -24,6 +25,13 @@ describe("googleAuthUseCase", () => {
     update: vi.fn(),
   });
 
+  const createMockRefreshTokenRepo = (): RefreshTokenRepo => ({
+    findById: vi.fn(),
+    save: vi.fn(),
+    revoke: vi.fn(),
+    revokeAllByUserId: vi.fn(),
+  });
+
   const createMockGoogleAuthService = (): GoogleAuthService => ({
     exchangeCodeForToken: vi.fn(),
     getUserInfo: vi.fn(),
@@ -44,6 +52,7 @@ describe("googleAuthUseCase", () => {
 
   it("should create new user and return tokens when user does not exist", async () => {
     const userRepo = createMockUserRepo();
+    const refreshTokenRepo = createMockRefreshTokenRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
 
@@ -68,6 +77,7 @@ describe("googleAuthUseCase", () => {
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
+      refreshTokenRepo,
       googleAuthService,
       jwtService
     );
@@ -82,10 +92,12 @@ describe("googleAuthUseCase", () => {
     }
     expect(userRepo.save).toHaveBeenCalled();
     expect(userRepo.update).not.toHaveBeenCalled();
+    expect(refreshTokenRepo.save).toHaveBeenCalled();
   });
 
   it("should update existing user and return tokens", async () => {
     const userRepo = createMockUserRepo();
+    const refreshTokenRepo = createMockRefreshTokenRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
 
@@ -110,6 +122,7 @@ describe("googleAuthUseCase", () => {
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
+      refreshTokenRepo,
       googleAuthService,
       jwtService
     );
@@ -123,10 +136,12 @@ describe("googleAuthUseCase", () => {
     }
     expect(userRepo.save).not.toHaveBeenCalled();
     expect(userRepo.update).toHaveBeenCalled();
+    expect(refreshTokenRepo.save).toHaveBeenCalled();
   });
 
   it("should return error when token exchange fails", async () => {
     const userRepo = createMockUserRepo();
+    const refreshTokenRepo = createMockRefreshTokenRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
 
@@ -137,6 +152,7 @@ describe("googleAuthUseCase", () => {
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
+      refreshTokenRepo,
       googleAuthService,
       jwtService
     );
@@ -150,6 +166,7 @@ describe("googleAuthUseCase", () => {
 
   it("should return error when getUserInfo fails", async () => {
     const userRepo = createMockUserRepo();
+    const refreshTokenRepo = createMockRefreshTokenRepo();
     const googleAuthService = createMockGoogleAuthService();
     const jwtService = createMockJwtService();
 
@@ -164,6 +181,7 @@ describe("googleAuthUseCase", () => {
 
     const googleAuth = createGoogleAuthUseCase(
       userRepo,
+      refreshTokenRepo,
       googleAuthService,
       jwtService
     );

@@ -1,13 +1,19 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { googleAuthCallbackSchema, refreshTokenSchema } from "@ai-scheduler/shared";
+import {
+  googleAuthCallbackSchema,
+  refreshTokenSchema,
+  logoutSchema,
+} from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
+import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
 import { createGoogleAuthService } from "../../infra/auth/google";
 import { createJwtService } from "../../infra/auth/jwt";
 import { createGoogleAuthUseCase } from "./usecase/googleAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
 import { createRefreshTokenUseCase } from "./usecase/refreshToken";
+import { createLogoutUseCase } from "./usecase/logout";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 
@@ -22,6 +28,7 @@ type Variables = {
   googleAuth: ReturnType<typeof createGoogleAuthUseCase>;
   getCurrentUser: ReturnType<typeof createGetCurrentUserUseCase>;
   refreshToken: ReturnType<typeof createRefreshTokenUseCase>;
+  logout: ReturnType<typeof createLogoutUseCase>;
   jwtService: ReturnType<typeof createJwtService>;
 };
 
@@ -34,15 +41,20 @@ const app = new Hono<{
 app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const userRepo = createUserRepo(db);
+  const refreshTokenRepo = createRefreshTokenRepo(db);
   const googleAuthService = createGoogleAuthService(
     c.env.GOOGLE_CLIENT_ID,
     c.env.GOOGLE_CLIENT_SECRET
   );
   const jwtService = createJwtService(c.env.JWT_SECRET);
 
-  c.set("googleAuth", createGoogleAuthUseCase(userRepo, googleAuthService, jwtService));
+  c.set(
+    "googleAuth",
+    createGoogleAuthUseCase(userRepo, refreshTokenRepo, googleAuthService, jwtService)
+  );
   c.set("getCurrentUser", createGetCurrentUserUseCase(userRepo));
-  c.set("refreshToken", createRefreshTokenUseCase(userRepo, jwtService));
+  c.set("refreshToken", createRefreshTokenUseCase(userRepo, refreshTokenRepo, jwtService));
+  c.set("logout", createLogoutUseCase(refreshTokenRepo, jwtService));
   c.set("jwtService", jwtService);
 
   await next();
@@ -111,9 +123,22 @@ export const authRoute = app
       return c.json(result.value, 200);
     }
   )
-  // POST /auth/logout - ログアウト（クライアント側でトークンを削除）
-  .post("/logout", async (c) => {
-    // JWTはステートレスなので、サーバー側では特に処理なし
-    // クライアント側でトークンを削除する
-    return c.json({ success: true }, 200);
-  });
+  // POST /auth/logout - ログアウト（リフレッシュトークンを無効化）
+  .post(
+    "/logout",
+    zValidator("json", logoutSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { refreshToken } = c.req.valid("json");
+      const result = await c.get("logout")(refreshToken);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  );

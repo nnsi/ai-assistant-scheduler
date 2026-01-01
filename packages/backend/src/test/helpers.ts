@@ -37,11 +37,21 @@ export const createTestDb = () => {
       updated_at text NOT NULL,
       FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id text PRIMARY KEY NOT NULL,
+      user_id text NOT NULL,
+      expires_at text NOT NULL,
+      created_at text NOT NULL,
+      revoked_at text,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
     CREATE INDEX IF NOT EXISTS idx_users_google_id ON users (google_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
     CREATE INDEX IF NOT EXISTS idx_schedules_user_id ON schedules (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_start_at ON schedules (start_at);
     CREATE INDEX IF NOT EXISTS idx_supplements_schedule_id ON schedule_supplements (schedule_id);
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_revoked_at ON refresh_tokens (revoked_at);
   `);
 
   // 外部キー制約を有効化
@@ -134,5 +144,6 @@ export const createTestSupplement = async (
 export const resetDatabase = async (db: TestDb) => {
   await db.delete(schema.scheduleSupplements);
   await db.delete(schema.schedules);
+  await db.delete(schema.refreshTokens);
   await db.delete(schema.users);
 };

@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { googleAuthCallbackSchema, refreshTokenSchema } from "@ai-scheduler/shared";
+import {
+  googleAuthCallbackSchema,
+  refreshTokenSchema,
+  logoutSchema,
+} from "@ai-scheduler/shared";
 import {
   createTestDb,
   createTestUser,
@@ -9,10 +13,12 @@ import {
   type TestDb,
 } from "../../test/helpers";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
+import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
 import { createJwtService } from "../../infra/auth/jwt";
 import { createGoogleAuthUseCase } from "./usecase/googleAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
 import { createRefreshTokenUseCase } from "./usecase/refreshToken";
+import { createLogoutUseCase } from "./usecase/logout";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import type { GoogleAuthService } from "../../infra/auth/google";
@@ -41,15 +47,18 @@ const createTestAuthApp = (
 ) => {
   const app = new Hono();
   const userRepo = createUserRepo(db as any);
+  const refreshTokenRepo = createRefreshTokenRepo(db as any);
   const jwtService = createJwtService("test-jwt-secret");
 
   const googleAuth = createGoogleAuthUseCase(
     userRepo,
+    refreshTokenRepo,
     googleAuthService,
     jwtService
   );
   const getCurrentUser = createGetCurrentUserUseCase(userRepo);
-  const refreshToken = createRefreshTokenUseCase(userRepo, jwtService);
+  const refreshToken = createRefreshTokenUseCase(userRepo, refreshTokenRepo, jwtService);
+  const logout = createLogoutUseCase(refreshTokenRepo, jwtService);
 
   // POST /auth/google
   app.post(
@@ -115,9 +124,24 @@ const createTestAuthApp = (
   );
 
   // POST /auth/logout
-  app.post("/auth/logout", async (c) => {
-    return c.json({ success: true }, 200);
-  });
+  app.post(
+    "/auth/logout",
+    zValidator("json", logoutSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { refreshToken: token } = c.req.valid("json");
+      const result = await logout(token);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  );
 
   return { app, jwtService };
 };
@@ -411,14 +435,62 @@ describe("Auth API Integration Tests", () => {
   });
 
   describe("POST /auth/logout", () => {
-    it("should return success", async () => {
+    it("should return success and invalidate all refresh tokens", async () => {
+      // まずログインしてトークンを取得
+      const loginRes = await app.request("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "valid-auth-code",
+          redirectUri: "http://localhost:5173/auth/callback",
+        }),
+      });
+      const loginData = (await loginRes.json()) as { refreshToken: string };
+
+      // ログアウト
       const res = await app.request("/auth/logout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: loginData.refreshToken,
+        }),
       });
 
       expect(res.status).toBe(200);
       const data = (await res.json()) as { success: boolean };
       expect(data.success).toBe(true);
+
+      // ログアウト後、同じリフレッシュトークンは使えなくなるはず
+      const refreshRes = await app.request("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: loginData.refreshToken,
+        }),
+      });
+      expect(refreshRes.status).toBe(401);
+    });
+
+    it("should return 401 for invalid refresh token", async () => {
+      const res = await app.request("/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshToken: "invalid-token",
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 400 for missing refresh token", async () => {
+      const res = await app.request("/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(400);
     });
   });
 });
