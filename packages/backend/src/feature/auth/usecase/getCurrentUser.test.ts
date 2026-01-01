@@ -9,14 +9,15 @@ describe("getCurrentUserUseCase", () => {
     email: "test@example.com",
     name: "Test User",
     picture: "https://example.com/photo.jpg",
-    googleId: "google-123",
+    provider: "google",
+    providerId: "google-123",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
 
   const createMockUserRepo = (): UserRepo => ({
     findById: vi.fn(),
-    findByGoogleId: vi.fn(),
+    findByProviderId: vi.fn(),
     findByEmail: vi.fn(),
     save: vi.fn(),
     update: vi.fn(),
@@ -52,7 +53,7 @@ describe("getCurrentUserUseCase", () => {
     }
   });
 
-  it("should not include sensitive fields like googleId in response", async () => {
+  it("should not include sensitive fields like providerId in response", async () => {
     const userRepo = createMockUserRepo();
     vi.mocked(userRepo.findById).mockResolvedValue(mockUser);
 
@@ -61,8 +62,9 @@ describe("getCurrentUserUseCase", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // User型にはgoogleIdは含まれない
-      expect("googleId" in result.value).toBe(false);
+      // User型にはproviderId等は含まれない
+      expect("providerId" in result.value).toBe(false);
+      expect("provider" in result.value).toBe(false);
       expect("createdAt" in result.value).toBe(false);
       expect("updatedAt" in result.value).toBe(false);
     }

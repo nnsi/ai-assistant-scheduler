@@ -1,21 +1,21 @@
 import type { Result } from "../../../shared/result";
 import type { AppError } from "../../../shared/errors";
 import type { UserRepo } from "../../../domain/infra/userRepo";
-import type { GoogleAuthService } from "../../../infra/auth/google";
+import type { OAuthProvider } from "../../../infra/auth/oauth";
 import { createConflictError, createNotFoundError } from "../../../shared/errors";
 import type { User } from "@ai-scheduler/shared";
 
-export type ReconnectGoogleUseCase = (
+export type ReconnectOAuthUseCase = (
   userId: string,
   code: string,
   redirectUri: string
 ) => Promise<Result<User, AppError>>;
 
-export const createReconnectGoogleUseCase =
+export const createReconnectOAuthUseCase =
   (
     userRepo: UserRepo,
-    googleAuthService: GoogleAuthService
-  ): ReconnectGoogleUseCase =>
+    oauthProvider: OAuthProvider
+  ): ReconnectOAuthUseCase =>
   async (userId, code, redirectUri) => {
     // 1. 現在のユーザーを取得
     const user = await userRepo.findById(userId);
@@ -27,7 +27,7 @@ export const createReconnectGoogleUseCase =
     }
 
     // 2. 認証コードからアクセストークンを取得
-    const tokenResult = await googleAuthService.exchangeCodeForToken(
+    const tokenResult = await oauthProvider.exchangeCodeForToken(
       code,
       redirectUri
     );
@@ -35,32 +35,34 @@ export const createReconnectGoogleUseCase =
       return tokenResult;
     }
 
-    // 3. アクセストークンからGoogleユーザー情報を取得
-    const userInfoResult = await googleAuthService.getUserInfo(
-      tokenResult.value
-    );
+    // 3. アクセストークンからユーザー情報を取得
+    const userInfoResult = await oauthProvider.getUserInfo(tokenResult.value);
     if (!userInfoResult.ok) {
       return userInfoResult;
     }
 
-    const googleUser = userInfoResult.value;
+    const oauthUser = userInfoResult.value;
 
-    // 4. 新しいGoogleアカウントが既に別のユーザーに紐づいていないか確認
-    const existingUser = await userRepo.findByGoogleId(googleUser.id);
+    // 4. 新しいアカウントが既に別のユーザーに紐づいていないか確認
+    const existingUser = await userRepo.findByProviderId(
+      oauthProvider.type,
+      oauthUser.id
+    );
     if (existingUser && existingUser.id !== userId) {
       return {
         ok: false,
-        error: createConflictError("このGoogleアカウントは既に別のユーザーに紐づいています"),
+        error: createConflictError("このアカウントは既に別のユーザーに紐づいています"),
       };
     }
 
-    // 5. Google情報を更新
+    // 5. OAuth情報を更新
     const updatedUser = {
       ...user,
-      googleId: googleUser.id,
-      email: googleUser.email,
-      name: googleUser.name,
-      picture: googleUser.picture ?? user.picture,
+      provider: oauthProvider.type,
+      providerId: oauthUser.id,
+      email: oauthUser.email,
+      name: oauthUser.name,
+      picture: oauthUser.picture ?? user.picture,
       updatedAt: new Date().toISOString(),
     };
     await userRepo.update(updatedUser);

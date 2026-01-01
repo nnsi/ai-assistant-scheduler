@@ -1,4 +1,4 @@
-import type { GoogleUserInfo } from "../../domain/model/user";
+import type { OAuthProvider, OAuthUserInfo } from "./oauth";
 import type { Result } from "../../shared/result";
 import { createInternalError, type AppError } from "../../shared/errors";
 
@@ -20,12 +20,14 @@ type GoogleUserInfoResponse = {
 export const createGoogleAuthService = (
   clientId: string,
   clientSecret: string
-) => ({
+): OAuthProvider => ({
+  type: "google",
+
   // 認証コードからアクセストークンを取得
   exchangeCodeForToken: async (
     code: string,
     redirectUri: string
-  ): Promise<Result<string>> => {
+  ): Promise<Result<string, AppError>> => {
     try {
       const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
@@ -64,7 +66,7 @@ export const createGoogleAuthService = (
   // アクセストークンからユーザー情報を取得
   getUserInfo: async (
     accessToken: string
-  ): Promise<Result<GoogleUserInfo, AppError>> => {
+  ): Promise<Result<OAuthUserInfo, AppError>> => {
     try {
       const response = await fetch(
         "https://www.googleapis.com/oauth2/v2/userinfo",

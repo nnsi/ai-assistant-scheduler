@@ -1,47 +1,45 @@
 import type { User } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
+import type { OAuthUserInfo, OAuthProviderType } from "../../infra/auth/oauth";
 
 // Re-export types from shared
 export type { User };
 
-// Google OAuthから取得するユーザー情報
-export type GoogleUserInfo = {
-  id: string;
-  email: string;
-  name: string;
-  picture?: string;
-};
-
 // データベースに保存するユーザー情報
 export type UserEntity = User & {
-  googleId: string;
+  provider: OAuthProviderType;
+  providerId: string;
   createdAt: string;
   updatedAt: string;
 };
 
 // ファクトリ関数
-export const createUser = (googleUser: GoogleUserInfo): UserEntity => {
+export const createUser = (
+  oauthUser: OAuthUserInfo,
+  provider: OAuthProviderType
+): UserEntity => {
   const now = new Date().toISOString();
   return {
     id: generateId(),
-    email: googleUser.email,
-    name: googleUser.name,
-    picture: googleUser.picture ?? null,
-    googleId: googleUser.id,
+    email: oauthUser.email,
+    name: oauthUser.name,
+    picture: oauthUser.picture ?? null,
+    provider,
+    providerId: oauthUser.id,
     createdAt: now,
     updatedAt: now,
   };
 };
 
-// GoogleユーザーInfoから既存ユーザーを更新
-export const updateUserFromGoogle = (
+// OAuthユーザー情報から既存ユーザーを更新
+export const updateUserFromOAuth = (
   existingUser: UserEntity,
-  googleUser: GoogleUserInfo
+  oauthUser: OAuthUserInfo
 ): UserEntity => {
   return {
     ...existingUser,
-    name: googleUser.name,
-    picture: googleUser.picture ?? existingUser.picture,
+    name: oauthUser.name,
+    picture: oauthUser.picture ?? existingUser.picture,
     updatedAt: new Date().toISOString(),
   };
 };

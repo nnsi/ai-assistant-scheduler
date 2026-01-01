@@ -2,34 +2,34 @@ import type { Result } from "../../../shared/result";
 import type { AppError } from "../../../shared/errors";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
-import type { GoogleAuthService } from "../../../infra/auth/google";
+import type { OAuthProvider } from "../../../infra/auth/oauth";
 import {
   type JwtService,
   REFRESH_TOKEN_EXPIRY_SECONDS,
 } from "../../../infra/auth/jwt";
 import {
   createUser,
-  updateUserFromGoogle,
+  updateUserFromOAuth,
   type UserEntity,
 } from "../../../domain/model/user";
 import { createRefreshToken } from "../../../domain/model/refreshToken";
 import type { AuthResponse } from "@ai-scheduler/shared";
 
-export type GoogleAuthUseCase = (
+export type OAuthAuthUseCase = (
   code: string,
   redirectUri: string
 ) => Promise<Result<AuthResponse, AppError>>;
 
-export const createGoogleAuthUseCase =
+export const createOAuthAuthUseCase =
   (
     userRepo: UserRepo,
     refreshTokenRepo: RefreshTokenRepo,
-    googleAuthService: GoogleAuthService,
+    oauthProvider: OAuthProvider,
     jwtService: JwtService
-  ): GoogleAuthUseCase =>
+  ): OAuthAuthUseCase =>
   async (code, redirectUri) => {
     // 1. 認証コードからアクセストークンを取得
-    const tokenResult = await googleAuthService.exchangeCodeForToken(
+    const tokenResult = await oauthProvider.exchangeCodeForToken(
       code,
       redirectUri
     );
@@ -37,27 +37,28 @@ export const createGoogleAuthUseCase =
       return tokenResult;
     }
 
-    // 2. アクセストークンからGoogleユーザー情報を取得
-    const userInfoResult = await googleAuthService.getUserInfo(
-      tokenResult.value
-    );
+    // 2. アクセストークンからユーザー情報を取得
+    const userInfoResult = await oauthProvider.getUserInfo(tokenResult.value);
     if (!userInfoResult.ok) {
       return userInfoResult;
     }
 
-    const googleUser = userInfoResult.value;
+    const oauthUser = userInfoResult.value;
 
     // 3. 既存ユーザーを検索（または新規作成）
     let user: UserEntity;
-    const existingUser = await userRepo.findByGoogleId(googleUser.id);
+    const existingUser = await userRepo.findByProviderId(
+      oauthProvider.type,
+      oauthUser.id
+    );
 
     if (existingUser) {
-      // 既存ユーザー: Google情報で更新
-      user = updateUserFromGoogle(existingUser, googleUser);
+      // 既存ユーザー: OAuth情報で更新
+      user = updateUserFromOAuth(existingUser, oauthUser);
       await userRepo.update(user);
     } else {
       // 新規ユーザー: 作成
-      user = createUser(googleUser);
+      user = createUser(oauthUser, oauthProvider.type);
       await userRepo.save(user);
     }
 

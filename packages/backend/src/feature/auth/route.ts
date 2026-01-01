@@ -12,12 +12,12 @@ import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
 import { createGoogleAuthService } from "../../infra/auth/google";
 import { createJwtService } from "../../infra/auth/jwt";
-import { createGoogleAuthUseCase } from "./usecase/googleAuth";
+import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
 import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 import { createLogoutUseCase } from "./usecase/logout";
 import { createUpdateEmailUseCase } from "./usecase/updateEmail";
-import { createReconnectGoogleUseCase } from "./usecase/reconnectGoogle";
+import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 
@@ -29,14 +29,13 @@ type Bindings = {
 };
 
 type Variables = {
-  googleAuth: ReturnType<typeof createGoogleAuthUseCase>;
+  googleAuth: ReturnType<typeof createOAuthAuthUseCase>;
   getCurrentUser: ReturnType<typeof createGetCurrentUserUseCase>;
   refreshToken: ReturnType<typeof createRefreshTokenUseCase>;
   logout: ReturnType<typeof createLogoutUseCase>;
   updateEmail: ReturnType<typeof createUpdateEmailUseCase>;
-  reconnectGoogle: ReturnType<typeof createReconnectGoogleUseCase>;
+  reconnectGoogle: ReturnType<typeof createReconnectOAuthUseCase>;
   jwtService: ReturnType<typeof createJwtService>;
-  googleAuthService: ReturnType<typeof createGoogleAuthService>;
 };
 
 const app = new Hono<{
@@ -57,15 +56,14 @@ app.use("*", async (c, next) => {
 
   c.set(
     "googleAuth",
-    createGoogleAuthUseCase(userRepo, refreshTokenRepo, googleAuthService, jwtService)
+    createOAuthAuthUseCase(userRepo, refreshTokenRepo, googleAuthService, jwtService)
   );
   c.set("getCurrentUser", createGetCurrentUserUseCase(userRepo));
   c.set("refreshToken", createRefreshTokenUseCase(userRepo, refreshTokenRepo, jwtService));
   c.set("logout", createLogoutUseCase(refreshTokenRepo, jwtService));
   c.set("updateEmail", createUpdateEmailUseCase(userRepo));
-  c.set("reconnectGoogle", createReconnectGoogleUseCase(userRepo, googleAuthService));
+  c.set("reconnectGoogle", createReconnectOAuthUseCase(userRepo, googleAuthService));
   c.set("jwtService", jwtService);
-  c.set("googleAuthService", googleAuthService);
 
   await next();
 });

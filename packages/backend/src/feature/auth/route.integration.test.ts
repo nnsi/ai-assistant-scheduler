@@ -15,16 +15,17 @@ import {
 import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
 import { createJwtService } from "../../infra/auth/jwt";
-import { createGoogleAuthUseCase } from "./usecase/googleAuth";
+import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
 import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 import { createLogoutUseCase } from "./usecase/logout";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
-import type { GoogleAuthService } from "../../infra/auth/google";
+import type { OAuthProvider } from "../../infra/auth/oauth";
 
-// モック用のGoogleAuthService
-const createMockGoogleAuthService = (): GoogleAuthService => ({
+// モック用のOAuthProvider
+const createMockOAuthProvider = (): OAuthProvider => ({
+  type: "google",
   exchangeCodeForToken: vi.fn().mockResolvedValue({
     ok: true,
     value: "mock-access-token",
@@ -43,17 +44,17 @@ const createMockGoogleAuthService = (): GoogleAuthService => ({
 // テスト用のAuthアプリを作成
 const createTestAuthApp = (
   db: TestDb,
-  googleAuthService: GoogleAuthService
+  oauthProvider: OAuthProvider
 ) => {
   const app = new Hono();
   const userRepo = createUserRepo(db as any);
   const refreshTokenRepo = createRefreshTokenRepo(db as any);
   const jwtService = createJwtService("test-jwt-secret");
 
-  const googleAuth = createGoogleAuthUseCase(
+  const googleAuth = createOAuthAuthUseCase(
     userRepo,
     refreshTokenRepo,
-    googleAuthService,
+    oauthProvider,
     jwtService
   );
   const getCurrentUser = createGetCurrentUserUseCase(userRepo);
@@ -148,14 +149,14 @@ const createTestAuthApp = (
 
 describe("Auth API Integration Tests", () => {
   let db: TestDb;
-  let mockGoogleAuthService: GoogleAuthService;
+  let mockOAuthProvider: OAuthProvider;
   let app: Hono;
   let jwtService: ReturnType<typeof createJwtService>;
 
   beforeAll(() => {
     db = createTestDb();
-    mockGoogleAuthService = createMockGoogleAuthService();
-    const testApp = createTestAuthApp(db, mockGoogleAuthService);
+    mockOAuthProvider = createMockOAuthProvider();
+    const testApp = createTestAuthApp(db, mockOAuthProvider);
     app = testApp.app;
     jwtService = testApp.jwtService;
   });
@@ -165,11 +166,11 @@ describe("Auth API Integration Tests", () => {
     vi.clearAllMocks();
 
     // モックをリセット
-    vi.mocked(mockGoogleAuthService.exchangeCodeForToken).mockResolvedValue({
+    vi.mocked(mockOAuthProvider.exchangeCodeForToken).mockResolvedValue({
       ok: true,
       value: "mock-access-token",
     });
-    vi.mocked(mockGoogleAuthService.getUserInfo).mockResolvedValue({
+    vi.mocked(mockOAuthProvider.getUserInfo).mockResolvedValue({
       ok: true,
       value: {
         id: "google-mock-123",
@@ -259,7 +260,7 @@ describe("Auth API Integration Tests", () => {
     });
 
     it("should return error when Google token exchange fails", async () => {
-      vi.mocked(mockGoogleAuthService.exchangeCodeForToken).mockResolvedValue({
+      vi.mocked(mockOAuthProvider.exchangeCodeForToken).mockResolvedValue({
         ok: false,
         error: { code: "INTERNAL_ERROR", message: "Token exchange failed" },
       });

@@ -13,7 +13,8 @@ export const createTestDb = () => {
       email text NOT NULL UNIQUE,
       name text NOT NULL,
       picture text,
-      google_id text NOT NULL UNIQUE,
+      provider text NOT NULL,
+      provider_id text NOT NULL,
       created_at text NOT NULL,
       updated_at text NOT NULL
     );
@@ -45,7 +46,7 @@ export const createTestDb = () => {
       revoked_at text,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
-    CREATE INDEX IF NOT EXISTS idx_users_google_id ON users (google_id);
+    CREATE INDEX IF NOT EXISTS idx_users_provider_id ON users (provider, provider_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
     CREATE INDEX IF NOT EXISTS idx_schedules_user_id ON schedules (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_start_at ON schedules (start_at);
@@ -70,7 +71,8 @@ export const createTestUser = async (
     email?: string;
     name?: string;
     picture?: string;
-    googleId?: string;
+    provider?: string;
+    providerId?: string;
   }
 ) => {
   const now = new Date().toISOString();
@@ -79,7 +81,8 @@ export const createTestUser = async (
     email: data?.email ?? "test@example.com",
     name: data?.name ?? "テストユーザー",
     picture: data?.picture ?? null,
-    googleId: data?.googleId ?? `google-${Date.now()}`,
+    provider: data?.provider ?? "google",
+    providerId: data?.providerId ?? `google-${Date.now()}`,
     createdAt: now,
     updatedAt: now,
   };
