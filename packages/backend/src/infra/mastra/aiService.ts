@@ -1,6 +1,31 @@
 import type { Agent } from "@mastra/core/agent";
-import type { AiService } from "../../domain/infra/aiService";
+import type { AiService, UserConditions } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
+
+// ユーザー条件からプロンプト用の文字列を生成
+const buildConditionsPrompt = (userConditions?: UserConditions): string => {
+  if (!userConditions) return "";
+
+  const parts: string[] = [];
+
+  if (userConditions.required.trim()) {
+    parts.push(
+      `【必須条件（口コミで違反が見つかれば絶対に除外）】: ${userConditions.required}`
+    );
+  }
+
+  if (userConditions.preferred.trim()) {
+    parts.push(`【優先条件（該当する候補を優先表示）】: ${userConditions.preferred}`);
+  }
+
+  if (userConditions.subjective.trim()) {
+    parts.push(`【重視するポイント（口コミで確認）】: ${userConditions.subjective}`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `\n\nユーザーのこだわり条件:\n${parts.join("\n")}`;
+};
 
 export const createAiService = (
   keywordAgent: Agent,
@@ -24,12 +49,17 @@ export const createAiService = (
       return JSON.parse(text);
     } catch {
       // パースに失敗した場合は空配列を返す
-      logger.warn("Failed to parse AI keywords response", { category: "ai", responseText: result.text });
+      logger.warn("Failed to parse AI keywords response", {
+        category: "ai",
+        responseText: result.text,
+      });
       return [];
     }
   },
 
-  searchWithKeywords: async (title, startAt, keywords) => {
+  searchWithKeywords: async (title, startAt, keywords, userConditions) => {
+    const conditionsPrompt = buildConditionsPrompt(userConditions);
+
     const result = await searchAgent.generate([
       {
         role: "user",
@@ -37,7 +67,7 @@ export const createAiService = (
 
 タイトル: ${title}
 日時: ${startAt}
-調べたいこと: ${keywords.join(", ")}`,
+調べたいこと: ${keywords.join(", ")}${conditionsPrompt}`,
       },
     ]);
 

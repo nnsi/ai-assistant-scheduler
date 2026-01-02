@@ -45,6 +45,19 @@ export const refreshTokens = sqliteTable("refresh_tokens", {
   revokedAt: text("revoked_at"), // null = 有効, 値あり = 失効
 });
 
+export const userProfiles = sqliteTable("user_profiles", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  requiredConditions: text("required_conditions"), // JSON array: 必須条件
+  preferredConditions: text("preferred_conditions"), // JSON array: 優先条件
+  subjectiveConditions: text("subjective_conditions"), // JSON array: 主観条件
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // 型エクスポート
 export type UserRow = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
@@ -54,3 +67,5 @@ export type SupplementRow = typeof scheduleSupplements.$inferSelect;
 export type SupplementInsert = typeof scheduleSupplements.$inferInsert;
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
+export type UserProfileRow = typeof userProfiles.$inferSelect;
+export type UserProfileInsert = typeof userProfiles.$inferInsert;

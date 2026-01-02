@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { getMonthLabel } from "@/lib/date";
 
@@ -7,6 +7,7 @@ type CalendarHeaderProps = {
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   onToday: () => void;
+  onConditionsClick?: () => void;
 };
 
 export const CalendarHeader = ({
@@ -14,6 +15,7 @@ export const CalendarHeader = ({
   onPreviousMonth,
   onNextMonth,
   onToday,
+  onConditionsClick,
 }: CalendarHeaderProps) => {
   return (
     <div className="flex items-center justify-between mb-4">
@@ -28,9 +30,23 @@ export const CalendarHeader = ({
           <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
-      <Button variant="secondary" size="sm" onClick={onToday}>
-        今日
-      </Button>
+      <div className="flex items-center gap-2">
+        {onConditionsClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onConditionsClick}
+            aria-label="こだわり条件設定"
+            title="こだわり条件設定"
+          >
+            <Settings2 className="w-5 h-5" />
+            <span className="ml-1 hidden sm:inline">こだわり条件</span>
+          </Button>
+        )}
+        <Button variant="secondary" size="sm" onClick={onToday}>
+          今日
+        </Button>
+      </div>
     </div>
   );
 };

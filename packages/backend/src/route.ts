@@ -3,6 +3,7 @@ import { scheduleRoute } from "./feature/schedule/route";
 import { supplementRoute } from "./feature/supplement/route";
 import { aiRoute } from "./feature/ai/route";
 import { authRoute } from "./feature/auth/route";
+import { profileRoute } from "./feature/profile/route";
 
 type Bindings = {
   DB: D1Database;
@@ -19,6 +20,7 @@ export const apiRoutes = app
   .route("/auth", authRoute)
   .route("/schedules", scheduleRoute)
   .route("/supplements", supplementRoute)
-  .route("/ai", aiRoute);
+  .route("/ai", aiRoute)
+  .route("/profile", profileRoute);
 
 export type ApiRoutes = typeof apiRoutes;

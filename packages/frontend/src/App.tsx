@@ -4,6 +4,7 @@ import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
 import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
 import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
 import { LoginPage, AuthCallback, ReconnectCallback, ProfileSettingsModal } from "@/components/Auth";
+import { ConditionsModal } from "@/components/Profile";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useAuth } from "@/contexts/AuthContext";
 import { addMonths, subMonths } from "@/lib/date";
@@ -19,6 +20,7 @@ function MainApp() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isConditionsModalOpen, setIsConditionsModalOpen] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // URLパラメータから通知を取得
@@ -145,6 +147,7 @@ function MainApp() {
           onPreviousMonth={handlePreviousMonth}
           onNextMonth={handleNextMonth}
           onToday={handleToday}
+          onConditionsClick={() => setIsConditionsModalOpen(true)}
         />
         <Calendar
           currentMonth={currentMonth}
@@ -172,6 +175,11 @@ function MainApp() {
       <ProfileSettingsModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      <ConditionsModal
+        isOpen={isConditionsModalOpen}
+        onClose={() => setIsConditionsModalOpen(false)}
       />
     </div>
   );

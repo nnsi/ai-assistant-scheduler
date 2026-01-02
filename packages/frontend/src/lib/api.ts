@@ -5,10 +5,13 @@ import {
   scheduleWithSupplementSchema,
   apiErrorSchema,
   tokenResponseSchema,
+  profileResponseSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
   type UpdateScheduleInput,
+  type UserProfile,
+  type UpdateProfileConditionsRequest,
 } from "@ai-scheduler/shared";
 import { z } from "zod";
 
@@ -265,6 +268,25 @@ export const updateMemo = async (
   });
 
   await handleVoidResponse(res);
+};
+
+// Profile API
+export const fetchProfileConditions = async (): Promise<UserProfile> => {
+  const res = await client.profile.conditions.$get();
+
+  const data = await handleResponse(res, profileResponseSchema);
+  return data.profile;
+};
+
+export const updateProfileConditions = async (
+  updates: UpdateProfileConditionsRequest
+): Promise<UserProfile> => {
+  const res = await client.profile.conditions.$put({
+    json: updates,
+  });
+
+  const data = await handleResponse(res, profileResponseSchema);
+  return data.profile;
 };
 
 export { ApiClientError };

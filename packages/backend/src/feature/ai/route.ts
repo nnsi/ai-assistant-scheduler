@@ -4,6 +4,8 @@ import { suggestKeywordsInputSchema, searchInputSchema } from "@ai-scheduler/sha
 import { createKeywordAgent, createSearchAgent } from "../../infra/mastra/agents";
 import { createAiService } from "../../infra/mastra/aiService";
 import { createMockAiService } from "../../infra/mock/aiService";
+import { createDb } from "../../infra/drizzle/client";
+import { createProfileRepo } from "../../infra/drizzle/profileRepo";
 import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
 import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
 import { createValidationError } from "../../shared/errors";
@@ -39,6 +41,9 @@ app.use("*", aiRateLimitMiddleware);
 
 // ミドルウェアでDIを解決
 app.use("*", async (c, next) => {
+  const db = createDb(c.env.DB);
+  const profileRepo = createProfileRepo(db);
+
   // USE_MOCK_AI が "true" の場合はモックを使用
   const useMock = c.env.USE_MOCK_AI === "true";
   const aiService = useMock
@@ -49,7 +54,7 @@ app.use("*", async (c, next) => {
       );
 
   c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService));
-  c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService));
+  c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService, profileRepo));
 
   await next();
 });
@@ -83,8 +88,9 @@ export const aiRoute = app
       }
     }),
     async (c) => {
+      const userId = c.get("userId");
       const { title, startAt, keywords } = c.req.valid("json");
-      const result = await c.get("searchWithKeywords")(title, startAt, keywords);
+      const result = await c.get("searchWithKeywords")(userId, title, startAt, keywords);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));

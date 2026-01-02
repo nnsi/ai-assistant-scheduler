@@ -1,16 +1,39 @@
-import type { AiService } from "../../../domain/infra/aiService";
+import type { AiService, UserConditions } from "../../../domain/infra/aiService";
+import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import { type Result, ok, err } from "../../../shared/result";
 import { createAiError } from "../../../shared/errors";
 
-export const createSearchWithKeywordsUseCase = (aiService: AiService) => {
+export const createSearchWithKeywordsUseCase = (
+  aiService: AiService,
+  profileRepo: ProfileRepo
+) => {
   return async (
+    userId: string,
     title: string,
     startAt: string,
     keywords: string[]
   ): Promise<Result<string>> => {
     try {
-      // AI検索実行
-      const aiResult = await aiService.searchWithKeywords(title, startAt, keywords);
+      // ユーザーのプロファイルを取得
+      const profile = await profileRepo.findByUserId(userId);
+
+      // プロファイルがあれば条件を抽出
+      let userConditions: UserConditions | undefined;
+      if (profile) {
+        userConditions = {
+          required: profile.requiredConditions,
+          preferred: profile.preferredConditions,
+          subjective: profile.subjectiveConditions,
+        };
+      }
+
+      // AI検索実行（ユーザー条件を渡す）
+      const aiResult = await aiService.searchWithKeywords(
+        title,
+        startAt,
+        keywords,
+        userConditions
+      );
       return ok(aiResult);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
