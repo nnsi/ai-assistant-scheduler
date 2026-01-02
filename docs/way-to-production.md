@@ -412,27 +412,76 @@ Sentry の場合:
 
 ---
 
-## 10. 実装ロードマップ
+## 10. 実装進捗
 
-### Phase 1: Critical（デプロイ前必須）- 推定 5-7 営業日
+### Phase 1: Critical（デプロイ前必須）
+
+#### コード実装タスク
+
+- [x] **1.1 AIエンドポイントのレート制限実装**
+  - `packages/backend/src/middleware/rateLimit.ts` 作成
+  - Cloudflare KV によるユーザー単位レート制限
+  - KV未設定時はグレースフルスキップ（ローカル開発対応）
+- [x] **1.2 リダイレクトURI検証**
+  - `packages/backend/src/shared/redirectUri.ts` 作成
+  - localhost, *.pages.dev, カスタムドメイン対応
+- [x] **2.1 GitHub Actions CI/CD構築**
+  - `.github/workflows/ci.yml` - テスト・型チェック・ビルド
+  - `.github/workflows/deploy.yml` - 本番デプロイ
+- [x] **2.3 マイグレーション自動化**
+  - `deploy.yml` に `wrangler d1 migrations apply` 組み込み
+- [x] **3.1 console.error → 構造化ログ置き換え**
+  - `packages/backend/src/shared/logger.ts` 作成
+  - `packages/frontend/src/lib/logger.ts` 作成
+  - バックエンド・フロントエンド全箇所を構造化ログに置換
+- [x] **4.1 フロントエンド単体テスト導入**
+  - Vitest + React Testing Library 設定
+  - `useAI.test.ts` - 6テスト
+  - `useSchedules.test.ts` - 7テスト
+- [x] **4.2 E2Eテスト完全実装**
+  - Playwright 設定
+  - `auth-flow.spec.ts` - 3テスト
+  - `schedule-crud.spec.ts` - 4テスト
+  - `ai-flow.spec.ts` - 4テスト
+
+#### 手動設定タスク（ユーザー作業）
+
+- [ ] **1.3 本番環境シークレット設定**
+  - `wrangler secret put` で4つのシークレット登録
+- [ ] **2.2 D1本番データベース作成**
+  - `wrangler d1 create` で本番DB作成
+  - `wrangler.toml` に Database ID 設定
+
+### テスト実行結果
+
+| テスト種類 | 結果 | 備考 |
+|-----------|------|------|
+| バックエンドテスト | ✅ 74テスト合格 | 統合テスト含む |
+| フロントエンドユニットテスト | ✅ 13テスト合格 | useAI, useSchedules |
+| E2Eテスト | ⚠️ 17テスト定義済 | ローカル環境でPlaywrightブラウザ要インストール |
+
+---
+
+## 11. 実装ロードマップ
+
+### Phase 1: Critical（デプロイ前必須）- ✅ コード実装完了
 
 ```
 Week 1:
-├── 1.1 AIエンドポイントのレート制限実装
-├── 1.2 リダイレクトURI検証
-├── 1.3 本番環境シークレット設定
-├── 2.1 GitHub Actions CI/CD構築
-├── 2.2 D1本番データベース作成
-├── 2.3 マイグレーション自動化
-├── 3.1 console.error → 構造化ログ置き換え
-├── 4.1 フロントエンド単体テスト導入（最低限）
-└── 4.2 E2Eテスト完全実装
+├── ✅ 1.1 AIエンドポイントのレート制限実装
+├── ✅ 1.2 リダイレクトURI検証
+├── ⏳ 1.3 本番環境シークレット設定（手動）
+├── ✅ 2.1 GitHub Actions CI/CD構築
+├── ⏳ 2.2 D1本番データベース作成（手動）
+├── ✅ 2.3 マイグレーション自動化
+├── ✅ 3.1 console.error → 構造化ログ置き換え
+├── ✅ 4.1 フロントエンド単体テスト導入（最低限）
+└── ✅ 4.2 E2Eテスト完全実装
 ```
 
-### Phase 2: High（リリース後1週間以内）- 推定 5-7 営業日
+### Phase 2: High（リリース後1週間以内）
 
 ```
-Week 2:
 ├── 1.4 PKCE対応
 ├── 1.5 セキュリティヘッダー追加
 ├── 1.6 OAuthトークン交換レート制限
@@ -490,7 +539,7 @@ Week 2:
 
 ---
 
-## 11. 現在良好な項目（対応不要）
+## 12. 現在良好な項目（対応不要）
 
 以下の項目は既に適切に実装されています：
 
@@ -511,7 +560,7 @@ Week 2:
 
 ---
 
-## 12. 合議のまとめ
+## 13. 合議のまとめ
 
 ### 3者の総合評価
 
