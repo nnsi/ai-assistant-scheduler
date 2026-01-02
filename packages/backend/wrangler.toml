@@ -23,7 +23,35 @@ USE_MOCK_AI = "true"
 JWT_SECRET = "dev-jwt-secret-change-in-production"
 
 # ============================================
-# 本番環境設定
+# ステージング環境設定 (masterブランチ → stg)
+# ============================================
+[env.staging]
+name = "ai-scheduler-api-stg"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "ai-scheduler-db-stg"
+database_id = "YOUR_STAGING_DATABASE_ID"
+migrations_dir = "drizzle"
+
+# ステージング環境用 KV Namespace（レート制限用）
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "YOUR_STAGING_KV_ID"
+
+[env.staging.vars]
+USE_MOCK_AI = "false"
+# FRONTEND_URL は GitHub Actions で設定
+
+# ステージング環境シークレット（GitHub Actions経由で設定）
+# OPENROUTER_API_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# JWT_SECRET
+# FRONTEND_URL
+
+# ============================================
+# 本番環境設定 (releaseブランチ → prod)
 # ============================================
 [env.production]
 name = "ai-scheduler-api-prod"
@@ -35,17 +63,17 @@ database_id = "YOUR_PRODUCTION_DATABASE_ID"
 migrations_dir = "drizzle"
 
 # 本番環境用 KV Namespace（レート制限用）
-# wrangler kv:namespace create "RATE_LIMIT_KV" --env production で作成後、idを設定
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "YOUR_PRODUCTION_KV_ID"
 
 [env.production.vars]
 USE_MOCK_AI = "false"
-FRONTEND_URL = "https://your-production-frontend.pages.dev"
+# FRONTEND_URL は GitHub Actions で設定
 
-# 本番環境シークレット（wrangler secret put --env production で設定）
+# 本番環境シークレット（GitHub Actions経由で設定）
 # OPENROUTER_API_KEY
 # GOOGLE_CLIENT_ID
 # GOOGLE_CLIENT_SECRET
 # JWT_SECRET
+# FRONTEND_URL

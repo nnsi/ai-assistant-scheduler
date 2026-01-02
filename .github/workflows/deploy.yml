@@ -2,14 +2,55 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - master    # → staging環境
+      - release   # → production環境
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
 
 jobs:
+  # 環境の決定
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      wrangler_env: ${{ steps.set-env.outputs.wrangler_env }}
+      pages_branch: ${{ steps.set-env.outputs.pages_branch }}
+    steps:
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" = "refs/heads/release" ]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+
+          if [ "$ENV" = "production" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "wrangler_env=production" >> $GITHUB_OUTPUT
+            echo "pages_branch=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "wrangler_env=staging" >> $GITHUB_OUTPUT
+            echo "pages_branch=preview" >> $GITHUB_OUTPUT
+          fi
+
   # CIチェック（テスト、型チェック、ビルド）
   ci:
     name: CI Checks
@@ -44,8 +85,9 @@ jobs:
   # バックエンドデプロイ
   deploy-backend:
     name: Deploy Backend
-    needs: ci
+    needs: [setup, ci]
     runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,10 +106,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # マイグレーション実行（本番D1データベース）
+      # シークレットをCloudflare Workersに登録
+      - name: Set Cloudflare Secrets
+        working-directory: packages/backend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "${{ secrets.JWT_SECRET }}" | wrangler secret put JWT_SECRET --env ${{ needs.setup.outputs.wrangler_env }}
+          echo "${{ secrets.GOOGLE_CLIENT_ID }}" | wrangler secret put GOOGLE_CLIENT_ID --env ${{ needs.setup.outputs.wrangler_env }}
+          echo "${{ secrets.GOOGLE_CLIENT_SECRET }}" | wrangler secret put GOOGLE_CLIENT_SECRET --env ${{ needs.setup.outputs.wrangler_env }}
+          echo "${{ secrets.OPENROUTER_API_KEY }}" | wrangler secret put OPENROUTER_API_KEY --env ${{ needs.setup.outputs.wrangler_env }}
+          echo "${{ vars.FRONTEND_URL }}" | wrangler secret put FRONTEND_URL --env ${{ needs.setup.outputs.wrangler_env }}
+
+      # マイグレーション実行
       - name: Run database migrations
         working-directory: packages/backend
-        run: pnpm db:migrate:prod
+        run: wrangler d1 migrations apply ai-scheduler-db-${{ needs.setup.outputs.environment == 'production' && 'prod' || 'stg' }} --env ${{ needs.setup.outputs.wrangler_env }} --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -75,7 +130,7 @@ jobs:
       # バックエンドデプロイ
       - name: Deploy Backend to Cloudflare Workers
         working-directory: packages/backend
-        run: wrangler deploy --env production
+        run: wrangler deploy --env ${{ needs.setup.outputs.wrangler_env }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -83,8 +138,9 @@ jobs:
   # フロントエンドデプロイ
   deploy-frontend:
     name: Deploy Frontend
-    needs: ci
+    needs: [setup, ci]
     runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,11 +162,16 @@ jobs:
       - name: Build frontend
         run: pnpm --filter frontend build
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://ai-scheduler-api-prod.your-subdomain.workers.dev' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Deploy Frontend to Cloudflare Pages
         working-directory: packages/frontend
-        run: wrangler pages deploy dist --project-name=ai-scheduler-frontend
+        run: |
+          if [ "${{ needs.setup.outputs.environment }}" = "production" ]; then
+            wrangler pages deploy dist --project-name=ai-scheduler-frontend --branch=main
+          else
+            wrangler pages deploy dist --project-name=ai-scheduler-frontend --branch=staging
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

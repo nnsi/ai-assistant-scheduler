@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master, release]
   pull_request:
-    branches: [main]
+    branches: [master, release]
 
 env:
   NODE_VERSION: '20'
@@ -36,8 +36,7 @@ jobs:
         run: pnpm --filter backend test
 
       - name: Run frontend tests
-        run: pnpm --filter frontend test || true
-        continue-on-error: true
+        run: pnpm --filter frontend test
 
   typecheck:
     name: Type Check

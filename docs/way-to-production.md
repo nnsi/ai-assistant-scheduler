@@ -32,8 +32,8 @@
 2. プロジェクトを作成または選択
 3. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuthクライアントID」
 4. アプリケーションの種類：「ウェブアプリケーション」
-5. 承認済みの JavaScript 生成元：本番フロントエンドURL（例：https://your-app.pages.dev）
-6. 承認済みのリダイレクトURI：本番フロントエンドのコールバックURL
+5. 承認済みの JavaScript 生成元：stg/prod両方のフロントエンドURL
+6. 承認済みのリダイレクトURI：stg/prod両方のコールバックURL
 7. クライアントID と クライアントシークレット をメモ
 ```
 **取得するもの:**
@@ -52,49 +52,89 @@
 
 #### 3. JWT シークレット生成
 ```bash
-# ターミナルで実行
-openssl rand -base64 32
+# ターミナルで実行（stg/prod用に2つ生成推奨）
+openssl rand -base64 32  # staging用
+openssl rand -base64 32  # production用
 ```
 **取得するもの:**
 - `JWT_SECRET`（32文字以上の乱数文字列）
 
 #### 4. Cloudflare D1 データベース作成
 ```bash
-# Cloudflare にログイン後
+# staging環境用
+wrangler d1 create ai-scheduler-db-stg
+# → Database ID をメモ → wrangler.toml の [env.staging] に設定
+
+# production環境用
 wrangler d1 create ai-scheduler-db-prod
-
-# 出力されるDatabase IDをメモ
-# 例: database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# → Database ID をメモ → wrangler.toml の [env.production] に設定
 ```
-**取得するもの:**
-- D1 Database ID（`wrangler.toml` の `[env.production]` に設定）
 
-#### 5. 本番環境シークレット登録
+#### 5. Cloudflare KV Namespace 作成（レート制限用）
 ```bash
-# 以下を順番に実行し、プロンプトに従って値を入力
-wrangler secret put GOOGLE_CLIENT_ID --env production
-wrangler secret put GOOGLE_CLIENT_SECRET --env production
-wrangler secret put JWT_SECRET --env production
-wrangler secret put OPENROUTER_API_KEY --env production
+# staging環境用
+wrangler kv:namespace create "RATE_LIMIT_KV" --env staging
+# → ID をメモ → wrangler.toml の [env.staging] に設定
+
+# production環境用
+wrangler kv:namespace create "RATE_LIMIT_KV" --env production
+# → ID をメモ → wrangler.toml の [env.production] に設定
 ```
 
-#### 6. GitHub Actions Secrets 設定
+#### 6. GitHub Environments 設定
 ```
-1. GitHub リポジトリ → Settings → Secrets and variables → Actions
-2. 以下を追加:
-   - CLOUDFLARE_API_TOKEN: Cloudflare API トークン（Workers デプロイ用）
-   - CLOUDFLARE_ACCOUNT_ID: Cloudflare アカウントID
+1. GitHub リポジトリ → Settings → Environments
+2. 「staging」環境を作成
+3. 「production」環境を作成（必要に応じてRequired reviewers設定）
+```
+
+#### 7. GitHub Actions Secrets 設定（環境別）
+```
+GitHub リポジトリ → Settings → Environments → 各環境を選択
+
+【staging環境のSecrets】
+- CLOUDFLARE_API_TOKEN: Cloudflare APIトークン
+- CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
+- JWT_SECRET: ステージング用JWTシークレット
+- GOOGLE_CLIENT_ID: Google OAuth クライアントID
+- GOOGLE_CLIENT_SECRET: Google OAuth クライアントシークレット
+- OPENROUTER_API_KEY: OpenRouter APIキー
+
+【staging環境のVariables】
+- FRONTEND_URL: https://your-stg-frontend.pages.dev
+- VITE_API_URL: https://ai-scheduler-api-stg.your-subdomain.workers.dev
+
+【production環境のSecrets】
+- CLOUDFLARE_API_TOKEN: Cloudflare APIトークン
+- CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
+- JWT_SECRET: 本番用JWTシークレット
+- GOOGLE_CLIENT_ID: Google OAuth クライアントID
+- GOOGLE_CLIENT_SECRET: Google OAuth クライアントシークレット
+- OPENROUTER_API_KEY: OpenRouter APIキー
+
+【production環境のVariables】
+- FRONTEND_URL: https://your-prod-frontend.pages.dev
+- VITE_API_URL: https://ai-scheduler-api-prod.your-subdomain.workers.dev
+```
+
+---
+
+### デプロイフロー
+
+```
+master ブランチにマージ → staging環境にデプロイ
+release ブランチにマージ → production環境にデプロイ
 ```
 
 ---
 
 ### 🟠 High（リリース前推奨）
 
-#### 7. GitHub Branch Protection 設定
+#### 8. GitHub Branch Protection 設定
 ```
 1. GitHub リポジトリ → Settings → Branches
 2. 「Add branch protection rule」
-3. Branch name pattern: main
+3. Branch name pattern: master（および release）
 4. 以下をチェック:
    - Require a pull request before merging
    - Require status checks to pass before merging
@@ -102,7 +142,7 @@ wrangler secret put OPENROUTER_API_KEY --env production
    - Require branches to be up to date before merging
 ```
 
-#### 8. エラートラッキングサービス登録（Sentry 推奨）
+#### 9. エラートラッキングサービス登録（Sentry 推奨）
 ```
 1. https://sentry.io/ でアカウント作成
 2. プロジェクト作成（JavaScript / Node.js）
@@ -165,23 +205,48 @@ Sentry の場合:
 □ Google Cloud Console
   □ OAuth クライアントID取得
   □ OAuth クライアントシークレット取得
-  □ 本番リダイレクトURI設定
+  □ stg/prod両方のリダイレクトURI設定
 
 □ OpenRouter
   □ APIキー取得
 
 □ ローカル
-  □ JWT_SECRET 生成（openssl rand -base64 32）
+  □ JWT_SECRET 生成（stg用: openssl rand -base64 32）
+  □ JWT_SECRET 生成（prod用: openssl rand -base64 32）
 
 □ Cloudflare
-  □ D1 本番データベース作成
-  □ wrangler secret put（4つのシークレット）
-  □ 本番ドメイン設定（任意）
-  □ Cache Rules 設定
+  □ D1 ステージングデータベース作成 (ai-scheduler-db-stg)
+  □ D1 本番データベース作成 (ai-scheduler-db-prod)
+  □ KV Namespace作成 (staging)
+  □ KV Namespace作成 (production)
+  □ wrangler.toml に Database ID/KV ID 設定
 
-□ GitHub
-  □ Actions Secrets 設定（CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID）
-  □ Branch Protection 設定
+□ GitHub Environments
+  □ staging 環境作成
+  □ production 環境作成
+
+□ GitHub Secrets/Variables (staging)
+  □ CLOUDFLARE_API_TOKEN
+  □ CLOUDFLARE_ACCOUNT_ID
+  □ JWT_SECRET
+  □ GOOGLE_CLIENT_ID
+  □ GOOGLE_CLIENT_SECRET
+  □ OPENROUTER_API_KEY
+  □ FRONTEND_URL (Variable)
+  □ VITE_API_URL (Variable)
+
+□ GitHub Secrets/Variables (production)
+  □ CLOUDFLARE_API_TOKEN
+  □ CLOUDFLARE_ACCOUNT_ID
+  □ JWT_SECRET
+  □ GOOGLE_CLIENT_ID
+  □ GOOGLE_CLIENT_SECRET
+  □ OPENROUTER_API_KEY
+  □ FRONTEND_URL (Variable)
+  □ VITE_API_URL (Variable)
+
+□ GitHub その他
+  □ Branch Protection 設定 (master, release)
   □ Secret Scanning 有効化
 
 □ エラートラッキング（Sentry等）
@@ -426,8 +491,11 @@ Sentry の場合:
   - `packages/backend/src/shared/redirectUri.ts` 作成
   - localhost, *.pages.dev, カスタムドメイン対応
 - [x] **2.1 GitHub Actions CI/CD構築**
-  - `.github/workflows/ci.yml` - テスト・型チェック・ビルド
-  - `.github/workflows/deploy.yml` - 本番デプロイ
+  - `.github/workflows/ci.yml` - テスト・型チェック・ビルド（master/release両対応）
+  - `.github/workflows/deploy.yml` - 環境別デプロイ
+    - master → staging環境
+    - release → production環境
+  - GitHub Secrets経由でCloudflare Workersにシークレット自動登録
 - [x] **2.3 マイグレーション自動化**
   - `deploy.yml` に `wrangler d1 migrations apply` 組み込み
 - [x] **3.1 console.error → 構造化ログ置き換え**
@@ -446,11 +514,16 @@ Sentry の場合:
 
 #### 手動設定タスク（ユーザー作業）
 
-- [ ] **1.3 本番環境シークレット設定**
-  - `wrangler secret put` で4つのシークレット登録
-- [ ] **2.2 D1本番データベース作成**
-  - `wrangler d1 create` で本番DB作成
-  - `wrangler.toml` に Database ID 設定
+- [ ] **Cloudflare リソース作成**
+  - D1データベース作成（stg/prod）
+  - KV Namespace作成（stg/prod）
+  - `wrangler.toml` に ID 設定
+- [ ] **GitHub Environments 設定**
+  - staging 環境作成
+  - production 環境作成
+- [ ] **GitHub Secrets/Variables 設定**
+  - 各環境に Secrets 登録（CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, JWT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, OPENROUTER_API_KEY）
+  - 各環境に Variables 登録（FRONTEND_URL, VITE_API_URL）
 
 ### テスト実行結果
 
@@ -467,16 +540,19 @@ Sentry の場合:
 ### Phase 1: Critical（デプロイ前必須）- ✅ コード実装完了
 
 ```
-Week 1:
+コード実装（完了）:
 ├── ✅ 1.1 AIエンドポイントのレート制限実装
 ├── ✅ 1.2 リダイレクトURI検証
-├── ⏳ 1.3 本番環境シークレット設定（手動）
-├── ✅ 2.1 GitHub Actions CI/CD構築
-├── ⏳ 2.2 D1本番データベース作成（手動）
+├── ✅ 2.1 GitHub Actions CI/CD構築（stg/prod対応）
 ├── ✅ 2.3 マイグレーション自動化
 ├── ✅ 3.1 console.error → 構造化ログ置き換え
-├── ✅ 4.1 フロントエンド単体テスト導入（最低限）
+├── ✅ 4.1 フロントエンド単体テスト導入
 └── ✅ 4.2 E2Eテスト完全実装
+
+手動設定（ユーザー作業）:
+├── ⏳ Cloudflareリソース作成（D1/KV stg+prod）
+├── ⏳ GitHub Environments設定
+└── ⏳ GitHub Secrets/Variables設定
 ```
 
 ### Phase 2: High（リリース後1週間以内）
