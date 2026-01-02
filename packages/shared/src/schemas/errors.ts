@@ -10,6 +10,8 @@ export const errorCodeSchema = z.enum([
   "AI_ERROR",
   "DATABASE_ERROR",
   "INTERNAL_ERROR",
+  "TOO_MANY_REQUESTS",
+  "INVALID_REDIRECT_URI",
 ]);
 
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

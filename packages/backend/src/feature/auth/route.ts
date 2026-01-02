@@ -20,12 +20,14 @@ import { createUpdateEmailUseCase } from "./usecase/updateEmail";
 import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
+import { validateRedirectUri } from "../../shared/redirectUri";
 
 type Bindings = {
   DB: D1Database;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   JWT_SECRET: string;
+  ALLOWED_REDIRECT_URIS?: string;
 };
 
 type Variables = {
@@ -79,6 +81,13 @@ export const authRoute = app
     }),
     async (c) => {
       const { code, redirectUri } = c.req.valid("json");
+
+      // リダイレクトURI検証
+      const uriValidation = validateRedirectUri(redirectUri, c.env.ALLOWED_REDIRECT_URIS);
+      if (!uriValidation.ok) {
+        return c.json(uriValidation.error, getStatusCode(uriValidation.error.code));
+      }
+
       const result = await c.get("googleAuth")(code, redirectUri);
 
       if (!result.ok) {
@@ -207,6 +216,13 @@ export const authRoute = app
       }
 
       const { code, redirectUri } = c.req.valid("json");
+
+      // リダイレクトURI検証
+      const uriValidation = validateRedirectUri(redirectUri, c.env.ALLOWED_REDIRECT_URIS);
+      if (!uriValidation.ok) {
+        return c.json(uriValidation.error, getStatusCode(uriValidation.error.code));
+      }
+
       const result = await c.get("reconnectGoogle")(payload.sub, code, redirectUri);
 
       if (!result.ok) {

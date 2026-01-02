@@ -9,6 +9,12 @@ database_name = "ai-scheduler-db"
 database_id = "local"
 migrations_dir = "drizzle"
 
+# KV Namespace for rate limiting (開発環境ではオプション)
+# 本番では wrangler kv:namespace create "RATE_LIMIT_KV" で作成
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "xxx"
+
 [vars]
 FRONTEND_URL = "http://localhost:5173"
 # モックAIを使用する場合は "true"（開発時のデフォルト）
@@ -16,9 +22,64 @@ USE_MOCK_AI = "true"
 # ローカル開発用（本番では wrangler secret put で設定）
 JWT_SECRET = "dev-jwt-secret-change-in-production"
 
-# 本番環境用（wrangler secret putで設定）
-# OPENROUTER_API_KEY = "sk-or-v1-xxx"
-# USE_MOCK_AI = "false"
-# GOOGLE_CLIENT_ID = "xxx.apps.googleusercontent.com"
-# GOOGLE_CLIENT_SECRET = "GOCSPX-xxx"
-# JWT_SECRET = "your-secret-key-here"
+# ============================================
+# ステージング環境設定 (masterブランチ → stg)
+# ============================================
+[env.staging]
+name = "ai-scheduler-api-stg"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "ai-scheduler-db-stg"
+database_id = "YOUR_STAGING_DATABASE_ID"
+migrations_dir = "drizzle"
+
+# ステージング環境用 KV Namespace（レート制限用）
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "YOUR_STAGING_KV_ID"
+
+[env.staging.vars]
+USE_MOCK_AI = "false"
+# FRONTEND_URL: ステージング環境のフロントエンドURL
+# 例: FRONTEND_URL = "https://ai-scheduler-frontend.pages.dev"
+# ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）
+# セキュリティ: 本番環境では必ず設定すること
+# 例: ALLOWED_REDIRECT_URIS = "https://ai-scheduler-frontend.pages.dev/callback"
+
+# ステージング環境シークレット（GitHub Actions経由で設定）
+# OPENROUTER_API_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# JWT_SECRET
+
+# ============================================
+# 本番環境設定 (releaseブランチ → prod)
+# ============================================
+[env.production]
+name = "ai-scheduler-api-prod"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "ai-scheduler-db-prod"
+database_id = "YOUR_PRODUCTION_DATABASE_ID"
+migrations_dir = "drizzle"
+
+# 本番環境用 KV Namespace（レート制限用）
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "YOUR_PRODUCTION_KV_ID"
+
+[env.production.vars]
+USE_MOCK_AI = "false"
+# FRONTEND_URL: 本番環境のフロントエンドURL
+# 例: FRONTEND_URL = "https://your-app.example.com"
+# ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）
+# セキュリティ: 本番環境では必ず設定すること
+# 例: ALLOWED_REDIRECT_URIS = "https://your-app.example.com/callback"
+
+# 本番環境シークレット（GitHub Actions経由で設定）
+# OPENROUTER_API_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# JWT_SECRET

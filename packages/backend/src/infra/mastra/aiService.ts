@@ -1,5 +1,6 @@
 import type { Agent } from "@mastra/core/agent";
 import type { AiService } from "../../domain/infra/aiService";
+import { logger } from "../../shared/logger";
 
 export const createAiService = (
   keywordAgent: Agent,
@@ -23,7 +24,7 @@ export const createAiService = (
       return JSON.parse(text);
     } catch {
       // パースに失敗した場合は空配列を返す
-      console.error("Failed to parse keywords:", result.text);
+      logger.warn("Failed to parse AI keywords response", { category: "ai", responseText: result.text });
       return [];
     }
   },
