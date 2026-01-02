@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 type KeywordSuggestionsProps = {
   keywords: string[];
   isLoading?: boolean;
+  hasConditions?: boolean;
   onSelect: (keywords: string[]) => void;
   onSkip: () => void;
 };
@@ -13,6 +14,7 @@ type KeywordSuggestionsProps = {
 export const KeywordSuggestions = ({
   keywords,
   isLoading = false,
+  hasConditions = false,
   onSelect,
   onSkip,
 }: KeywordSuggestionsProps) => {
@@ -75,13 +77,19 @@ export const KeywordSuggestions = ({
         })}
       </div>
 
+      {hasConditions && selectedKeywords.size === 0 && (
+        <p className="text-xs text-primary-600">
+          こだわり条件が設定されているため、キーワード未選択でも検索できます
+        </p>
+      )}
+
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="secondary" onClick={onSkip}>
           スキップ
         </Button>
         <Button
           onClick={handleSelect}
-          disabled={selectedKeywords.size === 0}
+          disabled={selectedKeywords.size === 0 && !hasConditions}
         >
           検索する ({selectedKeywords.size}件選択中)
         </Button>

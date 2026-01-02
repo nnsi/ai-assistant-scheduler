@@ -1,7 +1,7 @@
 import type { AiService } from "../../domain/infra/aiService";
 
 export const createMockAiService = (): AiService => ({
-  suggestKeywords: async (title, _startAt) => {
+  suggestKeywords: async (title, _startAt, _userConditions) => {
     // モックの遅延をシミュレート
     await new Promise((resolve) => setTimeout(resolve, 500));
 

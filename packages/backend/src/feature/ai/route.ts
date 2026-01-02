@@ -53,7 +53,7 @@ app.use("*", async (c, next) => {
         createSearchAgent(c.env.OPENROUTER_API_KEY)
       );
 
-  c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService));
+  c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService, profileRepo));
   c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService, profileRepo));
 
   await next();
@@ -69,8 +69,9 @@ export const aiRoute = app
       }
     }),
     async (c) => {
+      const userId = c.get("userId");
       const { title, startAt } = c.req.valid("json");
-      const result = await c.get("suggestKeywords")(title, startAt);
+      const result = await c.get("suggestKeywords")(userId, title, startAt);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));

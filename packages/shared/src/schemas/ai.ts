@@ -19,7 +19,7 @@ export type SuggestKeywordsResponse = z.infer<typeof suggestKeywordsResponseSche
 export const searchInputSchema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
   startAt: z.string().datetime({ offset: true }),
-  keywords: z.array(z.string()).min(1, "キーワードを1つ以上選択してください"),
+  keywords: z.array(z.string()), // こだわり条件があれば0件でもOK
 });
 
 export type SearchInput = z.infer<typeof searchInputSchema>;

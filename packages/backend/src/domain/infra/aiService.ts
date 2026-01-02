@@ -7,7 +7,11 @@ export type UserConditions = {
 
 // AIサービス型定義
 export type AiService = {
-  suggestKeywords: (title: string, startAt: string) => Promise<string[]>;
+  suggestKeywords: (
+    title: string,
+    startAt: string,
+    userConditions?: UserConditions
+  ) => Promise<string[]>;
   searchWithKeywords: (
     title: string,
     startAt: string,

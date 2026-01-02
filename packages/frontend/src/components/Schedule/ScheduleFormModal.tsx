@@ -4,6 +4,7 @@ import { ScheduleForm } from "./ScheduleForm";
 import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
 import { SearchResults } from "@/components/AI/SearchResults";
 import { useAI } from "@/hooks/useAI";
+import { useProfile } from "@/hooks/useProfile";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
 import type { Schedule, CreateScheduleInput } from "@ai-scheduler/shared";
@@ -37,6 +38,15 @@ export const ScheduleFormModal = ({
     search,
     reset,
   } = useAI();
+
+  const { profile } = useProfile();
+
+  // こだわり条件が設定されているかどうか
+  const hasConditions = Boolean(
+    profile?.requiredConditions?.trim() ||
+    profile?.preferredConditions?.trim() ||
+    profile?.subjectiveConditions?.trim()
+  );
 
   const handleFormSubmit = async (data: CreateScheduleInput) => {
     setFormData(data);
@@ -134,6 +144,7 @@ export const ScheduleFormModal = ({
         <KeywordSuggestions
           keywords={keywords}
           isLoading={isLoadingKeywords}
+          hasConditions={hasConditions}
           onSelect={handleKeywordSelect}
           onSkip={handleSkip}
         />
