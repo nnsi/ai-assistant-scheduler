@@ -9,6 +9,8 @@ export const getStatusCode = (code: ErrorCode): ContentfulStatusCode => {
       return 404;
     case "UNAUTHORIZED":
       return 401;
+    case "FORBIDDEN":
+      return 403;
     case "CONFLICT":
       return 409;
     case "AI_ERROR":

@@ -106,7 +106,9 @@ describe("Supplement API Integration Tests", () => {
       expect(data.code).toBe("NOT_FOUND");
     });
 
-    it("should return 404 when schedule does not exist", async () => {
+    it("should return 403 when schedule does not exist or user has no access", async () => {
+      // スケジュールが存在しない場合、所有権確認の結果として403を返す
+      // （リソースの存在を隠すセキュリティ上の理由）
       const res = await app.request(
         "/api/supplements/non-existent/memo",
         {
@@ -115,7 +117,10 @@ describe("Supplement API Integration Tests", () => {
           body: JSON.stringify({ userMemo: "メモ" }),
         }
       );
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
+
+      const data = (await res.json()) as { code: string };
+      expect(data.code).toBe("FORBIDDEN");
     });
   });
 });

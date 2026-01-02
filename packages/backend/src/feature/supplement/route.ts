@@ -3,16 +3,21 @@ import { zValidator } from "@hono/zod-validator";
 import { updateMemoInputSchema } from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
+import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createUpdateMemoUseCase } from "./usecase/updateMemo";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
+import { authMiddleware } from "../../middleware/auth";
 
 type Bindings = {
   DB: D1Database;
+  JWT_SECRET: string;
 };
 
 type Variables = {
   updateMemo: ReturnType<typeof createUpdateMemoUseCase>;
+  userId: string;
+  userEmail: string;
 };
 
 const app = new Hono<{
@@ -20,12 +25,16 @@ const app = new Hono<{
   Variables: Variables;
 }>();
 
+// 認証ミドルウェアを適用
+app.use("*", authMiddleware);
+
 // ミドルウェアでDIを解決
 app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const supplementRepo = createSupplementRepo(db);
+  const scheduleRepo = createScheduleRepo(db);
 
-  c.set("updateMemo", createUpdateMemoUseCase(supplementRepo));
+  c.set("updateMemo", createUpdateMemoUseCase(supplementRepo, scheduleRepo));
 
   await next();
 });
@@ -42,7 +51,8 @@ export const supplementRoute = app
     async (c) => {
       const scheduleId = c.req.param("scheduleId");
       const input = c.req.valid("json");
-      const result = await c.get("updateMemo")(scheduleId, input);
+      const userId = c.get("userId");
+      const result = await c.get("updateMemo")(scheduleId, input, userId);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));

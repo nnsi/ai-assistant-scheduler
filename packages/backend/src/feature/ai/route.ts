@@ -8,22 +8,29 @@ import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
 import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
+import { authMiddleware } from "../../middleware/auth";
 
 type Bindings = {
   DB: D1Database;
   OPENROUTER_API_KEY: string;
   USE_MOCK_AI?: string;
+  JWT_SECRET: string;
 };
 
 type Variables = {
   suggestKeywords: ReturnType<typeof createSuggestKeywordsUseCase>;
   searchWithKeywords: ReturnType<typeof createSearchWithKeywordsUseCase>;
+  userId: string;
+  userEmail: string;
 };
 
 const app = new Hono<{
   Bindings: Bindings;
   Variables: Variables;
 }>();
+
+// 認証ミドルウェアを適用（AIルートは認証必須）
+app.use("*", authMiddleware);
 
 // ミドルウェアでDIを解決
 app.use("*", async (c, next) => {
