@@ -95,7 +95,7 @@ describe("useSchedules", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      let createdSchedule: Schedule;
+      let createdSchedule: Schedule | null = null;
       await act(async () => {
         createdSchedule = await result.current.create({
           title: "テスト予定",
@@ -105,7 +105,7 @@ describe("useSchedules", () => {
         });
       });
 
-      expect(createdSchedule!).toEqual(mockSchedule);
+      expect(createdSchedule).toEqual(mockSchedule);
       expect(result.current.schedules).toContainEqual(mockSchedule);
     });
   });

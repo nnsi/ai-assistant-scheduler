@@ -24,7 +24,7 @@ describe("useAI", () => {
       expect(result.current.keywords).toEqual([]);
       expect(result.current.isLoadingKeywords).toBe(false);
 
-      let returnedKeywords: string[];
+      let returnedKeywords: string[] = [];
       await act(async () => {
         returnedKeywords = await result.current.suggestKeywords(
           "会議タイトル",
@@ -37,7 +37,7 @@ describe("useAI", () => {
         "2025-01-15T10:00:00"
       );
       expect(result.current.keywords).toEqual(mockKeywords);
-      expect(returnedKeywords!).toEqual(mockKeywords);
+      expect(returnedKeywords).toEqual(mockKeywords);
       expect(result.current.isLoadingKeywords).toBe(false);
     });
 
@@ -47,7 +47,7 @@ describe("useAI", () => {
 
       const { result } = renderHook(() => useAI());
 
-      let returnedKeywords: string[];
+      let returnedKeywords: string[] = [];
       await act(async () => {
         returnedKeywords = await result.current.suggestKeywords(
           "会議タイトル",
@@ -55,7 +55,7 @@ describe("useAI", () => {
         );
       });
 
-      expect(returnedKeywords!).toEqual([]);
+      expect(returnedKeywords).toEqual([]);
       expect(result.current.error).toEqual(mockError);
       expect(result.current.isLoadingKeywords).toBe(false);
     });
@@ -97,7 +97,7 @@ describe("useAI", () => {
       expect(result.current.searchResult).toBe("");
       expect(result.current.isLoadingSearch).toBe(false);
 
-      let returnedResult: string;
+      let returnedResult = "";
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",
@@ -112,7 +112,7 @@ describe("useAI", () => {
         ["キーワード1", "キーワード2"]
       );
       expect(result.current.searchResult).toBe(mockResult);
-      expect(returnedResult!).toBe(mockResult);
+      expect(returnedResult).toBe(mockResult);
       expect(result.current.isLoadingSearch).toBe(false);
     });
 
@@ -122,7 +122,7 @@ describe("useAI", () => {
 
       const { result } = renderHook(() => useAI());
 
-      let returnedResult: string;
+      let returnedResult = "";
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",
@@ -131,7 +131,7 @@ describe("useAI", () => {
         );
       });
 
-      expect(returnedResult!).toBe("");
+      expect(returnedResult).toBe("");
       expect(result.current.error).toEqual(mockError);
       expect(result.current.isLoadingSearch).toBe(false);
     });

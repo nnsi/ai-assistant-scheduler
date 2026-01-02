@@ -103,6 +103,7 @@ GitHub リポジトリ → Settings → Environments → 各環境を選択
 【staging環境のVariables】
 - FRONTEND_URL: https://your-stg-frontend.pages.dev
 - VITE_API_URL: https://ai-scheduler-api-stg.your-subdomain.workers.dev
+- ALLOWED_REDIRECT_URIS: https://your-stg-frontend.pages.dev/callback （セキュリティ必須）
 
 【production環境のSecrets】
 - CLOUDFLARE_API_TOKEN: Cloudflare APIトークン
@@ -115,6 +116,7 @@ GitHub リポジトリ → Settings → Environments → 各環境を選択
 【production環境のVariables】
 - FRONTEND_URL: https://your-prod-frontend.pages.dev
 - VITE_API_URL: https://ai-scheduler-api-prod.your-subdomain.workers.dev
+- ALLOWED_REDIRECT_URIS: https://your-prod-frontend.pages.dev/callback （セキュリティ必須）
 ```
 
 ---
@@ -234,6 +236,7 @@ Sentry の場合:
   □ OPENROUTER_API_KEY
   □ FRONTEND_URL (Variable)
   □ VITE_API_URL (Variable)
+  □ ALLOWED_REDIRECT_URIS (Variable) - セキュリティ必須
 
 □ GitHub Secrets/Variables (production)
   □ CLOUDFLARE_API_TOKEN
@@ -244,6 +247,7 @@ Sentry の場合:
   □ OPENROUTER_API_KEY
   □ FRONTEND_URL (Variable)
   □ VITE_API_URL (Variable)
+  □ ALLOWED_REDIRECT_URIS (Variable) - セキュリティ必須
 
 □ GitHub その他
   □ Branch Protection 設定 (master, release)

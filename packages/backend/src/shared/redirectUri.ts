@@ -2,40 +2,48 @@ import { createInvalidRedirectUriError } from "./errors";
 import type { Result } from "./result";
 
 /**
- * 許可されたリダイレクトURIのパターン
- * 本番環境では環境変数から読み込むことを推奨
+ * 開発環境用のリダイレクトURIパターン
+ * 本番環境では ALLOWED_REDIRECT_URIS 環境変数を使用し、このパターンは無視される
  */
-const ALLOWED_REDIRECT_URI_PATTERNS = [
-  // 開発環境
-  /^http:\/\/localhost:\d+\/?.*$/,
-  /^http:\/\/127\.0\.0\.1:\d+\/?.*$/,
-  // Cloudflare Pages（本番）
-  /^https:\/\/[\w-]+\.pages\.dev\/?.*$/,
-  // カスタムドメイン（本番で設定）
-  // 具体的なドメインは ALLOWED_REDIRECT_URIS 環境変数で追加
+const DEV_ALLOWED_REDIRECT_URI_PATTERNS = [
+  // 開発環境のみ - localhostへのリダイレクト
+  /^http:\/\/localhost:\d+\/callback$/,
+  /^http:\/\/127\.0\.0\.1:\d+\/callback$/,
 ];
 
 /**
  * リダイレクトURIが許可されているかを検証
  *
+ * セキュリティ: ALLOWED_REDIRECT_URIS が設定されている場合、完全一致のみ許可
+ * 設定されていない場合は開発環境用パターンにフォールバック
+ *
  * @param redirectUri - 検証するリダイレクトURI
- * @param allowedUris - 追加で許可するURIリスト（環境変数から）
+ * @param allowedUris - 許可するURIリスト（環境変数から、カンマ区切り）
  * @returns 検証結果
  */
 export const validateRedirectUri = (
   redirectUri: string,
   allowedUris?: string
 ): Result<true> => {
-  // 追加の許可URIがあれば、完全一致でチェック
+  // ALLOWED_REDIRECT_URIS が設定されている場合、完全一致のみ許可
+  // これにより本番環境では明示的に許可されたURIのみ受け付ける
   if (allowedUris) {
     const uriList = allowedUris.split(",").map((uri) => uri.trim());
     if (uriList.includes(redirectUri)) {
       return { ok: true, value: true };
     }
+    // 設定されているが一致しない場合はエラー（パターンマッチにフォールバックしない）
+    return {
+      ok: false,
+      error: createInvalidRedirectUriError(
+        `リダイレクトURI "${redirectUri}" は許可されていません`
+      ),
+    };
   }
 
-  // パターンマッチでチェック
-  const isAllowed = ALLOWED_REDIRECT_URI_PATTERNS.some((pattern) =>
+  // ALLOWED_REDIRECT_URIS が未設定の場合、開発環境用パターンでチェック
+  // 本番環境では必ず ALLOWED_REDIRECT_URIS を設定すること
+  const isAllowed = DEV_ALLOWED_REDIRECT_URI_PATTERNS.some((pattern) =>
     pattern.test(redirectUri)
   );
 
@@ -51,15 +59,3 @@ export const validateRedirectUri = (
   return { ok: true, value: true };
 };
 
-/**
- * URIのオリジン部分を抽出
- * 例: "http://localhost:5173/callback" -> "http://localhost:5173"
- */
-export const extractOrigin = (uri: string): string | null => {
-  try {
-    const url = new URL(uri);
-    return url.origin;
-  } catch {
-    return null;
-  }
-};

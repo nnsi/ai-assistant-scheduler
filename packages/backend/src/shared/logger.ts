@@ -5,6 +5,24 @@
  * 将来的にはSentry、Datadog、CloudflareのLogpushなどに統合可能。
  */
 
+/**
+ * 開発環境かどうかを判定
+ * Cloudflare Workers では process が存在しないため、
+ * 本番環境（Workers）ではスタックトレースを除外する
+ */
+const isDevelopment = (): boolean => {
+  // Cloudflare Workers環境では process が undefined
+  // Node.js環境（テスト実行時など）では process.env.NODE_ENV で判定
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nodeProcess = (globalThis as any).process;
+    return nodeProcess?.env?.NODE_ENV !== "production";
+  } catch {
+    // Cloudflare Workers環境 = 本番環境
+    return false;
+  }
+};
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export type LogContext = {
@@ -39,13 +57,16 @@ const formatLog = (entry: LogEntry): string => {
 
 /**
  * エラーオブジェクトをシリアライズ可能な形式に変換
+ * 本番環境ではスタックトレースを除外してファイルパスの露出を防ぐ
  */
 const serializeError = (error: unknown): LogEntry["error"] | undefined => {
+  const includeStack = isDevelopment();
+
   if (error instanceof Error) {
     return {
       name: error.name,
       message: error.message,
-      stack: error.stack,
+      ...(includeStack && error.stack ? { stack: error.stack } : {}),
     };
   }
   if (typeof error === "string") {

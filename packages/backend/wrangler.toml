@@ -41,14 +41,17 @@ id = "YOUR_STAGING_KV_ID"
 
 [env.staging.vars]
 USE_MOCK_AI = "false"
-# FRONTEND_URL は GitHub Actions で設定
+# FRONTEND_URL: ステージング環境のフロントエンドURL
+# 例: FRONTEND_URL = "https://ai-scheduler-frontend.pages.dev"
+# ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）
+# セキュリティ: 本番環境では必ず設定すること
+# 例: ALLOWED_REDIRECT_URIS = "https://ai-scheduler-frontend.pages.dev/callback"
 
 # ステージング環境シークレット（GitHub Actions経由で設定）
 # OPENROUTER_API_KEY
 # GOOGLE_CLIENT_ID
 # GOOGLE_CLIENT_SECRET
 # JWT_SECRET
-# FRONTEND_URL
 
 # ============================================
 # 本番環境設定 (releaseブランチ → prod)
@@ -69,11 +72,14 @@ id = "YOUR_PRODUCTION_KV_ID"
 
 [env.production.vars]
 USE_MOCK_AI = "false"
-# FRONTEND_URL は GitHub Actions で設定
+# FRONTEND_URL: 本番環境のフロントエンドURL
+# 例: FRONTEND_URL = "https://your-app.example.com"
+# ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）
+# セキュリティ: 本番環境では必ず設定すること
+# 例: ALLOWED_REDIRECT_URIS = "https://your-app.example.com/callback"
 
 # 本番環境シークレット（GitHub Actions経由で設定）
 # OPENROUTER_API_KEY
 # GOOGLE_CLIENT_ID
 # GOOGLE_CLIENT_SECRET
 # JWT_SECRET
-# FRONTEND_URL

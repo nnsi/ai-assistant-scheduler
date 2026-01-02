@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
 
 /**
  * 認証フローのE2Eテスト
@@ -64,18 +65,21 @@ test.describe("Authentication Flow", () => {
     await page.goto("/");
 
     // localStorageに認証情報を設定（ログイン後の状態をシミュレート）
-    await page.evaluate(() => {
-      localStorage.setItem("auth_access_token", "test-access-token");
-      localStorage.setItem("auth_refresh_token", "test-refresh-token");
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify({
-          id: "test-user-id",
-          email: "test@example.com",
-          name: "Test User",
-        })
-      );
-    });
+    await page.evaluate(
+      ({ tokenKey, token }) => {
+        localStorage.setItem(tokenKey, token);
+        localStorage.setItem("auth_refresh_token", "test-refresh-token");
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify({
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+          })
+        );
+      },
+      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
+    );
 
     // ページをリロード
     await page.reload();
@@ -87,18 +91,21 @@ test.describe("Authentication Flow", () => {
   test("should logout successfully", async ({ page }) => {
     // ログイン状態を設定
     await page.goto("/");
-    await page.evaluate(() => {
-      localStorage.setItem("auth_access_token", "test-access-token");
-      localStorage.setItem("auth_refresh_token", "test-refresh-token");
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify({
-          id: "test-user-id",
-          email: "test@example.com",
-          name: "Test User",
-        })
-      );
-    });
+    await page.evaluate(
+      ({ tokenKey, token }) => {
+        localStorage.setItem(tokenKey, token);
+        localStorage.setItem("auth_refresh_token", "test-refresh-token");
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify({
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+          })
+        );
+      },
+      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
+    );
     await page.reload();
 
     // ユーザーメニューを探す

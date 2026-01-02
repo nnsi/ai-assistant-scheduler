@@ -21,6 +21,7 @@ vi.stubEnv("VITE_API_URL", "http://localhost:8787/api");
 // テスト後にモックをリセット
 afterEach(() => {
   vi.clearAllMocks();
+  vi.mocked(global.fetch).mockReset();
   localStorageMock.getItem.mockReset();
   localStorageMock.setItem.mockReset();
   localStorageMock.removeItem.mockReset();

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
 
 /**
  * スケジュールCRUD操作のE2Eテスト
@@ -19,18 +20,21 @@ test.describe("Schedule CRUD Operations", () => {
 
   test.beforeEach(async ({ page }) => {
     // 認証状態を設定
-    await page.addInitScript(() => {
-      localStorage.setItem("auth_access_token", "test-access-token");
-      localStorage.setItem("auth_refresh_token", "test-refresh-token");
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify({
-          id: "test-user-id",
-          email: "test@example.com",
-          name: "Test User",
-        })
-      );
-    });
+    await page.addInitScript(
+      ({ tokenKey, token }) => {
+        localStorage.setItem(tokenKey, token);
+        localStorage.setItem("auth_refresh_token", "test-refresh-token");
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify({
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+          })
+        );
+      },
+      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
+    );
 
     // APIモックを設定
     await page.route("**/api/auth/me", async (route) => {
