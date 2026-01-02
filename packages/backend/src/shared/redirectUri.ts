@@ -7,8 +7,8 @@ import type { Result } from "./result";
  */
 const DEV_ALLOWED_REDIRECT_URI_PATTERNS = [
   // 開発環境のみ - localhostへのリダイレクト
-  /^http:\/\/localhost:\d+\/callback$/,
-  /^http:\/\/127\.0\.0\.1:\d+\/callback$/,
+  /^http:\/\/localhost:\d+\/auth\/callback$/,
+  /^http:\/\/127\.0\.0\.1:\d+\/auth\/callback$/,
 ];
 
 /**

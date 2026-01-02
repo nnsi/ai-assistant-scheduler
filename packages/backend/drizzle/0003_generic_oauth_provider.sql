@@ -2,16 +2,33 @@
 -- Created at: 2026-01-01
 -- Description: Replace google_id with generic provider + provider_id columns
 
--- Step 1: Add new columns
-ALTER TABLE `users` ADD COLUMN `provider` text;
-ALTER TABLE `users` ADD COLUMN `provider_id` text;
+-- Disable foreign key checks during migration
+PRAGMA foreign_keys = OFF;
 
--- Step 2: Migrate existing google_id data
-UPDATE `users` SET `provider` = 'google', `provider_id` = `google_id` WHERE `google_id` IS NOT NULL;
+-- Step 1: Create new users table without google_id
+CREATE TABLE `users_new` (
+  `id` text PRIMARY KEY NOT NULL,
+  `email` text NOT NULL UNIQUE,
+  `name` text NOT NULL,
+  `picture` text,
+  `provider` text NOT NULL,
+  `provider_id` text NOT NULL,
+  `created_at` text NOT NULL,
+  `updated_at` text NOT NULL
+);
 
--- Step 3: Create index on provider + provider_id for fast OAuth lookup
-CREATE INDEX IF NOT EXISTS `idx_users_provider_id` ON `users` (`provider`, `provider_id`);
+-- Step 2: Migrate existing data (google_id -> provider_id)
+INSERT INTO `users_new` (`id`, `email`, `name`, `picture`, `provider`, `provider_id`, `created_at`, `updated_at`)
+SELECT `id`, `email`, `name`, `picture`, 'google', `google_id`, `created_at`, `updated_at`
+FROM `users`;
 
--- Note: SQLite doesn't support dropping columns in older versions
--- The google_id column will remain but should not be used
--- In production, consider recreating the table without google_id if needed
+-- Step 3: Drop old table and rename new one
+DROP TABLE `users`;
+ALTER TABLE `users_new` RENAME TO `users`;
+
+-- Step 4: Recreate indexes
+CREATE UNIQUE INDEX `idx_users_email` ON `users` (`email`);
+CREATE INDEX `idx_users_provider_id` ON `users` (`provider`, `provider_id`);
+
+-- Re-enable foreign key checks
+PRAGMA foreign_keys = ON;
