@@ -20,6 +20,181 @@
 
 ---
 
+## 手動操作が必要な項目（コードで自動化できないもの）
+
+以下はユーザー自身が外部サービスやダッシュボードで操作・設定する必要がある項目です。
+
+### 🔴 Critical（デプロイ前必須）
+
+#### 1. Google Cloud Console での OAuth 設定
+```
+1. https://console.cloud.google.com/ にアクセス
+2. プロジェクトを作成または選択
+3. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuthクライアントID」
+4. アプリケーションの種類：「ウェブアプリケーション」
+5. 承認済みの JavaScript 生成元：本番フロントエンドURL（例：https://your-app.pages.dev）
+6. 承認済みのリダイレクトURI：本番フロントエンドのコールバックURL
+7. クライアントID と クライアントシークレット をメモ
+```
+**取得するもの:**
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+
+#### 2. OpenRouter API キー取得
+```
+1. https://openrouter.ai/ にアクセス
+2. アカウント作成・ログイン
+3. 「API Keys」→「Create Key」
+4. キーをメモ（sk-or-v1-... 形式）
+```
+**取得するもの:**
+- `OPENROUTER_API_KEY`
+
+#### 3. JWT シークレット生成
+```bash
+# ターミナルで実行
+openssl rand -base64 32
+```
+**取得するもの:**
+- `JWT_SECRET`（32文字以上の乱数文字列）
+
+#### 4. Cloudflare D1 データベース作成
+```bash
+# Cloudflare にログイン後
+wrangler d1 create ai-scheduler-db-prod
+
+# 出力されるDatabase IDをメモ
+# 例: database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```
+**取得するもの:**
+- D1 Database ID（`wrangler.toml` の `[env.production]` に設定）
+
+#### 5. 本番環境シークレット登録
+```bash
+# 以下を順番に実行し、プロンプトに従って値を入力
+wrangler secret put GOOGLE_CLIENT_ID --env production
+wrangler secret put GOOGLE_CLIENT_SECRET --env production
+wrangler secret put JWT_SECRET --env production
+wrangler secret put OPENROUTER_API_KEY --env production
+```
+
+#### 6. GitHub Actions Secrets 設定
+```
+1. GitHub リポジトリ → Settings → Secrets and variables → Actions
+2. 以下を追加:
+   - CLOUDFLARE_API_TOKEN: Cloudflare API トークン（Workers デプロイ用）
+   - CLOUDFLARE_ACCOUNT_ID: Cloudflare アカウントID
+```
+
+---
+
+### 🟠 High（リリース前推奨）
+
+#### 7. GitHub Branch Protection 設定
+```
+1. GitHub リポジトリ → Settings → Branches
+2. 「Add branch protection rule」
+3. Branch name pattern: main
+4. 以下をチェック:
+   - Require a pull request before merging
+   - Require status checks to pass before merging
+     - test, typecheck, build を追加
+   - Require branches to be up to date before merging
+```
+
+#### 8. エラートラッキングサービス登録（Sentry 推奨）
+```
+1. https://sentry.io/ でアカウント作成
+2. プロジェクト作成（JavaScript / Node.js）
+3. DSN をメモ
+4. wrangler secret put SENTRY_DSN --env production
+```
+**取得するもの:**
+- `SENTRY_DSN`
+
+#### 9. 本番ドメイン設定（Cloudflare Pages/Workers）
+```
+1. Cloudflare ダッシュボード → Workers & Pages
+2. プロジェクト選択 → Custom Domains
+3. 独自ドメインを追加（DNS設定が必要）
+```
+
+---
+
+### 🟡 Medium（リリース後対応可）
+
+#### 10. GitHub Secret Scanning 有効化
+```
+1. GitHub リポジトリ → Settings → Code security and analysis
+2. 「Secret scanning」を Enable
+3. 「Push protection」を Enable（推奨）
+```
+
+#### 11. Cloudflare Cache Rules 設定
+```
+1. Cloudflare ダッシュボード → Rules → Cache Rules
+2. 新規ルール作成
+3. 条件: URI Path starts with /api/schedules
+4. キャッシュ設定: Cache Everything, TTL 5分
+```
+
+#### 12. アラート設定（Slack/Discord 通知）
+```
+Sentry の場合:
+1. Settings → Integrations → Slack/Discord
+2. Alert Rules でエラー率閾値を設定
+```
+
+---
+
+### 📝 ドキュメント作成（ユーザーが記述）
+
+以下のドキュメントはサービス固有の内容を含むため、ユーザー自身で作成が必要です：
+
+| ドキュメント | 内容 | テンプレート参考 |
+|-------------|------|-----------------|
+| **プライバシーポリシー** | 収集データ、利用目的、第三者提供 | [プライバシーポリシージェネレーター](https://www.freeprivacypolicy.com/) |
+| **利用規約** | サービス条件、免責事項、禁止行為 | [利用規約ジェネレーター](https://www.termsofservicegenerator.net/) |
+| **インシデント対応プロセス** | エスカレーションフロー、連絡先 | 社内テンプレート |
+
+---
+
+### チェックリスト形式
+
+```
+□ Google Cloud Console
+  □ OAuth クライアントID取得
+  □ OAuth クライアントシークレット取得
+  □ 本番リダイレクトURI設定
+
+□ OpenRouter
+  □ APIキー取得
+
+□ ローカル
+  □ JWT_SECRET 生成（openssl rand -base64 32）
+
+□ Cloudflare
+  □ D1 本番データベース作成
+  □ wrangler secret put（4つのシークレット）
+  □ 本番ドメイン設定（任意）
+  □ Cache Rules 設定
+
+□ GitHub
+  □ Actions Secrets 設定（CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID）
+  □ Branch Protection 設定
+  □ Secret Scanning 有効化
+
+□ エラートラッキング（Sentry等）
+  □ アカウント作成
+  □ DSN 取得・設定
+
+□ ドキュメント
+  □ プライバシーポリシー作成
+  □ 利用規約作成
+```
+
+---
+
 ## 1. セキュリティ
 
 ### 🔴 Critical
