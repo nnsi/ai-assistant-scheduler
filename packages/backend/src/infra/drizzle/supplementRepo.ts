@@ -3,6 +3,7 @@ import type { Database } from "./client";
 import { scheduleSupplements, type SupplementRow } from "./schema";
 import type { SupplementRepo } from "../../domain/infra/supplementRepo";
 import type { Supplement } from "../../domain/model/supplement";
+import { logger } from "../../shared/logger";
 
 export const createSupplementRepo = (db: Database): SupplementRepo => ({
   findByScheduleId: async (scheduleId) => {
@@ -38,7 +39,7 @@ const safeParseJsonArray = (jsonString: string | null): string[] => {
     const parsed = JSON.parse(jsonString);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    console.error("Failed to parse keywords JSON:", jsonString);
+    logger.warn("Failed to parse keywords JSON", { category: "database", jsonString });
     return [];
   }
 };

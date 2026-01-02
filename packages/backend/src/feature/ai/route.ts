@@ -9,12 +9,14 @@ import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { authMiddleware } from "../../middleware/auth";
+import { aiRateLimitMiddleware } from "../../middleware/rateLimit";
 
 type Bindings = {
   DB: D1Database;
   OPENROUTER_API_KEY: string;
   USE_MOCK_AI?: string;
   JWT_SECRET: string;
+  RATE_LIMIT_KV?: KVNamespace;
 };
 
 type Variables = {
@@ -31,6 +33,9 @@ const app = new Hono<{
 
 // 認証ミドルウェアを適用（AIルートは認証必須）
 app.use("*", authMiddleware);
+
+// レート制限ミドルウェアを適用（1時間あたり10リクエスト）
+app.use("*", aiRateLimitMiddleware);
 
 // ミドルウェアでDIを解決
 app.use("*", async (c, next) => {

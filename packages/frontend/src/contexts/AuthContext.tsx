@@ -14,6 +14,7 @@ import {
   updateProfileResponseSchema,
   type User,
 } from "@ai-scheduler/shared";
+import { logger } from "../lib/logger";
 
 type AuthContextType = {
   user: User | null;
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refreshToken);
         return result.data.accessToken;
       } catch (error) {
-        console.error("Token refresh failed:", error);
+        logger.error("Token refresh failed", { category: "auth" }, error);
         return null;
       } finally {
         refreshPromiseRef.current = null;
@@ -157,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (error) {
-        console.error("Token verification failed:", error);
+        logger.error("Token verification failed", { category: "auth" }, error);
       } finally {
         setIsLoading(false);
       }

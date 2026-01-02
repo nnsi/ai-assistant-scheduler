@@ -51,3 +51,13 @@ export const createConflictError = (message: string): AppError => ({
   code: "CONFLICT",
   message,
 });
+
+export const createTooManyRequestsError = (message?: string): AppError => ({
+  code: "TOO_MANY_REQUESTS",
+  message: message || "リクエスト数が上限を超えました",
+});
+
+export const createInvalidRedirectUriError = (message?: string): AppError => ({
+  code: "INVALID_REDIRECT_URI",
+  message: message || "無効なリダイレクトURIです",
+});

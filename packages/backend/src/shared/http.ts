@@ -13,6 +13,10 @@ export const getStatusCode = (code: ErrorCode): ContentfulStatusCode => {
       return 403;
     case "CONFLICT":
       return 409;
+    case "TOO_MANY_REQUESTS":
+      return 429;
+    case "INVALID_REDIRECT_URI":
+      return 400;
     case "AI_ERROR":
       return 502;
     case "DATABASE_ERROR":

@@ -3,6 +3,7 @@ import { Modal } from "@/components/common/Modal";
 import { ScheduleDetail } from "./ScheduleDetail";
 import { Loader2 } from "lucide-react";
 import * as api from "@/lib/api";
+import { logger } from "@/lib/logger";
 import type { Schedule, ScheduleWithSupplement } from "@ai-scheduler/shared";
 
 type SchedulePopupProps = {
@@ -33,7 +34,7 @@ export const SchedulePopup = ({
       api
         .fetchScheduleById(schedule.id)
         .then(setFullSchedule)
-        .catch(console.error)
+        .catch((error) => logger.error("Failed to fetch schedule", { category: "api", scheduleId: schedule.id }, error))
         .finally(() => setIsLoading(false));
     } else {
       setFullSchedule(null);
@@ -48,7 +49,7 @@ export const SchedulePopup = ({
       onDelete(schedule.id);
       onClose();
     } catch (error) {
-      console.error("Failed to delete schedule:", error);
+      logger.error("Failed to delete schedule", { category: "api", scheduleId: schedule.id }, error);
     } finally {
       setIsDeleting(false);
     }
@@ -63,7 +64,7 @@ export const SchedulePopup = ({
       const updated = await api.fetchScheduleById(schedule.id);
       setFullSchedule(updated);
     } catch (error) {
-      console.error("Failed to save memo:", error);
+      logger.error("Failed to save memo", { category: "api", scheduleId: schedule.id }, error);
     } finally {
       setIsSavingMemo(false);
     }

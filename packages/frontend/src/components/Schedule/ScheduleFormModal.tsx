@@ -5,6 +5,7 @@ import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
 import { SearchResults } from "@/components/AI/SearchResults";
 import { useAI } from "@/hooks/useAI";
 import * as api from "@/lib/api";
+import { logger } from "@/lib/logger";
 import type { Schedule, CreateScheduleInput } from "@ai-scheduler/shared";
 
 type Step = "form" | "keywords" | "results";
@@ -46,7 +47,7 @@ export const ScheduleFormModal = ({
       await suggestKeywords(data.title, data.startAt);
       setStep("keywords");
     } catch (error) {
-      console.error("Failed to get keyword suggestions:", error);
+      logger.error("Failed to get keyword suggestions", { category: "ai", title: data.title }, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -70,7 +71,7 @@ export const ScheduleFormModal = ({
       onScheduleCreated(schedule);
       handleClose();
     } catch (error) {
-      console.error("Failed to create schedule:", error);
+      logger.error("Failed to create schedule (skip)", { category: "api" }, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +91,7 @@ export const ScheduleFormModal = ({
       onScheduleCreated(schedule);
       handleClose();
     } catch (error) {
-      console.error("Failed to create schedule:", error);
+      logger.error("Failed to create schedule", { category: "api" }, error);
     } finally {
       setIsSubmitting(false);
     }

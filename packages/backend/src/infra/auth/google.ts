@@ -1,6 +1,7 @@
 import type { OAuthProvider, OAuthUserInfo } from "./oauth";
 import type { Result } from "../../shared/result";
 import { createInternalError, type AppError } from "../../shared/errors";
+import { logger } from "../../shared/logger";
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -45,7 +46,7 @@ export const createGoogleAuthService = (
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Google token exchange failed:", errorText);
+        logger.error("Google token exchange failed", { category: "oauth", responseBody: errorText });
         return {
           ok: false,
           error: createInternalError("Googleトークン取得に失敗しました"),
@@ -55,7 +56,7 @@ export const createGoogleAuthService = (
       const data = (await response.json()) as GoogleTokenResponse;
       return { ok: true, value: data.access_token };
     } catch (error) {
-      console.error("Google token exchange error:", error);
+      logger.error("Google token exchange error", { category: "oauth" }, error);
       return {
         ok: false,
         error: createInternalError("Googleトークン取得中にエラーが発生しました"),
@@ -78,7 +79,8 @@ export const createGoogleAuthService = (
       );
 
       if (!response.ok) {
-        console.error("Google user info fetch failed:", await response.text());
+        const errorText = await response.text();
+        logger.error("Google user info fetch failed", { category: "oauth", responseBody: errorText });
         return {
           ok: false,
           error: createInternalError("Googleユーザー情報の取得に失敗しました"),
@@ -105,7 +107,7 @@ export const createGoogleAuthService = (
         },
       };
     } catch (error) {
-      console.error("Google user info error:", error);
+      logger.error("Google user info error", { category: "oauth" }, error);
       return {
         ok: false,
         error: createInternalError(
