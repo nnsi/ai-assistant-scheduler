@@ -34,7 +34,8 @@ describe("useAI", () => {
 
       expect(api.suggestKeywords).toHaveBeenCalledWith(
         "会議タイトル",
-        "2025-01-15T10:00:00"
+        "2025-01-15T10:00:00",
+        undefined // excludeKeywords
       );
       expect(result.current.keywords).toEqual(mockKeywords);
       expect(returnedKeywords).toEqual(mockKeywords);
