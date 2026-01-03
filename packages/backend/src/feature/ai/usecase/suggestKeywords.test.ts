@@ -38,7 +38,8 @@ describe("suggestKeywordsUseCase", () => {
     expect(mockAiService.suggestKeywords).toHaveBeenCalledWith(
       "都内 レストラン 新宿",
       "2025-01-10T12:00:00+09:00",
-      undefined
+      undefined,
+      undefined // excludeKeywords
     );
   });
 
