@@ -59,7 +59,7 @@ export const createMockAiService = (): AiService => ({
     } satisfies KeywordSuggestion;
   },
 
-  searchWithKeywords: async (title, startAt, keywords, agentTypes) => {
+  searchWithKeywords: async (title, _startAt, keywords, agentTypes) => {
     // モックの遅延をシミュレート
     await new Promise((resolve) => setTimeout(resolve, 1000));
 

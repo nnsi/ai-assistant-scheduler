@@ -1,10 +1,6 @@
 import type { Agent } from "@mastra/core/agent";
 import type { AgentType } from "@ai-scheduler/shared";
-import type {
-  AiService,
-  UserConditions,
-  KeywordSuggestion,
-} from "../../domain/infra/aiService";
+import type { AiService, UserConditions } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
 
 // ユーザー条件からプロンプト用の文字列を生成（検索用）
