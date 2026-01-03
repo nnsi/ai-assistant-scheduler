@@ -5,6 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+// OAuth stateパラメータ用のキー（再認証用）
+export const OAUTH_RECONNECT_STATE_KEY = "oauth_reconnect_state";
+
 type ProfileSettingsModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -12,6 +15,10 @@ type ProfileSettingsModalProps = {
 
 // Google OAuth URLを生成（再認証用）
 const getGoogleReconnectUrl = () => {
+  // CSRF対策: stateパラメータを生成してsessionStorageに保存
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(OAUTH_RECONNECT_STATE_KEY, state);
+
   const redirectUri = `${window.location.origin}/auth/reconnect-callback`;
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
@@ -20,6 +27,7 @@ const getGoogleReconnectUrl = () => {
     scope: "email profile",
     access_type: "offline",
     prompt: "consent",
+    state: state,
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 };

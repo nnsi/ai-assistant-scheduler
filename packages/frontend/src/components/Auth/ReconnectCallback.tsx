@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { OAUTH_RECONNECT_STATE_KEY } from "./ProfileSettingsModal";
 
 const REDIRECT_URI = `${window.location.origin}/auth/reconnect-callback`;
 
@@ -17,10 +18,20 @@ export function ReconnectCallback() {
 
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
+      const returnedState = params.get("state");
       const errorParam = params.get("error");
 
       if (errorParam) {
         window.location.href = `/?error=${encodeURIComponent(errorParam)}`;
+        return;
+      }
+
+      // CSRF対策: stateパラメータの検証
+      const savedState = sessionStorage.getItem(OAUTH_RECONNECT_STATE_KEY);
+      sessionStorage.removeItem(OAUTH_RECONNECT_STATE_KEY);
+
+      if (!returnedState || returnedState !== savedState) {
+        window.location.href = "/?error=不正なリクエストです";
         return;
       }
 

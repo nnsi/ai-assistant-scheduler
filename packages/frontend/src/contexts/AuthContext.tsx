@@ -15,6 +15,7 @@ import {
   type User,
 } from "@ai-scheduler/shared";
 import { logger } from "../lib/logger";
+import { setApiAccessToken, setTokenRefreshCallback } from "../lib/api";
 
 // Cookie版ログインレスポンス（リフレッシュトークンなし、HttpOnly Cookieで設定済み）
 const loginResponseSchema = z.object({
@@ -63,6 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
+  // アクセストークンが変更されたらapi.tsに反映
+  useEffect(() => {
+    setApiAccessToken(accessToken);
+  }, [accessToken]);
+
   // リフレッシュトークン（HttpOnly Cookie）を使ってアクセストークンを更新
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     // 既にリフレッシュ中の場合は既存のPromiseを返す
@@ -103,6 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return refreshPromiseRef.current;
   }, []);
+
+  // リフレッシュコールバックをapi.tsに設定
+  useEffect(() => {
+    setTokenRefreshCallback(refreshAccessToken);
+    return () => {
+      setTokenRefreshCallback(null);
+    };
+  }, [refreshAccessToken]);
 
   // 初回マウント時にリフレッシュトークン（Cookie）でアクセストークンを取得
   useEffect(() => {
