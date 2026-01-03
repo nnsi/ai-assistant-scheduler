@@ -1,3 +1,4 @@
+import type { AgentType } from "@ai-scheduler/shared";
 import type { AiService, UserConditions } from "../../../domain/infra/aiService";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import { type Result, ok, err } from "../../../shared/result";
@@ -11,7 +12,8 @@ export const createSearchWithKeywordsUseCase = (
     userId: string,
     title: string,
     startAt: string,
-    keywords: string[]
+    keywords: string[],
+    agentTypes?: AgentType[]
   ): Promise<Result<string>> => {
     try {
       // ユーザーのプロファイルを取得
@@ -32,6 +34,7 @@ export const createSearchWithKeywordsUseCase = (
         title,
         startAt,
         keywords,
+        agentTypes ?? ["search"],
         userConditions
       );
       return ok(aiResult);
