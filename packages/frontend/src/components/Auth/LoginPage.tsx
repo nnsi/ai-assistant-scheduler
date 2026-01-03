@@ -5,8 +5,15 @@ import { Button } from "@/components/common/Button";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
+// OAuth stateパラメータ用のキー
+const OAUTH_STATE_KEY = "oauth_state";
+
 // Google OAuth URLを生成
 const getGoogleOAuthUrl = () => {
+  // CSRF対策: stateパラメータを生成してsessionStorageに保存
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(OAUTH_STATE_KEY, state);
+
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: REDIRECT_URI,
@@ -14,6 +21,7 @@ const getGoogleOAuthUrl = () => {
     scope: "email profile",
     access_type: "offline",
     prompt: "consent",
+    state: state,
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 };

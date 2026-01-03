@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { apiRoutes } from "./route";
 
 type Bindings = {
@@ -13,6 +14,20 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// 開発環境で許可するlocalhostポート
+const ALLOWED_DEV_PORTS = [5173, 3000, 6006];
+
+// セキュリティヘッダーの設定
+app.use(
+  "*",
+  secureHeaders({
+    xFrameOptions: "DENY",
+    xContentTypeOptions: "nosniff",
+    strictTransportSecurity: "max-age=31536000; includeSubDomains",
+    referrerPolicy: "strict-origin-when-cross-origin",
+  })
+);
+
 // CORS設定
 app.use(
   "*",
@@ -23,9 +38,15 @@ app.use(
       if (!origin || origin === frontendUrl) {
         return frontendUrl;
       }
-      // 開発環境では localhost を許可
+      // 開発環境では許可されたlocalhostポートのみ許可
       if (origin.startsWith("http://localhost:")) {
-        return origin;
+        const portMatch = origin.match(/:(\d+)$/);
+        if (portMatch) {
+          const port = parseInt(portMatch[1], 10);
+          if (ALLOWED_DEV_PORTS.includes(port)) {
+            return origin;
+          }
+        }
       }
       return null;
     },
