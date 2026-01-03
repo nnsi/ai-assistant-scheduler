@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import {
   googleAuthCallbackSchema,
-  refreshTokenSchema,
-  logoutSchema,
   updateEmailSchema,
   reconnectGoogleSchema,
 } from "@ai-scheduler/shared";
@@ -21,6 +20,7 @@ import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
 import { createValidationError, createUnauthorizedError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { validateRedirectUri } from "../../shared/redirectUri";
+import { authRateLimitMiddleware } from "../../middleware/rateLimit";
 
 type Bindings = {
   DB: D1Database;
@@ -28,7 +28,13 @@ type Bindings = {
   GOOGLE_CLIENT_SECRET: string;
   JWT_SECRET: string;
   ALLOWED_REDIRECT_URIS?: string;
+  RATE_LIMIT_KV?: KVNamespace;
+  FRONTEND_URL?: string;
 };
+
+// リフレッシュトークン用Cookie設定
+const REFRESH_TOKEN_COOKIE = "refresh_token";
+const REFRESH_TOKEN_MAX_AGE = 30 * 24 * 60 * 60; // 30日
 
 type Variables = {
   googleAuth: ReturnType<typeof createOAuthAuthUseCase>;
@@ -70,6 +76,11 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+// 認証エンドポイントにレート制限を適用
+app.post("/google", authRateLimitMiddleware);
+app.post("/refresh", authRateLimitMiddleware);
+app.post("/logout", authRateLimitMiddleware);
+
 export const authRoute = app
   // POST /auth/google - Google OAuth コールバック処理
   .post(
@@ -94,7 +105,21 @@ export const authRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json(result.value, 200);
+      // リフレッシュトークンをHttpOnly Cookieで設定
+      const isProduction = c.env.FRONTEND_URL?.startsWith("https://");
+      setCookie(c, REFRESH_TOKEN_COOKIE, result.value.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "Strict",
+        path: "/api/auth",
+        maxAge: REFRESH_TOKEN_MAX_AGE,
+      });
+
+      // レスポンスにはアクセストークンとユーザー情報のみ返す（リフレッシュトークンは除外）
+      return c.json({
+        accessToken: result.value.accessToken,
+        user: result.value.user,
+      }, 200);
     }
   )
   // GET /auth/me - 現在のユーザー情報を取得
@@ -122,43 +147,76 @@ export const authRoute = app
     return c.json({ user: result.value }, 200);
   })
   // POST /auth/refresh - トークンリフレッシュ
-  .post(
-    "/refresh",
-    zValidator("json", refreshTokenSchema, (result, c) => {
-      if (!result.success) {
-        return c.json(createValidationError(result.error), 400);
-      }
-    }),
-    async (c) => {
-      const { refreshToken } = c.req.valid("json");
-      const result = await c.get("refreshToken")(refreshToken);
+  .post("/refresh", async (c) => {
+    // Cookieまたはリクエストボディからリフレッシュトークンを取得（後方互換性のため両方サポート）
+    let refreshToken = getCookie(c, REFRESH_TOKEN_COOKIE);
 
-      if (!result.ok) {
-        return c.json(result.error, getStatusCode(result.error.code));
+    // Cookieにない場合はリクエストボディを確認（後方互換性）
+    if (!refreshToken) {
+      try {
+        const body = await c.req.json();
+        if (body && typeof body.refreshToken === "string") {
+          refreshToken = body.refreshToken;
+        }
+      } catch {
+        // JSONパースエラーは無視
       }
-
-      return c.json(result.value, 200);
     }
-  )
+
+    if (!refreshToken) {
+      return c.json(createUnauthorizedError("リフレッシュトークンがありません"), 401);
+    }
+
+    const result = await c.get("refreshToken")(refreshToken);
+
+    if (!result.ok) {
+      // リフレッシュに失敗した場合はCookieを削除
+      deleteCookie(c, REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
+
+    // 新しいリフレッシュトークンをHttpOnly Cookieで設定
+    const isProduction = c.env.FRONTEND_URL?.startsWith("https://");
+    setCookie(c, REFRESH_TOKEN_COOKIE, result.value.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "Strict",
+      path: "/api/auth",
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    // レスポンスにはアクセストークンのみ返す
+    return c.json({
+      accessToken: result.value.accessToken,
+    }, 200);
+  })
   // POST /auth/logout - ログアウト（リフレッシュトークンを無効化）
-  .post(
-    "/logout",
-    zValidator("json", logoutSchema, (result, c) => {
-      if (!result.success) {
-        return c.json(createValidationError(result.error), 400);
-      }
-    }),
-    async (c) => {
-      const { refreshToken } = c.req.valid("json");
-      const result = await c.get("logout")(refreshToken);
+  .post("/logout", async (c) => {
+    // Cookieまたはリクエストボディからリフレッシュトークンを取得
+    let refreshToken = getCookie(c, REFRESH_TOKEN_COOKIE);
 
-      if (!result.ok) {
-        return c.json(result.error, getStatusCode(result.error.code));
+    // Cookieにない場合はリクエストボディを確認（後方互換性）
+    if (!refreshToken) {
+      try {
+        const body = await c.req.json();
+        if (body && typeof body.refreshToken === "string") {
+          refreshToken = body.refreshToken;
+        }
+      } catch {
+        // JSONパースエラーは無視
       }
-
-      return c.json(result.value, 200);
     }
-  )
+
+    // リフレッシュトークンがある場合のみサーバーで無効化
+    if (refreshToken) {
+      await c.get("logout")(refreshToken);
+    }
+
+    // Cookieを削除（リフレッシュトークンの有無に関わらず）
+    deleteCookie(c, REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+
+    return c.json({ message: "ログアウトしました" }, 200);
+  })
   // PUT /auth/email - メールアドレス更新
   .put(
     "/email",

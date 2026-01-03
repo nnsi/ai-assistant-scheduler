@@ -19,8 +19,8 @@ migrations_dir = "drizzle"
 FRONTEND_URL = "http://localhost:5173"
 # モックAIを使用する場合は "true"（開発時のデフォルト）
 USE_MOCK_AI = "true"
-# ローカル開発用（本番では wrangler secret put で設定）
-JWT_SECRET = "dev-jwt-secret-change-in-production"
+# JWT_SECRET は .dev.vars で設定（セキュリティのため wrangler.toml には含めない）
+# 本番では wrangler secret put JWT_SECRET で設定
 
 # ============================================
 # ステージング環境設定 (masterブランチ → stg)

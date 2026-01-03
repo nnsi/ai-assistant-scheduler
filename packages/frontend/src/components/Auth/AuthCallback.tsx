@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
+const OAUTH_STATE_KEY = "oauth_state";
 
 export function AuthCallback() {
   const { login } = useAuth();
@@ -12,10 +13,21 @@ export function AuthCallback() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       const errorParam = params.get("error");
+      const returnedState = params.get("state");
 
       if (errorParam) {
         // エラーがある場合はログインページにリダイレクト
+        sessionStorage.removeItem(OAUTH_STATE_KEY);
         window.location.href = `/?error=${encodeURIComponent(errorParam)}`;
+        return;
+      }
+
+      // CSRF対策: stateパラメータの検証
+      const savedState = sessionStorage.getItem(OAUTH_STATE_KEY);
+      sessionStorage.removeItem(OAUTH_STATE_KEY);
+
+      if (!returnedState || returnedState !== savedState) {
+        window.location.href = "/?error=不正なリクエストです";
         return;
       }
 

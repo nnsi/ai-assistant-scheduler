@@ -7,14 +7,25 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { z } from "zod";
 import {
-  authResponseSchema,
-  tokenResponseSchema,
+  userSchema,
   meResponseSchema,
   updateProfileResponseSchema,
   type User,
 } from "@ai-scheduler/shared";
 import { logger } from "../lib/logger";
+
+// Cookie版ログインレスポンス（リフレッシュトークンなし、HttpOnly Cookieで設定済み）
+const loginResponseSchema = z.object({
+  accessToken: z.string(),
+  user: userSchema,
+});
+
+// Cookie版リフレッシュレスポンス（アクセストークンのみ、リフレッシュトークンはCookieで更新済み）
+const refreshResponseSchema = z.object({
+  accessToken: z.string(),
+});
 
 type AuthContextType = {
   user: User | null;
@@ -22,7 +33,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (code: string, redirectUri: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
   updateEmail: (email: string) => Promise<void>;
   reconnectGoogle: (code: string, redirectUri: string) => Promise<void>;
@@ -30,8 +41,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const ACCESS_TOKEN_KEY = "auth_access_token";
-const REFRESH_TOKEN_KEY = "auth_refresh_token";
+// ユーザー情報のキャッシュ用（オプション）
 const USER_KEY = "auth_user";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
@@ -48,38 +58,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
-  const [accessToken, setAccessToken] = useState<string | null>(() => {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-  });
+  // アクセストークンはメモリのみで管理（XSS対策）
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
-  // リフレッシュトークンを使ってアクセストークンを更新
+  // リフレッシュトークン（HttpOnly Cookie）を使ってアクセストークンを更新
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     // 既にリフレッシュ中の場合は既存のPromiseを返す
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
 
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!refreshToken) {
-      return null;
-    }
-
     refreshPromiseRef.current = (async () => {
       try {
+        // リフレッシュトークンはHttpOnly Cookieで自動送信される
         const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refreshToken }),
+          credentials: "include", // Cookieを送信
         });
 
         if (!res.ok) {
           // リフレッシュトークンが無効な場合はログアウト
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
-          localStorage.removeItem(REFRESH_TOKEN_KEY);
           localStorage.removeItem(USER_KEY);
           setAccessToken(null);
           setUser(null);
@@ -87,13 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const json: unknown = await res.json();
-        const result = tokenResponseSchema.safeParse(json);
+        const result = refreshResponseSchema.safeParse(json);
         if (!result.success) {
           return null;
         }
         setAccessToken(result.data.accessToken);
-        localStorage.setItem(ACCESS_TOKEN_KEY, result.data.accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refreshToken);
         return result.data.accessToken;
       } catch (error) {
         logger.error("Token refresh failed", { category: "auth" }, error);
@@ -106,65 +104,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return refreshPromiseRef.current;
   }, []);
 
-  // 初回マウント時にトークンを検証
+  // 初回マウント時にリフレッシュトークン（Cookie）でアクセストークンを取得
   useEffect(() => {
-    const verifyToken = async () => {
-      if (!accessToken) {
-        // アクセストークンがない場合、リフレッシュを試みる
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (refreshToken) {
-          const newToken = await refreshAccessToken();
-          if (newToken) {
-            setIsLoading(false);
-            return;
-          }
-        }
-        setIsLoading(false);
-        return;
-      }
-
+    const initializeAuth = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        // リフレッシュトークン（Cookie）でアクセストークンを取得
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          // アクセストークン取得成功、ユーザー情報を取得
+          const res = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${newToken}`,
+            },
+          });
 
-        if (res.ok) {
-          const json: unknown = await res.json();
-          const result = meResponseSchema.safeParse(json);
-          if (result.success) {
-            setUser(result.data.user);
-            localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
-          }
-        } else if (res.status === 401) {
-          // アクセストークンが期限切れの場合、リフレッシュを試みる
-          const newToken = await refreshAccessToken();
-          if (newToken) {
-            // リフレッシュ成功、再度ユーザー情報を取得
-            const retryRes = await fetch(`${API_BASE_URL}/auth/me`, {
-              headers: {
-                Authorization: `Bearer ${newToken}`,
-              },
-            });
-            if (retryRes.ok) {
-              const retryJson: unknown = await retryRes.json();
-              const retryResult = meResponseSchema.safeParse(retryJson);
-              if (retryResult.success) {
-                setUser(retryResult.data.user);
-                localStorage.setItem(USER_KEY, JSON.stringify(retryResult.data.user));
-              }
+          if (res.ok) {
+            const json: unknown = await res.json();
+            const result = meResponseSchema.safeParse(json);
+            if (result.success) {
+              setUser(result.data.user);
+              localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
             }
           }
+        } else {
+          // リフレッシュ失敗時はキャッシュされたユーザー情報をクリア
+          localStorage.removeItem(USER_KEY);
+          setUser(null);
         }
       } catch (error) {
-        logger.error("Token verification failed", { category: "auth" }, error);
+        logger.error("Auth initialization failed", { category: "auth" }, error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    verifyToken();
+    initializeAuth();
   }, []); // 初回のみ実行
 
   const login = useCallback(async (code: string, redirectUri: string) => {
@@ -175,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Cookieを受け取る
         body: JSON.stringify({ code, redirectUri }),
       });
 
@@ -191,31 +166,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const json: unknown = await res.json();
-      const result = authResponseSchema.safeParse(json);
+      const result = loginResponseSchema.safeParse(json);
       if (!result.success) {
         throw new Error("レスポンスの形式が不正です");
       }
+      // アクセストークンはメモリのみ、リフレッシュトークンはHttpOnly Cookieで保存済み
       setAccessToken(result.data.accessToken);
       setUser(result.data.user);
-      localStorage.setItem(ACCESS_TOKEN_KEY, result.data.accessToken);
-      localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refreshToken);
       localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setAccessToken(null);
-    setUser(null);
+  const logout = useCallback(async () => {
+    try {
+      // サーバーにログアウトを通知（リフレッシュトークンを無効化 + Cookieを削除）
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include", // Cookieを送信
+      });
+    } catch (error) {
+      logger.error("Logout API call failed", { category: "auth" }, error);
+    } finally {
+      // ローカルの状態をクリア
+      localStorage.removeItem(USER_KEY);
+      setAccessToken(null);
+      setUser(null);
+    }
   }, []);
 
   const updateEmail = useCallback(async (email: string) => {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (!token) {
+    if (!accessToken) {
       throw new Error("認証が必要です");
     }
 
@@ -223,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ email }),
     });
@@ -247,11 +229,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(result.data.user);
     localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
-  }, []);
+  }, [accessToken]);
 
   const reconnectGoogle = useCallback(async (code: string, redirectUri: string) => {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (!token) {
+    if (!accessToken) {
       throw new Error("認証が必要です");
     }
 
@@ -259,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ code, redirectUri }),
     });
@@ -283,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(result.data.user);
     localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
-  }, []);
+  }, [accessToken]);
 
   return (
     <AuthContext.Provider
