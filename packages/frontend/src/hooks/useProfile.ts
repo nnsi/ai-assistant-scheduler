@@ -1,42 +1,42 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import type { UserProfile, UpdateProfileConditionsRequest } from "@ai-scheduler/shared";
 
-export const useProfile = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+const PROFILE_QUERY_KEY = ["profile", "conditions"];
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await api.fetchProfileConditions();
-      setProfile(data);
-    } catch (e) {
-      setError(e as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+type UseProfileOptions = {
+  enabled?: boolean;
+};
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+export const useProfile = (options: UseProfileOptions = {}) => {
+  const { enabled = true } = options;
+  const queryClient = useQueryClient();
+
+  const { data: profile = null, isLoading, error, refetch } = useQuery({
+    queryKey: PROFILE_QUERY_KEY,
+    queryFn: api.fetchProfileConditions,
+    enabled,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (updates: UpdateProfileConditionsRequest) =>
+      api.updateProfileConditions(updates),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<UserProfile>(PROFILE_QUERY_KEY, updated);
+    },
+  });
 
   const updateConditions = async (
     updates: UpdateProfileConditionsRequest
   ): Promise<UserProfile> => {
-    const updated = await api.updateProfileConditions(updates);
-    setProfile(updated);
-    return updated;
+    return updateMutation.mutateAsync(updates);
   };
 
   return {
     profile,
     isLoading,
-    error,
+    error: error as Error | null,
     updateConditions,
-    refetch: fetchProfile,
+    refetch,
   };
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
@@ -7,9 +7,16 @@ const OAUTH_STATE_KEY = "oauth_state";
 export function AuthCallback() {
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     const handleCallback = async () => {
+      // React Strict Modeでの二重実行を防止
+      if (isProcessingRef.current) {
+        return;
+      }
+      isProcessingRef.current = true;
+
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       const errorParam = params.get("error");

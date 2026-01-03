@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/common/Modal";
 import { ScheduleDetail } from "./ScheduleDetail";
 import { Loader2 } from "lucide-react";
@@ -21,25 +22,29 @@ export const SchedulePopup = ({
   onEdit,
   onDelete,
 }: SchedulePopupProps) => {
-  const [fullSchedule, setFullSchedule] = useState<ScheduleWithSupplement | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isSavingMemo, setIsSavingMemo] = useState(false);
 
-  useEffect(() => {
-    if (schedule && isOpen) {
-      setIsLoading(true);
-      api
-        .fetchScheduleById(schedule.id)
-        .then(setFullSchedule)
-        .catch((error) => logger.error("Failed to fetch schedule", { category: "api", scheduleId: schedule.id }, error))
-        .finally(() => setIsLoading(false));
-    } else {
-      setFullSchedule(null);
-    }
-  }, [schedule, isOpen]);
+  const scheduleId = schedule?.id;
+  const queryKey = ["schedule", scheduleId];
+
+  const { data: fullSchedule, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => api.fetchScheduleById(scheduleId!),
+    enabled: !!scheduleId && isOpen,
+  });
+
+  const memoMutation = useMutation({
+    mutationFn: (memo: string) => api.updateMemo(scheduleId!, memo),
+    onSuccess: async () => {
+      // 補足情報を再取得
+      const updated = await api.fetchScheduleById(scheduleId!);
+      queryClient.setQueryData<ScheduleWithSupplement>(queryKey, updated);
+    },
+    onError: (error) => {
+      logger.error("Failed to save memo", { category: "api", scheduleId }, error);
+    },
+  });
 
   const handleDelete = async () => {
     if (!schedule) return;
@@ -57,17 +62,7 @@ export const SchedulePopup = ({
 
   const handleMemoSave = async (memo: string) => {
     if (!schedule) return;
-    setIsSavingMemo(true);
-    try {
-      await api.updateMemo(schedule.id, memo);
-      // 補足情報を再取得
-      const updated = await api.fetchScheduleById(schedule.id);
-      setFullSchedule(updated);
-    } catch (error) {
-      logger.error("Failed to save memo", { category: "api", scheduleId: schedule.id }, error);
-    } finally {
-      setIsSavingMemo(false);
-    }
+    await memoMutation.mutateAsync(memo);
   };
 
   return (
@@ -83,7 +78,7 @@ export const SchedulePopup = ({
           onDelete={handleDelete}
           onMemoSave={handleMemoSave}
           isDeleting={isDeleting}
-          isSavingMemo={isSavingMemo}
+          isSavingMemo={memoMutation.isPending}
         />
       ) : null}
     </Modal>

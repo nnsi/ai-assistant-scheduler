@@ -40,7 +40,7 @@ const ConditionField = ({
 );
 
 export const ConditionsModal = ({ isOpen, onClose }: ConditionsModalProps) => {
-  const { profile, isLoading, error, updateConditions } = useProfile();
+  const { profile, isLoading, error, updateConditions } = useProfile({ enabled: isOpen });
   const [requiredConditions, setRequiredConditions] = useState("");
   const [preferredConditions, setPreferredConditions] = useState("");
   const [subjectiveConditions, setSubjectiveConditions] = useState("");

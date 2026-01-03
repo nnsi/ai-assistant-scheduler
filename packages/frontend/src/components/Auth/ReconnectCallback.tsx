@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { OAUTH_RECONNECT_STATE_KEY } from "./ProfileSettingsModal";
 
@@ -7,9 +7,16 @@ const REDIRECT_URI = `${window.location.origin}/auth/reconnect-callback`;
 export function ReconnectCallback() {
   const { reconnectGoogle, isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     const handleCallback = async () => {
+      // React Strict Modeでの二重実行を防止
+      if (isProcessingRef.current) {
+        return;
+      }
+      isProcessingRef.current = true;
+
       // 認証されていない場合はログインページにリダイレクト
       if (!isAuthenticated) {
         window.location.href = "/?error=認証が必要です";

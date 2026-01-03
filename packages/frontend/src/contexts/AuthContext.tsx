@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+  const isInitializedRef = useRef(false);
 
   // アクセストークンが変更されたらapi.tsに反映
   useEffect(() => {
@@ -121,6 +122,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 初回マウント時にリフレッシュトークン（Cookie）でアクセストークンを取得
   useEffect(() => {
     const initializeAuth = async () => {
+      // React Strict Modeでの二重実行を防止
+      if (isInitializedRef.current) {
+        return;
+      }
+      isInitializedRef.current = true;
+
       try {
         // リフレッシュトークン（Cookie）でアクセストークンを取得
         const newToken = await refreshAccessToken();
