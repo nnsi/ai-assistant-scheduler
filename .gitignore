@@ -7,3 +7,6 @@ dist
 # Playwright test artifacts
 playwright-report/
 test-results/
+
+*storybook.log
+storybook-static
