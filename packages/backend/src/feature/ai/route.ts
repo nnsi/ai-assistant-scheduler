@@ -70,8 +70,8 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt } = c.req.valid("json");
-      const result = await c.get("suggestKeywords")(userId, title, startAt);
+      const { title, startAt, excludeKeywords } = c.req.valid("json");
+      const result = await c.get("suggestKeywords")(userId, title, startAt, excludeKeywords);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));

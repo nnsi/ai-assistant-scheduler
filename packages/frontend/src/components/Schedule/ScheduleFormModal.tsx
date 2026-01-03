@@ -35,6 +35,7 @@ export const ScheduleFormModal = ({
     isLoadingKeywords,
     isLoadingSearch,
     suggestKeywords,
+    regenerateKeywords,
     search,
     reset,
   } = useAI();
@@ -69,6 +70,16 @@ export const ScheduleFormModal = ({
     setSelectedKeywords(keywords);
     await search(formData.title, formData.startAt, keywords);
     setStep("results");
+  };
+
+  const handleRegenerate = async () => {
+    if (!formData) return;
+
+    try {
+      await regenerateKeywords(formData.title, formData.startAt);
+    } catch (error) {
+      logger.error("Failed to regenerate keywords", { category: "ai", title: formData.title }, error);
+    }
   };
 
   const handleSkip = async () => {
@@ -147,6 +158,7 @@ export const ScheduleFormModal = ({
           hasConditions={hasConditions}
           onSelect={handleKeywordSelect}
           onSkip={handleSkip}
+          onRegenerate={handleRegenerate}
         />
       )}
       {step === "results" && (

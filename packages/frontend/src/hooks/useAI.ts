@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import * as api from "@/lib/api";
 
 export const useAI = () => {
@@ -7,15 +7,18 @@ export const useAI = () => {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchResult, setSearchResult] = useState<string>("");
   const [error, setError] = useState<Error | null>(null);
+  // 除外済みキーワードの履歴（再生成用）
+  const excludedKeywordsRef = useRef<string[]>([]);
 
   const suggestKeywords = async (
     title: string,
-    startAt: string
+    startAt: string,
+    excludeKeywords?: string[]
   ): Promise<string[]> => {
     setIsLoadingKeywords(true);
     setError(null);
     try {
-      const result = await api.suggestKeywords(title, startAt);
+      const result = await api.suggestKeywords(title, startAt, excludeKeywords);
       setKeywords(result);
       return result;
     } catch (e) {
@@ -25,6 +28,16 @@ export const useAI = () => {
     } finally {
       setIsLoadingKeywords(false);
     }
+  };
+
+  // キーワードを再生成（現在のキーワードを除外して新しいものを取得）
+  const regenerateKeywords = async (
+    title: string,
+    startAt: string
+  ): Promise<string[]> => {
+    // 現在のキーワードを除外リストに追加
+    excludedKeywordsRef.current = [...excludedKeywordsRef.current, ...keywords];
+    return suggestKeywords(title, startAt, excludedKeywordsRef.current);
   };
 
   const search = async (
@@ -51,6 +64,7 @@ export const useAI = () => {
     setKeywords([]);
     setSearchResult("");
     setError(null);
+    excludedKeywordsRef.current = [];
   };
 
   return {
@@ -60,6 +74,7 @@ export const useAI = () => {
     searchResult,
     error,
     suggestKeywords,
+    regenerateKeywords,
     search,
     reset,
   };

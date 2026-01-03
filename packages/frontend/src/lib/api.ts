@@ -234,10 +234,11 @@ export const deleteSchedule = async (id: string): Promise<void> => {
 // AI API
 export const suggestKeywords = async (
   title: string,
-  startAt: string
+  startAt: string,
+  excludeKeywords?: string[]
 ): Promise<string[]> => {
   const res = await client.ai["suggest-keywords"].$post({
-    json: { title, startAt },
+    json: { title, startAt, excludeKeywords },
   });
 
   const data = await handleResponse(res, keywordsResponseSchema);

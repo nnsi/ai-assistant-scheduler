@@ -10,7 +10,8 @@ export type AiService = {
   suggestKeywords: (
     title: string,
     startAt: string,
-    userConditions?: UserConditions
+    userConditions?: UserConditions,
+    excludeKeywords?: string[]
   ) => Promise<string[]>;
   searchWithKeywords: (
     title: string,

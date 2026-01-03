@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
 
@@ -9,6 +9,7 @@ type KeywordSuggestionsProps = {
   hasConditions?: boolean;
   onSelect: (keywords: string[]) => void;
   onSkip: () => void;
+  onRegenerate?: () => void;
 };
 
 export const KeywordSuggestions = ({
@@ -17,6 +18,7 @@ export const KeywordSuggestions = ({
   hasConditions = false,
   onSelect,
   onSkip,
+  onRegenerate,
 }: KeywordSuggestionsProps) => {
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set()
@@ -76,6 +78,16 @@ export const KeywordSuggestions = ({
           );
         })}
       </div>
+
+      {onRegenerate && (
+        <button
+          onClick={onRegenerate}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          別のキーワードを提案してもらう
+        </button>
+      )}
 
       {hasConditions && selectedKeywords.size === 0 && (
         <p className="text-xs text-primary-600">

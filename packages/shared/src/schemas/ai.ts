@@ -4,6 +4,7 @@ import { z } from "zod";
 export const suggestKeywordsInputSchema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
   startAt: z.string().datetime({ offset: true, message: "有効な日時形式で入力してください" }),
+  excludeKeywords: z.array(z.string()).optional(), // 再生成時に除外するキーワード
 });
 
 export type SuggestKeywordsInput = z.infer<typeof suggestKeywordsInputSchema>;

@@ -10,7 +10,8 @@ export const createSuggestKeywordsUseCase = (
   return async (
     userId: string,
     title: string,
-    startAt: string
+    startAt: string,
+    excludeKeywords?: string[]
   ): Promise<Result<string[]>> => {
     try {
       // ユーザーのプロファイルを取得
@@ -29,7 +30,8 @@ export const createSuggestKeywordsUseCase = (
       const keywords = await aiService.suggestKeywords(
         title,
         startAt,
-        userConditions
+        userConditions,
+        excludeKeywords
       );
       return ok(keywords);
     } catch (error) {

@@ -28,28 +28,47 @@ const buildConditionsPrompt = (userConditions?: UserConditions): string => {
 };
 
 // ユーザー条件から除外キーワードのプロンプトを生成（キーワード提案用）
-const buildExclusionPrompt = (userConditions?: UserConditions): string => {
-  if (!userConditions) return "";
+const buildExclusionPrompt = (
+  userConditions?: UserConditions,
+  excludeKeywords?: string[]
+): string => {
+  const parts: string[] = [];
 
-  const allConditions = [
-    userConditions.required,
-    userConditions.preferred,
-    userConditions.subjective,
-  ]
-    .filter((c) => c.trim())
-    .join("、");
+  // こだわり条件からの除外
+  if (userConditions) {
+    const allConditions = [
+      userConditions.required,
+      userConditions.preferred,
+      userConditions.subjective,
+    ]
+      .filter((c) => c.trim())
+      .join("、");
 
-  if (!allConditions) return "";
+    if (allConditions) {
+      parts.push(
+        `以下はユーザーが既に設定済みの「こだわり条件」なので、キーワードとして提案しないこと:\n${allConditions}`
+      );
+    }
+  }
 
-  return `\n\n【除外】以下はユーザーが既に設定済みの「こだわり条件」なので、キーワードとして提案しないこと:\n${allConditions}`;
+  // 前回提案済みキーワードからの除外（再生成時）
+  if (excludeKeywords && excludeKeywords.length > 0) {
+    parts.push(
+      `以下は既に提案済みのキーワードなので、同じものや類似のものは提案しないこと:\n${excludeKeywords.join("、")}`
+    );
+  }
+
+  if (parts.length === 0) return "";
+
+  return `\n\n【除外】\n${parts.join("\n\n")}`;
 };
 
 export const createAiService = (
   keywordAgent: Agent,
   searchAgent: Agent
 ): AiService => ({
-  suggestKeywords: async (title, startAt, userConditions) => {
-    const exclusionPrompt = buildExclusionPrompt(userConditions);
+  suggestKeywords: async (title, startAt, userConditions, excludeKeywords) => {
+    const exclusionPrompt = buildExclusionPrompt(userConditions, excludeKeywords);
 
     const result = await keywordAgent.generate([
       {
