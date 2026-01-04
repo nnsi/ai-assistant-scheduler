@@ -1,3 +1,4 @@
+import type { Shop } from "@ai-scheduler/shared";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import { createSupplement } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
@@ -7,13 +8,15 @@ export const createSaveSupplementUseCase = (supplementRepo: SupplementRepo) => {
   return async (
     scheduleId: string,
     keywords: string[],
-    aiResult: string
+    aiResult: string,
+    shopCandidates?: Shop[]
   ): Promise<Result<void>> => {
     try {
       const supplement = createSupplement({
         scheduleId,
         keywords,
         aiResult,
+        shopCandidates,
       });
       await supplementRepo.save(supplement);
       return ok(undefined);

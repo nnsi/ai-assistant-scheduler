@@ -23,6 +23,8 @@ describe("getScheduleByIdUseCase", () => {
     scheduleId: "1",
     keywords: ["キーワード1", "キーワード2"],
     aiResult: "AI検索結果",
+    shopCandidates: null,
+    selectedShop: null,
     userMemo: null,
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",

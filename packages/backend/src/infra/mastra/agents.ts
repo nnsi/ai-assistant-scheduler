@@ -146,9 +146,13 @@ export const createSearchAgent = (apiKey: string) => {
   2. 予約サイト/食べログ等の店舗個別ページ
   3. Googleマップの店舗ページ
 
-## 出力フォーマット（Markdown）: 比較できる形で短く
+## 出力フォーマット
 
-### 候補（最大5件・必須条件クリアのみ）
+必ず以下の2つのセクションを出力してください：
+
+### 1. Markdown形式の説明
+
+#### 候補（最大5件・必須条件クリアのみ）
 
 各候補は次のテンプレを厳守：
 
@@ -162,10 +166,39 @@ export const createSearchAgent = (apiKey: string) => {
   - 重視ポイント: ✅/△/—（口コミ等の根拠URLがあれば付ける）
 - リンク: [公式](URL) / [予約](URL) / [食べログ](URL) / [Googleマップ](URL)
 
-### ひとこと（任意）
+#### ひとこと（任意）
 候補の選び方の前提（例: 必須条件が厳しいため候補が少ない等）を1〜2行だけ。
 
-情報が見つからない場合は正直に「条件を満たし、かつ営業日が確定できる店舗が見つかりませんでした」と結論を出してください。`,
+情報が見つからない場合は正直に「条件を満たし、かつ営業日が確定できる店舗が見つかりませんでした」と結論を出してください。
+
+### 2. JSON形式の構造化データ
+
+Markdown説明の後に、必ず以下のJSON形式で店舗リストを出力してください：
+
+\`\`\`json:shops
+[
+  {
+    "name": "店舗名",
+    "summary": "一言説明",
+    "businessHours": "営業時間",
+    "closedDays": "定休日",
+    "address": "住所（わかる場合）",
+    "urls": {
+      "official": "公式サイトURL",
+      "reservation": "予約サイトURL",
+      "tabelog": "食べログURL",
+      "googleMap": "GoogleマップURL"
+    },
+    "conditionChecks": {
+      "required": "必須条件の判定結果",
+      "preferred": "優先条件の判定結果",
+      "subjective": "重視ポイントの判定結果"
+    }
+  }
+]
+\`\`\`
+
+**重要**: JSONブロックは \`\`\`json:shops で始めてください。URLがない場合はそのフィールドを省略してください。`,
     model: openrouter("google/gemini-2.5-flash:online"),
   });
 };

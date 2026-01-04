@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import type { ShopList } from "@ai-scheduler/shared";
 import * as api from "@/lib/api";
 
 export const useAI = () => {
@@ -6,6 +7,7 @@ export const useAI = () => {
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchResult, setSearchResult] = useState<string>("");
+  const [shopCandidates, setShopCandidates] = useState<ShopList | undefined>(undefined);
   const [error, setError] = useState<Error | null>(null);
   // 除外済みキーワードの履歴（再生成用）
   const excludedKeywordsRef = useRef<string[]>([]);
@@ -44,17 +46,18 @@ export const useAI = () => {
     title: string,
     startAt: string,
     selectedKeywords: string[]
-  ): Promise<string> => {
+  ): Promise<api.SearchResult | null> => {
     setIsLoadingSearch(true);
     setError(null);
     try {
       const result = await api.searchWithKeywords(title, startAt, selectedKeywords);
-      setSearchResult(result);
+      setSearchResult(result.result);
+      setShopCandidates(result.shopCandidates);
       return result;
     } catch (e) {
       const error = e instanceof Error ? e : new Error(String(e));
       setError(error);
-      return "";
+      return null;
     } finally {
       setIsLoadingSearch(false);
     }
@@ -65,17 +68,18 @@ export const useAI = () => {
     title: string,
     startAt: string,
     selectedKeywords: string[]
-  ): Promise<string> => {
+  ): Promise<api.SearchResult | null> => {
     setIsLoadingSearch(true);
     setError(null);
     try {
       const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords);
-      setSearchResult(result);
+      setSearchResult(result.result);
+      setShopCandidates(result.shopCandidates);
       return result;
     } catch (e) {
       const error = e instanceof Error ? e : new Error(String(e));
       setError(error);
-      return "";
+      return null;
     } finally {
       setIsLoadingSearch(false);
     }
@@ -84,6 +88,7 @@ export const useAI = () => {
   const reset = () => {
     setKeywords([]);
     setSearchResult("");
+    setShopCandidates(undefined);
     setError(null);
     excludedKeywordsRef.current = [];
   };
@@ -93,6 +98,7 @@ export const useAI = () => {
     isLoadingSearch,
     keywords,
     searchResult,
+    shopCandidates,
     error,
     suggestKeywords,
     regenerateKeywords,

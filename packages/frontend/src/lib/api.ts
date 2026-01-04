@@ -5,12 +5,15 @@ import {
   scheduleWithSupplementSchema,
   apiErrorSchema,
   profileResponseSchema,
+  shopListSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
   type UpdateScheduleInput,
   type UserProfile,
   type UpdateProfileConditionsRequest,
+  type Shop,
+  type ShopList,
 } from "@ai-scheduler/shared";
 import { z } from "zod";
 
@@ -79,7 +82,10 @@ const client = hc<ApiRoutes>(API_BASE_URL, {
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
 const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
-const searchResponseSchema = z.object({ result: z.string() });
+const searchResponseSchema = z.object({
+  result: z.string(),
+  shopCandidates: shopListSchema.optional(),
+});
 
 // エラーレスポンスをパースしてスロー
 async function handleErrorResponse(res: Response): Promise<never> {
@@ -202,17 +208,21 @@ export const suggestKeywords = async (
   return data.keywords;
 };
 
+export type SearchResult = {
+  result: string;
+  shopCandidates?: ShopList;
+};
+
 export const searchWithKeywords = async (
   title: string,
   startAt: string,
   keywords: string[]
-): Promise<string> => {
+): Promise<SearchResult> => {
   const res = await client.ai.search.$post({
     json: { title, startAt, keywords },
   });
 
-  const data = await handleResponse(res, searchResponseSchema);
-  return data.result;
+  return handleResponse(res, searchResponseSchema);
 };
 
 export const searchAndSave = async (
@@ -220,13 +230,25 @@ export const searchAndSave = async (
   title: string,
   startAt: string,
   keywords: string[]
-): Promise<string> => {
+): Promise<SearchResult> => {
   const res = await client.ai["search-and-save"].$post({
     json: { scheduleId, title, startAt, keywords },
   });
 
-  const data = await handleResponse(res, searchResponseSchema);
-  return data.result;
+  return handleResponse(res, searchResponseSchema);
+};
+
+// お店選択API
+export const selectShop = async (
+  scheduleId: string,
+  shop: Shop
+): Promise<void> => {
+  const res = await client.supplements[":scheduleId"]["selected-shop"].$put({
+    param: { scheduleId },
+    json: { shop },
+  });
+
+  await handleVoidResponse(res);
 };
 
 // Supplement API

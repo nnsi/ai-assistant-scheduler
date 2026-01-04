@@ -1,7 +1,41 @@
 import type { Agent } from "@mastra/core/agent";
-import type { AgentType } from "@ai-scheduler/shared";
-import type { AiService, UserConditions } from "../../domain/infra/aiService";
+import type { AgentType, Shop } from "@ai-scheduler/shared";
+import { shopListSchema } from "@ai-scheduler/shared";
+import type { AiService, UserConditions, SearchResult } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
+
+// SearchAgentの出力からJSONブロックをパースする
+const parseShopCandidates = (text: string): Shop[] | undefined => {
+  // ```json:shops ... ``` ブロックを探す
+  const jsonMatch = text.match(/```json:shops\s*([\s\S]*?)```/);
+  if (!jsonMatch) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(jsonMatch[1].trim());
+    const result = shopListSchema.safeParse(parsed);
+    if (result.success) {
+      return result.data;
+    }
+    logger.warn("Failed to validate shop candidates", {
+      category: "ai",
+      error: result.error.message,
+    });
+    return undefined;
+  } catch (e) {
+    logger.warn("Failed to parse shop candidates JSON", {
+      category: "ai",
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return undefined;
+  }
+};
+
+// Markdown出力からJSONブロックを除去する
+const removeJsonBlock = (text: string): string => {
+  return text.replace(/```json:shops[\s\S]*?```/g, "").trim();
+};
 
 // ユーザー条件からプロンプト用の文字列を生成（検索用）
 const buildConditionsPrompt = (userConditions?: UserConditions): string => {
@@ -160,7 +194,7 @@ export const createAiService = (
     keywords,
     agentTypes,
     userConditions
-  ) => {
+  ): Promise<SearchResult> => {
     const conditionsPrompt = buildConditionsPrompt(userConditions);
 
     // デフォルトは search
@@ -168,7 +202,7 @@ export const createAiService = (
       agentTypes.length > 0 ? sortAgentTypes(agentTypes) : ["search"] as AgentType[];
 
     // 各エージェントを順番に実行
-    const results: { type: AgentType; content: string }[] = [];
+    const results: { type: AgentType; content: string; shopCandidates?: Shop[] }[] = [];
 
     for (const agentType of typesToUse) {
       const agent = agents[agentType];
@@ -185,17 +219,37 @@ export const createAiService = (
         },
       ]);
 
-      results.push({ type: agentType, content: result.text });
+      // SearchAgentの場合はJSONブロックをパース
+      if (agentType === "search") {
+        const shopCandidates = parseShopCandidates(result.text);
+        const cleanedContent = removeJsonBlock(result.text);
+        results.push({ type: agentType, content: cleanedContent, shopCandidates });
+      } else {
+        results.push({ type: agentType, content: result.text });
+      }
     }
+
+    // お店候補を収集（SearchAgentの結果から）
+    const allShopCandidates = results
+      .filter((r) => r.shopCandidates)
+      .flatMap((r) => r.shopCandidates!);
 
     // 複数エージェントの結果をマージ
     if (results.length === 1) {
-      return results[0].content;
+      return {
+        result: results[0].content,
+        shopCandidates: allShopCandidates.length > 0 ? allShopCandidates : undefined,
+      };
     }
 
     // セクションタイトル付きでマージ
-    return results
+    const mergedResult = results
       .map(({ type, content }) => `## ${getAgentSectionTitle(type)}\n\n${content}`)
       .join("\n\n---\n\n");
+
+    return {
+      result: mergedResult,
+      shopCandidates: allShopCandidates.length > 0 ? allShopCandidates : undefined,
+    };
   },
 });

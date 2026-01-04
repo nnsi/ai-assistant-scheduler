@@ -7,7 +7,7 @@ import { useAI } from "@/hooks/useAI";
 import { useProfile } from "@/hooks/useProfile";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
-import type { Schedule, CreateScheduleInput } from "@ai-scheduler/shared";
+import type { Schedule, CreateScheduleInput, Shop } from "@ai-scheduler/shared";
 
 type Step = "form" | "keywords" | "results";
 
@@ -33,6 +33,7 @@ export const ScheduleFormModal = ({
   const {
     keywords,
     searchResult,
+    shopCandidates,
     isLoadingKeywords,
     isLoadingSearch,
     suggestKeywords,
@@ -40,6 +41,7 @@ export const ScheduleFormModal = ({
     searchAndSave,
     reset,
   } = useAI();
+  const [isSelectingShop, setIsSelectingShop] = useState(false);
 
   const { profile } = useProfile();
 
@@ -93,6 +95,19 @@ export const ScheduleFormModal = ({
   const handleSkip = () => {
     // スケジュールは既に保存済みなので、モーダルを閉じるだけ
     handleClose();
+  };
+
+  const handleSelectShop = async (shop: Shop) => {
+    if (!createdSchedule) return;
+
+    setIsSelectingShop(true);
+    try {
+      await api.selectShop(createdSchedule.id, shop);
+    } catch (error) {
+      logger.error("Failed to select shop", { category: "api", shopName: shop.name }, error);
+    } finally {
+      setIsSelectingShop(false);
+    }
   };
 
   const handleCloseResult = () => {
@@ -153,9 +168,12 @@ export const ScheduleFormModal = ({
       {step === "results" && (
         <SearchResults
           result={searchResult}
+          shopCandidates={shopCandidates}
           isLoading={isLoadingSearch}
+          isSelectingShop={isSelectingShop}
           onClose={handleCloseResult}
           onBack={handleBack}
+          onSelectShop={handleSelectShop}
         />
       )}
     </Modal>

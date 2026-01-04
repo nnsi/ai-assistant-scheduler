@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shopSchema, shopListSchema } from "./shop";
 
 // 入力スキーマ
 export const createScheduleInputSchema = z
@@ -52,6 +53,8 @@ export const scheduleWithSupplementSchema = scheduleSchema.extend({
       id: z.string(),
       keywords: z.array(z.string()),
       aiResult: z.string().nullable(),
+      shopCandidates: shopListSchema.nullable(),
+      selectedShop: shopSchema.nullable(),
       userMemo: z.string().nullable(),
     })
     .nullable(),

@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { updateMemoInputSchema } from "@ai-scheduler/shared";
+import { updateMemoInputSchema, selectShopInputSchema } from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createUpdateMemoUseCase } from "./usecase/updateMemo";
+import { createSelectShopUseCase } from "./usecase/selectShop";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { authMiddleware } from "../../middleware/auth";
@@ -16,6 +17,7 @@ type Bindings = {
 
 type Variables = {
   updateMemo: ReturnType<typeof createUpdateMemoUseCase>;
+  selectShop: ReturnType<typeof createSelectShopUseCase>;
   userId: string;
   userEmail: string;
 };
@@ -35,6 +37,7 @@ app.use("*", async (c, next) => {
   const scheduleRepo = createScheduleRepo(db);
 
   c.set("updateMemo", createUpdateMemoUseCase(supplementRepo, scheduleRepo));
+  c.set("selectShop", createSelectShopUseCase(supplementRepo, scheduleRepo));
 
   await next();
 });
@@ -59,5 +62,26 @@ export const supplementRoute = app
       }
 
       return c.json(result.value, 200);
+    }
+  )
+  // PUT /supplements/:scheduleId/selected-shop
+  .put(
+    "/:scheduleId/selected-shop",
+    zValidator("json", selectShopInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const scheduleId = c.req.param("scheduleId");
+      const { shop } = c.req.valid("json");
+      const userId = c.get("userId");
+      const result = await c.get("selectShop")(scheduleId, shop, userId);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.body(null, 204);
     }
   );

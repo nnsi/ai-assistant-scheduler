@@ -1,5 +1,5 @@
-import type { AgentType } from "@ai-scheduler/shared";
-import type { AiService, KeywordSuggestion } from "../../domain/infra/aiService";
+import type { AgentType, Shop } from "@ai-scheduler/shared";
+import type { AiService, KeywordSuggestion, SearchResult } from "../../domain/infra/aiService";
 
 export const createMockAiService = (): AiService => ({
   suggestKeywords: async (title, _startAt, _userConditions, excludeKeywords) => {
@@ -59,7 +59,7 @@ export const createMockAiService = (): AiService => ({
     } satisfies KeywordSuggestion;
   },
 
-  searchWithKeywords: async (title, _startAt, keywords, agentTypes) => {
+  searchWithKeywords: async (title, _startAt, keywords, agentTypes): Promise<SearchResult> => {
     // モックの遅延をシミュレート
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -68,6 +68,7 @@ export const createMockAiService = (): AiService => ({
 
     // エージェントタイプごとにモックレスポンスを生成
     const responses: string[] = [];
+    let shopCandidates: Shop[] | undefined;
 
     for (const agentType of typesToUse) {
       switch (agentType) {
@@ -112,9 +113,50 @@ ${keywordList}
   - 優先条件: ✅
 - リンク: [公式](https://example.com) / [食べログ](https://tabelog.com)
 
+**店舗B（モック）**
+- 一言: もう一つの候補店舗です
+- 指定日の営業: ◯
+- 営業時間/定休日: 10:00-21:00（火曜定休）
+- 条件判定:
+  - 必須条件: ✅
+  - 優先条件: △
+- リンク: [公式](https://example.com) / [Googleマップ](https://maps.google.com)
+
 ### ひとこと
 
 これはモックレスポンスです。実際のAI検索結果はここに表示されます。`);
+
+          // モック用の店舗候補リスト
+          shopCandidates = [
+            {
+              name: "店舗A（モック）",
+              summary: "条件にマッチするモック店舗です",
+              businessHours: "11:00-22:00",
+              closedDays: "月曜定休",
+              urls: {
+                official: "https://example.com",
+                tabelog: "https://tabelog.com",
+              },
+              conditionChecks: {
+                required: "✅ すべて満たしています",
+                preferred: "✅ 該当します",
+              },
+            },
+            {
+              name: "店舗B（モック）",
+              summary: "もう一つの候補店舗です",
+              businessHours: "10:00-21:00",
+              closedDays: "火曜定休",
+              urls: {
+                official: "https://example.com",
+                googleMap: "https://maps.google.com",
+              },
+              conditionChecks: {
+                required: "✅ すべて満たしています",
+                preferred: "△ 一部のみ",
+              },
+            },
+          ];
           break;
 
         case "area-info":
@@ -142,10 +184,11 @@ ${keywordList}
     }
 
     // 複数の場合はセパレータで結合
-    if (responses.length === 1) {
-      return responses[0];
-    }
+    const result = responses.length === 1 ? responses[0] : responses.join("\n\n---\n\n");
 
-    return responses.join("\n\n---\n\n");
+    return {
+      result,
+      shopCandidates,
+    };
   },
 });

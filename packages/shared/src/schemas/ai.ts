@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shopListSchema } from "./shop";
 
 // エージェントタイプ
 export const agentTypeSchema = z.enum(["search", "plan", "area-info"]);
@@ -34,6 +35,7 @@ export type SearchInput = z.infer<typeof searchInputSchema>;
 // 検索レスポンス
 export const searchResponseSchema = z.object({
   result: z.string(),
+  shopCandidates: shopListSchema.optional(),
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;

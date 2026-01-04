@@ -121,7 +121,10 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ result: result.value }, 200);
+      return c.json({
+        result: result.value.result,
+        shopCandidates: result.value.shopCandidates,
+      }, 200);
     }
   )
   // POST /ai/search-and-save
@@ -148,6 +151,9 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ result: result.value }, 200);
+      return c.json({
+        result: result.value.result,
+        shopCandidates: result.value.shopCandidates,
+      }, 200);
     }
   );

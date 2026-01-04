@@ -30,6 +30,8 @@ export const scheduleSupplements = sqliteTable("schedule_supplements", {
     .references(() => schedules.id, { onDelete: "cascade" }),
   keywords: text("keywords"), // JSON array
   aiResult: text("ai_result"),
+  shopCandidates: text("shop_candidates"), // JSON array of shop objects
+  selectedShop: text("selected_shop"), // JSON object of selected shop
   userMemo: text("user_memo"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),

@@ -1,4 +1,4 @@
-import type { AgentType } from "@ai-scheduler/shared";
+import type { AgentType, Shop } from "@ai-scheduler/shared";
 
 // ユーザーのこだわり条件（シンプルな自由テキスト形式）
 export type UserConditions = {
@@ -11,6 +11,12 @@ export type UserConditions = {
 export type KeywordSuggestion = {
   keywords: string[];
   agentTypes: AgentType[];
+};
+
+// 検索結果
+export type SearchResult = {
+  result: string;
+  shopCandidates?: Shop[];
 };
 
 // AIサービス型定義
@@ -27,5 +33,5 @@ export type AiService = {
     keywords: string[],
     agentTypes: AgentType[],
     userConditions?: UserConditions
-  ) => Promise<string>;
+  ) => Promise<SearchResult>;
 };
