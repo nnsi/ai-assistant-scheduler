@@ -19,8 +19,8 @@ migrations_dir = "drizzle"
 FRONTEND_URL = "http://localhost:5173"
 # モックAIを使用する場合は "true"（開発時のデフォルト）
 USE_MOCK_AI = "true"
-# 開発環境認証バイパス: "true" でGoogle認証をスキップしてテストユーザーでログイン可能
-ENABLE_DEV_AUTH = "true"
+# 開発環境認証バイパス: ローカル開発時は .dev.vars で有効化
+ENABLE_DEV_AUTH = "false"
 # JWT_SECRET は .dev.vars で設定（セキュリティのため wrangler.toml には含めない）
 # 本番では wrangler secret put JWT_SECRET で設定
 

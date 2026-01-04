@@ -17,3 +17,6 @@ OPENROUTER_API_KEY=sk-or-v1-your-key
 # Set to "false" to use real AI (OpenRouter)
 # Set to "true" to use mock AI responses (development)
 USE_MOCK_AI=true
+
+# 開発環境認証バイパス: "true" でGoogle認証をスキップしてテストユーザーでログイン可能
+ENABLE_DEV_AUTH=true
