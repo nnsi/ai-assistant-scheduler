@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/common/Button";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
+const ENABLE_DEV_AUTH = import.meta.env.VITE_ENABLE_DEV_AUTH === "true";
 
 // OAuth stateパラメータ用のキー
 const OAUTH_STATE_KEY = "oauth_state";
@@ -27,8 +29,10 @@ const getGoogleOAuthUrl = () => {
 };
 
 export function LoginPage() {
-  const { isLoading } = useAuth();
+  const { isLoading, devLogin } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [isDevLoading, setIsDevLoading] = useState(false);
 
   // URLパラメータからエラーを取得
   useEffect(() => {
@@ -47,6 +51,19 @@ export function LoginPage() {
       return;
     }
     window.location.href = getGoogleOAuthUrl();
+  };
+
+  const handleDevLogin = async () => {
+    setIsDevLoading(true);
+    setError(null);
+    try {
+      await devLogin();
+      navigate("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "開発環境ログインに失敗しました");
+    } finally {
+      setIsDevLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -75,7 +92,7 @@ export function LoginPage() {
           </div>
         )}
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
           <Button
             onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-3"
@@ -100,6 +117,19 @@ export function LoginPage() {
             </svg>
             Googleでログイン
           </Button>
+
+          {ENABLE_DEV_AUTH && (
+            <Button
+              onClick={handleDevLogin}
+              disabled={isDevLoading}
+              className="w-full flex items-center justify-center gap-3 bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 py-3"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {isDevLoading ? "ログイン中..." : "開発環境ログイン"}
+            </Button>
+          )}
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
