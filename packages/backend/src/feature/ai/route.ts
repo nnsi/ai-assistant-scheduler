@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { suggestKeywordsInputSchema, searchInputSchema } from "@ai-scheduler/shared";
+import { suggestKeywordsInputSchema, searchInputSchema, searchAndSaveInputSchema } from "@ai-scheduler/shared";
 import {
   createKeywordAgent,
   createSearchAgent,
@@ -11,8 +11,11 @@ import { createAiService } from "../../infra/mastra/aiService";
 import { createMockAiService } from "../../infra/mock/aiService";
 import { createDb } from "../../infra/drizzle/client";
 import { createProfileRepo } from "../../infra/drizzle/profileRepo";
+import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
 import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
 import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
+import { createSaveSupplementUseCase } from "./usecase/saveSupplement";
+import { createSearchAndSaveUseCase } from "./usecase/searchAndSave";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { authMiddleware } from "../../middleware/auth";
@@ -29,6 +32,7 @@ type Bindings = {
 type Variables = {
   suggestKeywords: ReturnType<typeof createSuggestKeywordsUseCase>;
   searchWithKeywords: ReturnType<typeof createSearchWithKeywordsUseCase>;
+  searchAndSave: ReturnType<typeof createSearchAndSaveUseCase>;
   userId: string;
   userEmail: string;
 };
@@ -48,6 +52,7 @@ app.use("*", aiRateLimitMiddleware);
 app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const profileRepo = createProfileRepo(db);
+  const supplementRepo = createSupplementRepo(db);
 
   // USE_MOCK_AI が "true" の場合はモックを使用
   const useMock = c.env.USE_MOCK_AI === "true";
@@ -59,8 +64,12 @@ app.use("*", async (c, next) => {
         "area-info": createAreaInfoAgent(c.env.OPENROUTER_API_KEY),
       });
 
+  const searchWithKeywords = createSearchWithKeywordsUseCase(aiService, profileRepo);
+  const saveSupplement = createSaveSupplementUseCase(supplementRepo);
+
   c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService, profileRepo));
-  c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService, profileRepo));
+  c.set("searchWithKeywords", searchWithKeywords);
+  c.set("searchAndSave", createSearchAndSaveUseCase(searchWithKeywords, saveSupplement));
 
   await next();
 });
@@ -102,6 +111,33 @@ export const aiRoute = app
       const { title, startAt, keywords, agentTypes } = c.req.valid("json");
       const result = await c.get("searchWithKeywords")(
         userId,
+        title,
+        startAt,
+        keywords,
+        agentTypes
+      );
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json({ result: result.value }, 200);
+    }
+  )
+  // POST /ai/search-and-save
+  .post(
+    "/search-and-save",
+    zValidator("json", searchAndSaveInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const userId = c.get("userId");
+      const { scheduleId, title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const result = await c.get("searchAndSave")(
+        userId,
+        scheduleId,
         title,
         startAt,
         keywords,

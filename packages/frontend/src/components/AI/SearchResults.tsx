@@ -5,14 +5,14 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 type SearchResultsProps = {
   result: string;
   isLoading?: boolean;
-  onSave: () => void;
+  onClose: () => void;
   onBack: () => void;
 };
 
 export const SearchResults = ({
   result,
   isLoading = false,
-  onSave,
+  onClose,
   onBack,
 }: SearchResultsProps) => {
   if (isLoading) {
@@ -29,7 +29,7 @@ export const SearchResults = ({
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">検索結果</h3>
         <p className="text-xs text-gray-500 mb-4">
-          AIが関連情報を検索しました。この内容で保存しますか？
+          AIが関連情報を検索しました。この内容は自動的に保存されています。
         </p>
       </div>
 
@@ -41,7 +41,7 @@ export const SearchResults = ({
         <Button variant="secondary" onClick={onBack}>
           戻る
         </Button>
-        <Button onClick={onSave}>保存する</Button>
+        <Button onClick={onClose}>閉じる</Button>
       </div>
     </div>
   );

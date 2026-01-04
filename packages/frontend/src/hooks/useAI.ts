@@ -60,6 +60,27 @@ export const useAI = () => {
     }
   };
 
+  const searchAndSave = async (
+    scheduleId: string,
+    title: string,
+    startAt: string,
+    selectedKeywords: string[]
+  ): Promise<string> => {
+    setIsLoadingSearch(true);
+    setError(null);
+    try {
+      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords);
+      setSearchResult(result);
+      return result;
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(error);
+      return "";
+    } finally {
+      setIsLoadingSearch(false);
+    }
+  };
+
   const reset = () => {
     setKeywords([]);
     setSearchResult("");
@@ -76,6 +97,7 @@ export const useAI = () => {
     suggestKeywords,
     regenerateKeywords,
     search,
+    searchAndSave,
     reset,
   };
 };

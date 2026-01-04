@@ -26,7 +26,7 @@ export const ScheduleFormModal = ({
 }: ScheduleFormModalProps) => {
   const [step, setStep] = useState<Step>("form");
   const [formData, setFormData] = useState<CreateScheduleInput | null>(null);
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [createdSchedule, setCreatedSchedule] = useState<Schedule | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
@@ -37,7 +37,7 @@ export const ScheduleFormModal = ({
     isLoadingSearch,
     suggestKeywords,
     regenerateKeywords,
-    search,
+    searchAndSave,
     reset,
   } = useAI();
 
@@ -55,21 +55,25 @@ export const ScheduleFormModal = ({
     setIsSubmitting(true);
 
     try {
-      // キーワード提案を取得（スケジュールはまだ作成しない）
-      await suggestKeywords(data.title, data.startAt);
+      // スケジュールを即座に保存し、キーワード提案を並行取得
+      const [schedule] = await Promise.all([
+        api.createSchedule(data),
+        suggestKeywords(data.title, data.startAt),
+      ]);
+      setCreatedSchedule(schedule);
       setStep("keywords");
     } catch (error) {
-      logger.error("Failed to get keyword suggestions", { category: "ai", title: data.title }, error);
+      logger.error("Failed to create schedule or get keyword suggestions", { category: "api", title: data.title }, error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleKeywordSelect = async (keywords: string[]) => {
-    if (!formData) return;
+    if (!formData || !createdSchedule) return;
 
-    setSelectedKeywords(keywords);
-    await search(formData.title, formData.startAt, keywords);
+    // 検索＋保存を実行（結果が返り次第自動保存される）
+    await searchAndSave(createdSchedule.id, formData.title, formData.startAt, keywords);
     setStep("results");
   };
 
@@ -86,40 +90,14 @@ export const ScheduleFormModal = ({
     }
   };
 
-  const handleSkip = async () => {
-    if (!formData) return;
-
-    setIsSubmitting(true);
-    try {
-      // AI結果なしでスケジュールを作成
-      const schedule = await api.createSchedule(formData);
-      onScheduleCreated(schedule);
-      handleClose();
-    } catch (error) {
-      logger.error("Failed to create schedule (skip)", { category: "api" }, error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSkip = () => {
+    // スケジュールは既に保存済みなので、モーダルを閉じるだけ
+    handleClose();
   };
 
-  const handleSave = async () => {
-    if (!formData) return;
-
-    setIsSubmitting(true);
-    try {
-      // スケジュール＋AI結果を一緒に保存
-      const schedule = await api.createSchedule({
-        ...formData,
-        keywords: selectedKeywords,
-        aiResult: searchResult,
-      });
-      onScheduleCreated(schedule);
-      handleClose();
-    } catch (error) {
-      logger.error("Failed to create schedule", { category: "api" }, error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleCloseResult = () => {
+    // AI検索結果は既に保存済みなので、モーダルを閉じるだけ
+    handleClose();
   };
 
   const handleBack = () => {
@@ -127,9 +105,13 @@ export const ScheduleFormModal = ({
   };
 
   const handleClose = () => {
+    // スケジュールが作成されていれば通知（カレンダー更新のため）
+    if (createdSchedule) {
+      onScheduleCreated(createdSchedule);
+    }
     setStep("form");
     setFormData(null);
-    setSelectedKeywords([]);
+    setCreatedSchedule(null);
     setIsRegenerating(false);
     reset();
     onClose();
@@ -172,7 +154,7 @@ export const ScheduleFormModal = ({
         <SearchResults
           result={searchResult}
           isLoading={isLoadingSearch}
-          onSave={handleSave}
+          onClose={handleCloseResult}
           onBack={handleBack}
         />
       )}

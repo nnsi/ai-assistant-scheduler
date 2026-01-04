@@ -215,6 +215,20 @@ export const searchWithKeywords = async (
   return data.result;
 };
 
+export const searchAndSave = async (
+  scheduleId: string,
+  title: string,
+  startAt: string,
+  keywords: string[]
+): Promise<string> => {
+  const res = await client.ai["search-and-save"].$post({
+    json: { scheduleId, title, startAt, keywords },
+  });
+
+  const data = await handleResponse(res, searchResponseSchema);
+  return data.result;
+};
+
 // Supplement API
 export const updateMemo = async (
   scheduleId: string,

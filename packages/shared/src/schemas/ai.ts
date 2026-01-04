@@ -37,3 +37,14 @@ export const searchResponseSchema = z.object({
 });
 
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
+
+// 検索＋保存入力
+export const searchAndSaveInputSchema = z.object({
+  scheduleId: z.string().min(1, "スケジュールIDは必須です"),
+  title: z.string().min(1, "タイトルは必須です"),
+  startAt: z.string().datetime({ offset: true }),
+  keywords: z.array(z.string()),
+  agentTypes: z.array(agentTypeSchema).optional(),
+});
+
+export type SearchAndSaveInput = z.infer<typeof searchAndSaveInputSchema>;
