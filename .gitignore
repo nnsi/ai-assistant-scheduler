@@ -5,6 +5,7 @@ dist
 .dev.vars
 
 # Playwright test artifacts
+.playwright-mcp
 playwright-report/
 test-results/
 

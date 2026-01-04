@@ -49,7 +49,7 @@ export const Calendar = ({
         {weekDays.map((day, index) => (
           <div
             key={day}
-            className={`py-2 text-center text-sm font-medium ${
+            className={`py-1 sm:py-2 text-center text-xs sm:text-sm font-medium ${
               index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-gray-700"
             }`}
           >

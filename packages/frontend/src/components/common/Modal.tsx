@@ -66,8 +66,8 @@ export const Modal = ({
         >
           {/* Header */}
           {title && (
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 id="modal-title" className="text-lg font-semibold text-gray-900">{title}</h2>
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
+              <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-gray-900">{title}</h2>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-500"
@@ -78,7 +78,7 @@ export const Modal = ({
           )}
 
           {/* Body */}
-          <div className="px-6 py-4">{children}</div>
+          <div className="px-4 sm:px-6 py-3 sm:py-4">{children}</div>
         </div>
       </div>
     </div>

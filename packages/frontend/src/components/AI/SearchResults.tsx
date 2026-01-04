@@ -29,30 +29,30 @@ const ShopCard = ({
 }) => {
   return (
     <div
-      className={`border rounded-lg p-4 transition-all ${
+      className={`border rounded-lg p-3 sm:p-4 transition-all ${
         isSelected
           ? "border-primary-500 bg-primary-50"
           : "border-gray-200 hover:border-gray-300"
       }`}
     >
-      <div className="flex justify-between items-start gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 truncate">{shop.name}</h4>
+          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{shop.name}</h4>
           {shop.summary && (
-            <p className="text-sm text-gray-600 mt-1">{shop.summary}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{shop.summary}</p>
           )}
-          <div className="mt-2 space-y-1 text-sm text-gray-500">
+          <div className="mt-2 space-y-1 text-xs sm:text-sm text-gray-500">
             {shop.businessHours && (
               <div className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{shop.businessHours}</span>
-                {shop.closedDays && <span className="text-gray-400">（{shop.closedDays}）</span>}
+                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <span className="truncate">{shop.businessHours}</span>
+                {shop.closedDays && <span className="text-gray-400 hidden sm:inline">（{shop.closedDays}）</span>}
               </div>
             )}
             {shop.address && (
               <div className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>{shop.address}</span>
+                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <span className="truncate">{shop.address}</span>
               </div>
             )}
           </div>
@@ -96,7 +96,7 @@ const ShopCard = ({
           variant={isSelected ? "primary" : "secondary"}
           onClick={onSelect}
           disabled={isSelecting}
-          className="shrink-0"
+          className="shrink-0 w-full sm:w-auto"
         >
           {isSelecting ? (
             <Loader2 className="w-4 h-4 animate-spin" />

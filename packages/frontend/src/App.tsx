@@ -109,11 +109,11 @@ function MainApp() {
       )}
 
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">
-            AI Assistant Scheduler
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <h1 className="text-base sm:text-xl font-semibold text-gray-900">
+            AI Scheduler
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {user && (
               <>
                 <button
@@ -127,11 +127,11 @@ function MainApp() {
                       className="w-8 h-8 rounded-full"
                     />
                   )}
-                  <span className="text-sm text-gray-700">{user.name}</span>
+                  <span className="hidden sm:inline text-sm text-gray-700">{user.name}</span>
                 </button>
                 <button
                   onClick={logout}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-xs sm:text-sm text-gray-500 hover:text-gray-700"
                 >
                   ログアウト
                 </button>
@@ -141,7 +141,7 @@ function MainApp() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <CalendarHeader
           currentMonth={currentMonth}
           onPreviousMonth={handlePreviousMonth}
