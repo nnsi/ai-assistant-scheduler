@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: セキュリティ専門のコードレビュアー。認証・認可、入力検証、XSS、CSRF、インジェクション攻撃などの脆弱性を検出する。コード変更後やセキュリティレビュー依頼時に使用。
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
@@ -88,6 +88,24 @@ model: inherit
 - 「〜かもしれない」ではなく、具体的な脆弱性を指摘する
 - 修正方法は実装可能な具体的なコードを提示する
 - 過剰な指摘は避ける（例：「すべてのAPIにレート制限を」は実用的でない場合がある）
+- **Bashツールで実際の攻撃テストを実施できる**。curlを使って脆弱性を検証する
+
+## 攻撃テストの実施
+
+開発サーバーが起動している場合、以下のような攻撃テストを実施できる：
+
+```bash
+# 認証なしアクセス
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8787/api/schedules
+
+# 不正なJWT
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8787/api/schedules \
+  -H "Authorization: Bearer invalid-token"
+
+# CORS違反
+curl -s -I http://localhost:8787/api/schedules \
+  -H "Origin: https://evil.com" | grep -i "access-control"
+```
 
 ## このプロジェクト固有のチェックポイント
 

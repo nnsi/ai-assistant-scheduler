@@ -38,3 +38,42 @@ SessionStartフックが非同期モードで実行されます。セッショ�
 - CORSの`allowHeaders`に`Authorization`を追加したか確認
 - 既存のリソース系テーブルに`user_id`が必要か検討
 - 既存テストへの影響範囲を`grep`で事前調査
+
+## React 18 Strict Mode
+
+- `useEffect`内で直接API通信を行わない（二重実行される）
+- データフェッチングには`TanStack Query`（React Query）を使う
+- 一度きりの処理（OAuth認証コールバック等）は`useRef`で二重実行を防止
+
+```typescript
+// 悪い例
+useEffect(() => {
+  fetch('/api/data').then(...)
+}, []);
+
+// 良い例（React Query）
+const { data } = useQuery({ queryKey: ['data'], queryFn: fetchData });
+
+// 良い例（一度きりの処理）
+const isProcessingRef = useRef(false);
+useEffect(() => {
+  if (isProcessingRef.current) return;
+  isProcessingRef.current = true;
+  // 処理...
+}, []);
+```
+
+## サブエージェント・Codexの結果
+
+- 結果を鵜呑みにしない。AIレビュアーは時々間違える
+- 「すでに実装済み」の機能を見落としていることがある
+- 「ファイルがGitに混入」など致命的な指摘は `git ls-files` で必ず検証
+- 両者が同じ問題を指摘していれば信頼性が高い
+- 片方だけが指摘している問題は特に慎重に検討する
+
+## AIプロンプトの改善
+
+- 「〜するな」の禁止形より「〜する」の目的志向で書く
+- 問題が出たら「このルールを足そう」ではなく「何を達成したいか」から考え直す
+- 曖昧なケースの処理方針を決める（例：「不明なら除外」）
+- 出力フォーマットを目的に合わせて設計する

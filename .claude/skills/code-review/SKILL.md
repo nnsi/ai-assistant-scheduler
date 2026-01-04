@@ -51,6 +51,24 @@ description: 複数のレビュアー（サブエージェント + Codex）を�
 - **修正コストと効果** - 大規模な設計変更が必要か、簡単な修正で済むか
 - **既に対応済みではないか** - レビュアーが見落としている可能性
 
+**具体的な検証方法（必ず実施）：**
+
+```bash
+# 「〜が実装されていない」→ 実際にコードをgrepして確認
+grep -r "authMiddleware" packages/backend/src/
+
+# 「ファイルがGitに混入」→ git ls-filesで確認
+git ls-files | grep ".dev.vars"
+
+# 「〜の検証がない」→ 該当コードを読んで確認
+# Read ツールで該当ファイルを確認
+```
+
+**過去の誤検出例：**
+- Codexが「認証の欠如」を指摘 → 実際はOAuth実装済みだった
+- Codexが「JWT exp検証がない」と指摘 → hono/jwtは自動でexp検証する
+- 攻撃者エージェントが「.dev.varsがGitに混入」→ .gitignoreに入っていて混入していなかった
+
 ### 4. 修正の実施
 
 - **Critical/High** → 原則として修正する
