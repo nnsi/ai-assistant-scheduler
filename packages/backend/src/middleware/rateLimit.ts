@@ -92,10 +92,10 @@ export const createRateLimitMiddleware = (
 
 /**
  * AI エンドポイント用のレート制限設定
- * 1時間あたり10リクエスト
+ * 1時間あたり1000リクエスト
  */
 export const aiRateLimitMiddleware = createRateLimitMiddleware({
-  maxRequests: 10,
+  maxRequests: 1000,
   windowMs: 60 * 60 * 1000, // 1時間
   keyPrefix: "ai_rate_limit",
 });
