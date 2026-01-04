@@ -90,15 +90,18 @@ describe("useAI", () => {
 
   describe("search", () => {
     it("検索結果を取得できる", async () => {
-      const mockResult = "検索結果のテキスト";
-      vi.mocked(api.searchWithKeywords).mockResolvedValue(mockResult);
+      const mockSearchResult = {
+        result: "検索結果のテキスト",
+        shopCandidates: undefined,
+      };
+      vi.mocked(api.searchWithKeywords).mockResolvedValue(mockSearchResult);
 
       const { result } = renderHook(() => useAI());
 
       expect(result.current.searchResult).toBe("");
       expect(result.current.isLoadingSearch).toBe(false);
 
-      let returnedResult = "";
+      let returnedResult: api.SearchResult | null = null;
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",
@@ -112,18 +115,18 @@ describe("useAI", () => {
         "2025-01-15T10:00:00",
         ["キーワード1", "キーワード2"]
       );
-      expect(result.current.searchResult).toBe(mockResult);
-      expect(returnedResult).toBe(mockResult);
+      expect(result.current.searchResult).toBe(mockSearchResult.result);
+      expect(returnedResult).toEqual(mockSearchResult);
       expect(result.current.isLoadingSearch).toBe(false);
     });
 
-    it("エラー時は空文字を返しerrorを設定する", async () => {
+    it("エラー時はnullを返しerrorを設定する", async () => {
       const mockError = new Error("Search API Error");
       vi.mocked(api.searchWithKeywords).mockRejectedValue(mockError);
 
       const { result } = renderHook(() => useAI());
 
-      let returnedResult = "";
+      let returnedResult: api.SearchResult | null = null;
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",
@@ -132,7 +135,7 @@ describe("useAI", () => {
         );
       });
 
-      expect(returnedResult).toBe("");
+      expect(returnedResult).toBeNull();
       expect(result.current.error).toEqual(mockError);
       expect(result.current.isLoadingSearch).toBe(false);
     });
@@ -141,7 +144,10 @@ describe("useAI", () => {
   describe("reset", () => {
     it("状態をリセットできる", async () => {
       vi.mocked(api.suggestKeywords).mockResolvedValue(["keyword"]);
-      vi.mocked(api.searchWithKeywords).mockResolvedValue("result");
+      vi.mocked(api.searchWithKeywords).mockResolvedValue({
+        result: "result",
+        shopCandidates: undefined,
+      });
 
       const { result } = renderHook(() => useAI());
 
