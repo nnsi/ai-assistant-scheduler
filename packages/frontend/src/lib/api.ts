@@ -241,6 +241,7 @@ export const searchAndSave = async (
 // ストリーミングイベントの型
 export type StreamEvent =
   | { type: "text"; content: string }
+  | { type: "status"; message: string }
   | { type: "done"; shopCandidates?: ShopList }
   | { type: "error"; message: string };
 
@@ -320,13 +321,36 @@ const streamRequest = async (
 
       buffer += decoder.decode(value, { stream: true });
 
-      // SSEイベントをパース（data: {...}\n\n形式）
+      // SSEメッセージは\n\nで区切られる
+      // 完全なメッセージのみを処理し、不完全なものはバッファに残す
+      let messageEnd = buffer.indexOf("\n\n");
+      while (messageEnd !== -1) {
+        const message = buffer.slice(0, messageEnd);
+        buffer = buffer.slice(messageEnd + 2);
+
+        // メッセージ内のdata:行を探す
+        const lines = message.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            try {
+              const event = JSON.parse(data) as StreamEvent;
+              onEvent(event);
+            } catch {
+              // JSONパース失敗は無視（通常は発生しないはず）
+            }
+          }
+          // event:, id:, 空行は無視
+        }
+
+        messageEnd = buffer.indexOf("\n\n");
+      }
+    }
+
+    // 残りのバッファを処理（ストリーム終了時）
+    if (buffer.trim()) {
       const lines = buffer.split("\n");
-      buffer = "";
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
+      for (const line of lines) {
         if (line.startsWith("data: ")) {
           const data = line.slice(6);
           try {
@@ -335,10 +359,6 @@ const streamRequest = async (
           } catch {
             // JSONパース失敗は無視
           }
-        } else if (line !== "" && !line.startsWith("event:") && !line.startsWith("id:")) {
-          // 不完全な行はバッファに戻す
-          buffer = lines.slice(i).join("\n");
-          break;
         }
       }
     }

@@ -9,6 +9,7 @@ export const useAI = () => {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchResult, setSearchResult] = useState<string>("");
   const [shopCandidates, setShopCandidates] = useState<ShopList | undefined>(undefined);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   // 除外済みキーワードの履歴（再生成用）
   const excludedKeywordsRef = useRef<string[]>([]);
@@ -104,6 +105,7 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setSearchResult("");
     setShopCandidates(undefined);
+    setStatusMessage(null);
     setError(null);
 
     let fullText = "";
@@ -115,11 +117,14 @@ export const useAI = () => {
           if (event.type === "text") {
             fullText += event.content;
             setSearchResult(fullText);
+          } else if (event.type === "status") {
+            setStatusMessage(event.message);
           } else if (event.type === "done") {
             finalShopCandidates = event.shopCandidates;
             if (event.shopCandidates) {
               setShopCandidates(event.shopCandidates);
             }
+            setStatusMessage(null); // 完了時にステータスをクリア
           } else if (event.type === "error") {
             setError(new Error(event.message));
           }
@@ -179,6 +184,7 @@ export const useAI = () => {
     setKeywords([]);
     setSearchResult("");
     setShopCandidates(undefined);
+    setStatusMessage(null);
     setError(null);
     excludedKeywordsRef.current = [];
   };
@@ -190,6 +196,7 @@ export const useAI = () => {
     keywords,
     searchResult,
     shopCandidates,
+    statusMessage,
     error,
     suggestKeywords,
     regenerateKeywords,

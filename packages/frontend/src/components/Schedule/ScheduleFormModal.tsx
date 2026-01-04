@@ -34,6 +34,7 @@ export const ScheduleFormModal = ({
     keywords,
     searchResult,
     shopCandidates,
+    statusMessage,
     isLoadingKeywords,
     isLoadingSearch,
     isStreaming,
@@ -174,6 +175,7 @@ export const ScheduleFormModal = ({
         <SearchResults
           result={searchResult}
           shopCandidates={shopCandidates}
+          statusMessage={statusMessage}
           isLoading={isLoadingSearch}
           isStreaming={isStreaming}
           isSelectingShop={isSelectingShop}

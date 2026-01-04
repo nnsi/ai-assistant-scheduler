@@ -22,6 +22,7 @@ export type SearchResult = {
 // ストリーミングイベントの型
 export type StreamEvent =
   | { type: "text"; content: string }
+  | { type: "status"; message: string }
   | { type: "done"; shopCandidates?: Shop[] }
   | { type: "error"; message: string };
 

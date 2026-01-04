@@ -4,18 +4,129 @@ import { shopListSchema } from "@ai-scheduler/shared";
 import type { AiService, UserConditions, SearchResult, StreamEvent } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
 
+// JSON配列を括弧のバランスを追跡して抽出する
+const extractJsonArray = (text: string, startIndex: number): string | undefined => {
+  if (text[startIndex] !== "[") return undefined;
+
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = startIndex; i < text.length; i++) {
+    const char = text[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escapeNext = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === "[" || char === "{") {
+      depth++;
+    } else if (char === "]" || char === "}") {
+      depth--;
+      if (depth === 0) {
+        return text.slice(startIndex, i + 1);
+      }
+    }
+  }
+
+  return undefined;
+};
+
 // SearchAgentの出力からJSONブロックをパースする
 const parseShopCandidates = (text: string): Shop[] | undefined => {
-  // ```json:shops ... ``` ブロックを探す
-  const jsonMatch = text.match(/```json:shops\s*([\s\S]*?)```/);
-  if (!jsonMatch) {
+  let jsonContent: string | undefined;
+
+  // パターン1: ```json:shops ... ``` ブロック
+  const jsonShopsMatch = text.match(/```json:shops\s*/);
+  if (jsonShopsMatch && jsonShopsMatch.index !== undefined) {
+    const contentStart = jsonShopsMatch.index + jsonShopsMatch[0].length;
+    const endMatch = text.slice(contentStart).indexOf("```");
+    if (endMatch !== -1) {
+      jsonContent = text.slice(contentStart, contentStart + endMatch).trim();
+    }
+  }
+
+  // パターン2: ```json: shops ... ``` ブロック（スペース入り）
+  if (!jsonContent) {
+    const jsonSpaceShopsMatch = text.match(/```json:\s*shops\s*/);
+    if (jsonSpaceShopsMatch && jsonSpaceShopsMatch.index !== undefined) {
+      const contentStart = jsonSpaceShopsMatch.index + jsonSpaceShopsMatch[0].length;
+      const endMatch = text.slice(contentStart).indexOf("```");
+      if (endMatch !== -1) {
+        jsonContent = text.slice(contentStart, contentStart + endMatch).trim();
+      }
+    }
+  }
+
+  // パターン3: ```json ... ``` ブロック内のJSON配列
+  if (!jsonContent) {
+    const jsonBlockMatch = text.match(/```json\s*/);
+    if (jsonBlockMatch && jsonBlockMatch.index !== undefined) {
+      const contentStart = jsonBlockMatch.index + jsonBlockMatch[0].length;
+      const endMatch = text.slice(contentStart).indexOf("```");
+      if (endMatch !== -1) {
+        const blockContent = text.slice(contentStart, contentStart + endMatch).trim();
+        // 配列で始まっているか確認
+        if (blockContent.startsWith("[")) {
+          jsonContent = blockContent;
+        }
+      }
+    }
+  }
+
+  // パターン4: Markdown後の末尾JSON配列（括弧バランスで抽出）
+  if (!jsonContent) {
+    // 末尾から [ を探して、そこからJSON配列を抽出
+    const lastBracket = text.lastIndexOf("\n[");
+    if (lastBracket !== -1) {
+      const extracted = extractJsonArray(text, lastBracket + 1);
+      if (extracted) {
+        // 末尾に近いか確認（余分な文字が少ない）
+        const afterJson = text.slice(lastBracket + 1 + extracted.length).trim();
+        if (afterJson.length < 10) { // 末尾の空白や改行を許容
+          jsonContent = extracted;
+        }
+      }
+    }
+  }
+
+  if (!jsonContent) {
+    // デバッグ: JSONが見つからなかった場合、テキストの末尾を出力
+    logger.info("No JSON content found in AI output", {
+      category: "ai",
+      textLength: text.length,
+      lastChars: text.slice(-200),
+    });
     return undefined;
   }
 
+  logger.info("Found JSON content", {
+    category: "ai",
+    jsonLength: jsonContent.length,
+    preview: jsonContent.slice(0, 100),
+  });
+
   try {
-    const parsed = JSON.parse(jsonMatch[1].trim());
+    const parsed = JSON.parse(jsonContent);
     const result = shopListSchema.safeParse(parsed);
     if (result.success) {
+      logger.info("Successfully parsed shop candidates", {
+        category: "ai",
+        count: result.data.length,
+      });
       return result.data;
     }
     logger.warn("Failed to validate shop candidates", {
@@ -27,6 +138,7 @@ const parseShopCandidates = (text: string): Shop[] | undefined => {
     logger.warn("Failed to parse shop candidates JSON", {
       category: "ai",
       error: e instanceof Error ? e.message : String(e),
+      jsonPreview: jsonContent.slice(0, 200),
     });
     return undefined;
   }
@@ -34,7 +146,47 @@ const parseShopCandidates = (text: string): Shop[] | undefined => {
 
 // Markdown出力からJSONブロックを除去する
 const removeJsonBlock = (text: string): string => {
-  return text.replace(/```json:shops[\s\S]*?```/g, "").trim();
+  let result = text;
+
+  // パターン1&2: ```json:shops または ```json: shops ブロックを除去
+  result = result.replace(/```json:?\s*shops[\s\S]*?```/g, "");
+
+  // パターン3: ```json ブロック（配列を含む場合）を除去
+  const jsonBlockMatch = result.match(/```json\s*/);
+  if (jsonBlockMatch && jsonBlockMatch.index !== undefined) {
+    const contentStart = jsonBlockMatch.index + jsonBlockMatch[0].length;
+    const endMatch = result.slice(contentStart).indexOf("```");
+    if (endMatch !== -1) {
+      const blockContent = result.slice(contentStart, contentStart + endMatch).trim();
+      if (blockContent.startsWith("[")) {
+        result = result.slice(0, jsonBlockMatch.index) + result.slice(contentStart + endMatch + 3);
+      }
+    }
+  }
+
+  // パターン4: 末尾のJSON配列を除去（括弧バランスで検出）
+  const lastBracket = result.lastIndexOf("\n[");
+  if (lastBracket !== -1) {
+    const extracted = extractJsonArray(result, lastBracket + 1);
+    if (extracted) {
+      const afterJson = result.slice(lastBracket + 1 + extracted.length).trim();
+      if (afterJson.length < 10) {
+        result = result.slice(0, lastBracket);
+      }
+    }
+  }
+
+  return result.trim();
+};
+
+// 文字列の末尾がパターンの先頭部分と一致する長さを返す
+const findPartialMatch = (text: string, pattern: string): number => {
+  for (let len = Math.min(text.length, pattern.length - 1); len > 0; len--) {
+    if (text.slice(-len) === pattern.slice(0, len)) {
+      return len;
+    }
+  }
+  return 0;
 };
 
 // ユーザー条件からプロンプト用の文字列を生成（検索用）
@@ -294,9 +446,82 @@ export const createAiService = (
         ]);
 
         // ストリームからテキストを読み取る
+        // JSONブロックをフィルタリングしながら出力
+        let buffer = "";
+        let inJsonBlock = false;
+        let displayedText = "";
+        let statusSent = false; // statusイベントは一度だけ送信
+
+        // JSONブロック開始マーカーのパターン（検出用）
+        const jsonBlockMarkers = ["```json:shops", "```json: shops", "```json"];
+        const longestMarker = "```json:shops"; // 部分一致検出用
+
         for await (const chunk of streamResult.textStream) {
-          yield { type: "text", content: chunk };
           fullText += chunk;
+          buffer += chunk;
+
+          // JSONブロックの開始を検知
+          while (buffer.length > 0) {
+            if (inJsonBlock) {
+              // JSONブロック内：終端 ``` を探す
+              const endIndex = buffer.indexOf("```");
+              if (endIndex !== -1) {
+                // JSONブロック終了
+                inJsonBlock = false;
+                buffer = buffer.slice(endIndex + 3);
+              } else {
+                // まだ終端が来ていない、バッファに保持
+                break;
+              }
+            } else {
+              // JSONブロック外：開始マーカーを探す
+              let foundMarker: { index: number; length: number } | null = null;
+              for (const marker of jsonBlockMarkers) {
+                const idx = buffer.indexOf(marker);
+                if (idx !== -1 && (foundMarker === null || idx < foundMarker.index)) {
+                  foundMarker = { index: idx, length: marker.length };
+                }
+              }
+
+              if (foundMarker !== null) {
+                // JSONブロック開始前のテキストを出力
+                if (foundMarker.index > 0) {
+                  const textToYield = buffer.slice(0, foundMarker.index);
+                  yield { type: "text", content: textToYield };
+                  displayedText += textToYield;
+                }
+                inJsonBlock = true;
+                buffer = buffer.slice(foundMarker.index + foundMarker.length);
+                // JSONブロック開始時にステータスを通知（一度だけ）
+                if (!statusSent) {
+                  yield { type: "status", message: "店舗選択カードを作成中..." };
+                  statusSent = true;
+                }
+              } else {
+                // 開始マーカーの一部が含まれる可能性を考慮
+                const partialMatch = findPartialMatch(buffer, longestMarker);
+                if (partialMatch > 0) {
+                  // 確定部分を出力
+                  const textToYield = buffer.slice(0, buffer.length - partialMatch);
+                  yield { type: "text", content: textToYield };
+                  displayedText += textToYield;
+                  buffer = buffer.slice(buffer.length - partialMatch);
+                } else {
+                  // 全て出力
+                  yield { type: "text", content: buffer };
+                  displayedText += buffer;
+                  buffer = "";
+                }
+                break;
+              }
+            }
+          }
+        }
+
+        // 残りのバッファを出力（JSONブロック外の場合のみ）
+        if (!inJsonBlock && buffer.length > 0) {
+          yield { type: "text", content: buffer };
+          displayedText += buffer;
         }
 
         // SearchAgentの場合は完了後にJSONをパース

@@ -7,6 +7,7 @@ import type { Shop, ShopList } from "@ai-scheduler/shared";
 type SearchResultsProps = {
   result: string;
   shopCandidates?: ShopList;
+  statusMessage?: string | null;
   isLoading?: boolean;
   isStreaming?: boolean;
   isSelectingShop?: boolean;
@@ -117,6 +118,7 @@ const ShopCard = ({
 export const SearchResults = ({
   result,
   shopCandidates,
+  statusMessage,
   isLoading = false,
   isStreaming = false,
   isSelectingShop = false,
@@ -177,6 +179,14 @@ export const SearchResults = ({
           className="bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto"
         >
           <MarkdownRenderer content={result} />
+        </div>
+      )}
+
+      {/* ステータスメッセージ表示（JSONパース中など） */}
+      {isStreaming && statusMessage && (
+        <div className="flex items-center gap-2 text-sm text-primary-600 bg-primary-50 rounded-lg px-4 py-3">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>{statusMessage}</span>
         </div>
       )}
 
