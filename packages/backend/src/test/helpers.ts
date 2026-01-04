@@ -33,6 +33,8 @@ export const createTestDb = () => {
       schedule_id text NOT NULL,
       keywords text,
       ai_result text,
+      shop_candidates text,
+      selected_shop text,
       user_memo text,
       created_at text NOT NULL,
       updated_at text NOT NULL,
@@ -125,6 +127,8 @@ export const createTestSupplement = async (
     id?: string;
     keywords?: string[];
     aiResult?: string | null;
+    shopCandidates?: string | null;
+    selectedShop?: string | null;
     userMemo?: string | null;
   }
 ) => {
@@ -134,6 +138,8 @@ export const createTestSupplement = async (
     scheduleId,
     keywords: data?.keywords ? JSON.stringify(data.keywords) : null,
     aiResult: data?.aiResult ?? null,
+    shopCandidates: data?.shopCandidates ?? null,
+    selectedShop: data?.selectedShop ?? null,
     userMemo: data?.userMemo ?? null,
     createdAt: now,
     updatedAt: now,
