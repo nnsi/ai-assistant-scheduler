@@ -210,6 +210,18 @@ export const SearchResults = ({
         </div>
       )}
 
+      {/* ストリーミング完了後: 検索結果が0件の場合 */}
+      {!isStreaming && (!shopCandidates || shopCandidates.length === 0) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-800 font-medium mb-1">
+            お店候補が見つかりませんでした
+          </p>
+          <p className="text-xs text-amber-600">
+            AIによる検索支援が難しい予定のようです。ご自身で情報を調べていただくか、予定の内容を変更してお試しください。
+          </p>
+        </div>
+      )}
+
       {/* ストリーミング完了後: Markdown形式の詳細情報 */}
       {!isStreaming && (
         <details className="group" open={!shopCandidates?.length}>
@@ -223,12 +235,21 @@ export const SearchResults = ({
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="secondary" onClick={onBack} disabled={isStreaming}>
-          戻る
-        </Button>
-        <Button onClick={onClose}>
-          {isStreaming ? "中断して閉じる" : "閉じる"}
-        </Button>
+        {/* 0件の場合は「終了する」ボタンのみ（戻って検索し直しても同じ結果になる可能性が高い） */}
+        {!isStreaming && (!shopCandidates || shopCandidates.length === 0) ? (
+          <Button onClick={onClose}>
+            終了する
+          </Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={onBack} disabled={isStreaming}>
+              戻る
+            </Button>
+            <Button onClick={onClose}>
+              {isStreaming ? "中断して閉じる" : "閉じる"}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

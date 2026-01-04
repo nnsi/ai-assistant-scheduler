@@ -12,7 +12,7 @@ type SchedulePopupProps = {
   isOpen: boolean;
   onClose: () => void;
   onEdit: (schedule: Schedule) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 };
 
 export const SchedulePopup = ({
@@ -50,8 +50,7 @@ export const SchedulePopup = ({
     if (!schedule) return;
     setIsDeleting(true);
     try {
-      await api.deleteSchedule(schedule.id);
-      onDelete(schedule.id);
+      await onDelete(schedule.id);
       onClose();
     } catch (error) {
       logger.error("Failed to delete schedule", { category: "api", scheduleId: schedule.id }, error);

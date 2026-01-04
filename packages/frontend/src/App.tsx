@@ -82,9 +82,8 @@ function MainApp() {
     setIsPopupOpen(false);
   };
 
-  const handleScheduleDelete = (id: string) => {
-    remove(id);
-    setIsPopupOpen(false);
+  const handleScheduleDelete = async (id: string): Promise<void> => {
+    await remove(id);
   };
 
   return (

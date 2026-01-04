@@ -95,6 +95,26 @@ export const ShortResult: Story = {
   ],
 };
 
+// 検索結果が0件の場合（shopCandidatesが空配列）
+export const NoShopCandidates: Story = {
+  args: {
+    result: `## 検索結果
+
+「スケジュールの確認」という予定内容から、具体的な店舗やスポットの候補を見つけることができませんでした。
+
+この予定は店舗検索に適していない可能性があります。`,
+    shopCandidates: [],
+    isLoading: false,
+  },
+  decorators: [
+    (Story) => (
+      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const WithLinks: Story = {
   args: {
     result: `## 候補
