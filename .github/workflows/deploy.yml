@@ -28,7 +28,6 @@ jobs:
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       wrangler_env: ${{ steps.set-env.outputs.wrangler_env }}
-      pages_branch: ${{ steps.set-env.outputs.pages_branch }}
     steps:
       - name: Determine environment
         id: set-env
@@ -44,11 +43,9 @@ jobs:
           if [ "$ENV" = "production" ]; then
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "wrangler_env=production" >> $GITHUB_OUTPUT
-            echo "pages_branch=production" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "wrangler_env=staging" >> $GITHUB_OUTPUT
-            echo "pages_branch=preview" >> $GITHUB_OUTPUT
           fi
 
   # CIチェック（テスト、型チェック、ビルド）
@@ -105,6 +102,20 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # wrangler.toml の Database ID / KV ID を動的に設定
+      - name: Configure wrangler.toml with environment IDs
+        working-directory: packages/backend
+        run: |
+          if [ "${{ needs.setup.outputs.wrangler_env }}" = "production" ]; then
+            sed -i 's/database_id = "YOUR_PRODUCTION_DATABASE_ID"/database_id = "${{ vars.D1_DATABASE_ID }}"/' wrangler.toml
+            sed -i 's/id = "YOUR_PRODUCTION_KV_ID"/id = "${{ vars.KV_NAMESPACE_ID }}"/' wrangler.toml
+          else
+            sed -i 's/database_id = "YOUR_STAGING_DATABASE_ID"/database_id = "${{ vars.D1_DATABASE_ID }}"/' wrangler.toml
+            sed -i 's/id = "YOUR_STAGING_KV_ID"/id = "${{ vars.KV_NAMESPACE_ID }}"/' wrangler.toml
+          fi
+          echo "=== wrangler.toml (env sections) ==="
+          grep -A 10 '\[env\.' wrangler.toml || true
 
       # シークレットをCloudflare Workersに登録
       # Note: printenvを使用してプロセスリストへの露出を回避
@@ -168,14 +179,9 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 
-      - name: Deploy Frontend to Cloudflare Pages
+      - name: Deploy Frontend to Cloudflare Workers
         working-directory: packages/frontend
-        run: |
-          if [ "${{ needs.setup.outputs.environment }}" = "production" ]; then
-            wrangler pages deploy dist --project-name=ai-scheduler-frontend --branch=main
-          else
-            wrangler pages deploy dist --project-name=ai-scheduler-frontend --branch=staging
-          fi
+        run: wrangler deploy --env ${{ needs.setup.outputs.wrangler_env }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,0 +1,24 @@
+name = "ai-scheduler-frontend"
+compatibility_date = "2024-12-30"
+
+# Workers Static Assets
+[assets]
+directory = "./dist"
+
+# ============================================
+# ステージング環境設定
+# ============================================
+[env.staging]
+name = "ai-scheduler-frontend-stg"
+
+[env.staging.assets]
+directory = "./dist"
+
+# ============================================
+# 本番環境設定
+# ============================================
+[env.production]
+name = "ai-scheduler-frontend-prod"
+
+[env.production.assets]
+directory = "./dist"

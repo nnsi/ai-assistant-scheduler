@@ -59,61 +59,79 @@ openssl rand -base64 32  # production用
 **取得するもの:**
 - `JWT_SECRET`（32文字以上の乱数文字列）
 
-#### 4. Cloudflare D1 データベース作成
+#### 4. Terraform State 用 R2 バケット作成
 ```bash
-# staging環境用
-wrangler d1 create ai-scheduler-db-stg
-# → Database ID をメモ → wrangler.toml の [env.staging] に設定
-
-# production環境用
-wrangler d1 create ai-scheduler-db-prod
-# → Database ID をメモ → wrangler.toml の [env.production] に設定
+# Terraform state を保存する R2 バケットを作成
+wrangler r2 bucket create terraform-state
 ```
 
-#### 5. Cloudflare KV Namespace 作成（レート制限用）
-```bash
-# staging環境用
-wrangler kv:namespace create "RATE_LIMIT_KV" --env staging
-# → ID をメモ → wrangler.toml の [env.staging] に設定
+#### 5. R2 API トークン作成（Terraform backend 用）
+```
+1. Cloudflare ダッシュボード → R2 → 概要 → 「R2 API トークンを管理」
+2. 「API トークンを作成する」
+3. 権限: オブジェクトの読み取りと書き込み
+4. バケット: terraform-state を選択
+5. Access Key ID と Secret Access Key をメモ
+```
+**取得するもの:**
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
 
-# production環境用
-wrangler kv:namespace create "RATE_LIMIT_KV" --env production
-# → ID をメモ → wrangler.toml の [env.production] に設定
+#### 6. Terraform で D1/KV を作成
+```
+1. GitHub リポジトリ → Actions → Infrastructure
+2. 「Run workflow」→ action: plan → 実行（変更内容を確認）
+3. 「Run workflow」→ action: apply → 実行（リソース作成）
+4. GitHub Environment Variables (D1_DATABASE_ID, KV_NAMESPACE_ID) が自動設定される
+   ※ 自動設定には GH_PAT (Personal Access Token) が必要
+   ※ GH_PAT がない場合は、ワークフローログから ID をコピーして手動設定
 ```
 
-#### 6. GitHub Environments 設定
+> **Note:** wrangler.toml への直接設定は不要です。GitHub Actions がデプロイ時に自動で wrangler.toml を書き換えます。
+
+#### 7. GitHub Environments 設定
 ```
 1. GitHub リポジトリ → Settings → Environments
 2. 「staging」環境を作成
 3. 「production」環境を作成（必要に応じてRequired reviewers設定）
 ```
 
-#### 7. GitHub Actions Secrets 設定（環境別）
+#### 8. GitHub Actions Secrets 設定
 ```
-GitHub リポジトリ → Settings → Environments → 各環境を選択
+GitHub リポジトリ → Settings → Secrets and variables → Actions
 
-【staging環境のSecrets】
-- CLOUDFLARE_API_TOKEN: Cloudflare APIトークン
+【Repository Secrets（リポジトリ共通）】
+- CLOUDFLARE_API_TOKEN: Cloudflare APIトークン（下記権限が必要）
+  - Account > D1: Edit
+  - Account > Workers KV Storage: Edit
+  - Account > Workers Scripts: Edit
 - CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
+- R2_ACCESS_KEY_ID: R2 API Access Key ID（Terraform state用）
+- R2_SECRET_ACCESS_KEY: R2 API Secret Access Key（Terraform state用）
+- GH_PAT: GitHub Personal Access Token（repo スコープ、Variables自動更新用、任意）
+
+【staging環境のSecrets】（Settings → Environments → staging）
 - JWT_SECRET: ステージング用JWTシークレット
 - GOOGLE_CLIENT_ID: Google OAuth クライアントID
 - GOOGLE_CLIENT_SECRET: Google OAuth クライアントシークレット
 - OPENROUTER_API_KEY: OpenRouter APIキー
 
 【staging環境のVariables】
+- D1_DATABASE_ID: Terraform apply で自動設定（または手動設定）
+- KV_NAMESPACE_ID: Terraform apply で自動設定（または手動設定）
 - FRONTEND_URL: https://your-stg-frontend.pages.dev
 - VITE_API_URL: https://ai-scheduler-api-stg.your-subdomain.workers.dev
 - ALLOWED_REDIRECT_URIS: https://your-stg-frontend.pages.dev/callback （セキュリティ必須）
 
-【production環境のSecrets】
-- CLOUDFLARE_API_TOKEN: Cloudflare APIトークン
-- CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
+【production環境のSecrets】（Settings → Environments → production）
 - JWT_SECRET: 本番用JWTシークレット
 - GOOGLE_CLIENT_ID: Google OAuth クライアントID
 - GOOGLE_CLIENT_SECRET: Google OAuth クライアントシークレット
 - OPENROUTER_API_KEY: OpenRouter APIキー
 
 【production環境のVariables】
+- D1_DATABASE_ID: Terraform apply で自動設定（または手動設定）
+- KV_NAMESPACE_ID: Terraform apply で自動設定（または手動設定）
 - FRONTEND_URL: https://your-prod-frontend.pages.dev
 - VITE_API_URL: https://ai-scheduler-api-prod.your-subdomain.workers.dev
 - ALLOWED_REDIRECT_URIS: https://your-prod-frontend.pages.dev/callback （セキュリティ必須）
@@ -154,10 +172,10 @@ release ブランチにマージ → production環境にデプロイ
 **取得するもの:**
 - `SENTRY_DSN`
 
-#### 9. 本番ドメイン設定（Cloudflare Pages/Workers）
+#### 9. 本番ドメイン設定（Cloudflare Workers）
 ```
 1. Cloudflare ダッシュボード → Workers & Pages
-2. プロジェクト選択 → Custom Domains
+2. Worker選択 → Settings → Domains & Routes
 3. 独自ドメインを追加（DNS設定が必要）
 ```
 
@@ -204,62 +222,62 @@ Sentry の場合:
 ### チェックリスト形式
 
 ```
-□ Google Cloud Console
-  □ OAuth クライアントID取得
-  □ OAuth クライアントシークレット取得
-  □ stg/prod両方のリダイレクトURI設定
+- [x] Google Cloud Console
+  - [x] OAuth クライアントID取得
+  - [x] OAuth クライアントシークレット取得
+  - [x] stg/prod両方のリダイレクトURI設定
 
-□ OpenRouter
-  □ APIキー取得
+- [x] OpenRouter
+  - [x] APIキー取得
 
-□ ローカル
-  □ JWT_SECRET 生成（stg用: openssl rand -base64 32）
-  □ JWT_SECRET 生成（prod用: openssl rand -base64 32）
+- [x] ローカル
+  - [x] JWT_SECRET 生成（stg用: openssl rand -base64 32）
+  - [x] JWT_SECRET 生成（prod用: openssl rand -base64 32）
 
-□ Cloudflare
-  □ D1 ステージングデータベース作成 (ai-scheduler-db-stg)
-  □ D1 本番データベース作成 (ai-scheduler-db-prod)
-  □ KV Namespace作成 (staging)
-  □ KV Namespace作成 (production)
-  □ wrangler.toml に Database ID/KV ID 設定
+- [x] Cloudflare
+  - [x] R2 バケット作成 (terraform-state)
+  - [x] R2 API トークン作成
 
-□ GitHub Environments
-  □ staging 環境作成
-  □ production 環境作成
+- [x] GitHub Environments
+  - [x] staging 環境作成
+  - [x] production 環境作成
 
-□ GitHub Secrets/Variables (staging)
-  □ CLOUDFLARE_API_TOKEN
-  □ CLOUDFLARE_ACCOUNT_ID
-  □ JWT_SECRET
-  □ GOOGLE_CLIENT_ID
-  □ GOOGLE_CLIENT_SECRET
-  □ OPENROUTER_API_KEY
-  □ FRONTEND_URL (Variable)
-  □ VITE_API_URL (Variable)
-  □ ALLOWED_REDIRECT_URIS (Variable) - セキュリティ必須
+- [x] GitHub Repository Secrets
+  - [x] CLOUDFLARE_API_TOKEN
+  - [x] CLOUDFLARE_ACCOUNT_ID
+  - [x] R2_ACCESS_KEY_ID
+  - [x] R2_SECRET_ACCESS_KEY
+  - [x] GH_PAT
 
-□ GitHub Secrets/Variables (production)
-  □ CLOUDFLARE_API_TOKEN
-  □ CLOUDFLARE_ACCOUNT_ID
-  □ JWT_SECRET
-  □ GOOGLE_CLIENT_ID
-  □ GOOGLE_CLIENT_SECRET
-  □ OPENROUTER_API_KEY
-  □ FRONTEND_URL (Variable)
-  □ VITE_API_URL (Variable)
-  □ ALLOWED_REDIRECT_URIS (Variable) - セキュリティ必須
+- [x] GitHub Secrets/Variables (staging)
+  - [x] JWT_SECRET
+  - [x] GOOGLE_CLIENT_ID
+  - [x] GOOGLE_CLIENT_SECRET
+  - [x] OPENROUTER_API_KEY
+  - [x] FRONTEND_URL (Variable)
+  - [x] VITE_API_URL (Variable)
+  - [x] ALLOWED_REDIRECT_URIS (Variable)
 
-□ GitHub その他
-  □ Branch Protection 設定 (master, release)
-  □ Secret Scanning 有効化
+- [] GitHub Secrets/Variables (production)
+  - [] JWT_SECRET
+  - [] GOOGLE_CLIENT_ID
+  - [] GOOGLE_CLIENT_SECRET
+  - [] OPENROUTER_API_KEY
+  - [] FRONTEND_URL (Variable)
+  - [] VITE_API_URL (Variable)
+  - [] ALLOWED_REDIRECT_URIS (Variable)
 
-□ エラートラッキング（Sentry等）
-  □ アカウント作成
-  □ DSN 取得・設定
+- [] GitHub その他
+  - [] Branch Protection 設定 (master, release)
+  - [] Secret Scanning 有効化
 
-□ ドキュメント
-  □ プライバシーポリシー作成
-  □ 利用規約作成
+- [] エラートラッキング（Sentry等）
+  - [] アカウント作成
+  - [] DSN 取得・設定
+
+- [] ドキュメント
+  - [] プライバシーポリシー作成
+  - [] 利用規約作成
 ```
 
 ---
@@ -384,7 +402,7 @@ Sentry の場合:
 | # | タスク | 詳細 | 担当観点 |
 |---|--------|------|----------|
 | 5.1 | **README.md作成（ルート）** | プロジェクト概要、技術スタック、セットアップ手順、開発コマンド | コード品質 |
-| 5.2 | **本番デプロイ手順書** | Cloudflare Workers/Pages デプロイ手順、環境変数設定手順 | 総合調整 |
+| 5.2 | **本番デプロイ手順書** | Cloudflare Workers デプロイ手順、環境変数設定手順 | 総合調整 |
 | 5.3 | **Google Cloud Console設定ガイド** | OAuth 2.0 クライアント作成手順、リダイレクトURI設定 | コード品質 |
 
 ### 🟡 Medium
@@ -519,15 +537,15 @@ Sentry の場合:
 #### 手動設定タスク（ユーザー作業）
 
 - [ ] **Cloudflare リソース作成**
-  - D1データベース作成（stg/prod）
-  - KV Namespace作成（stg/prod）
-  - `wrangler.toml` に ID 設定
+  - D1データベース作成（stg/prod）→ Database ID をメモ
+  - KV Namespace作成（stg/prod）→ KV ID をメモ
 - [ ] **GitHub Environments 設定**
   - staging 環境作成
   - production 環境作成
 - [ ] **GitHub Secrets/Variables 設定**
   - 各環境に Secrets 登録（CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, JWT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, OPENROUTER_API_KEY）
-  - 各環境に Variables 登録（FRONTEND_URL, VITE_API_URL）
+  - 各環境に Variables 登録（D1_DATABASE_ID, KV_NAMESPACE_ID, FRONTEND_URL, VITE_API_URL, ALLOWED_REDIRECT_URIS）
+  - ※ wrangler.toml への ID 設定は不要（GitHub Actions が自動設定）
 
 ### テスト実行結果
 
@@ -554,9 +572,9 @@ Sentry の場合:
 └── ✅ 4.2 E2Eテスト完全実装
 
 手動設定（ユーザー作業）:
-├── ⏳ Cloudflareリソース作成（D1/KV stg+prod）
+├── ⏳ Cloudflareリソース作成（D1/KV stg+prod）→ ID をメモ
 ├── ⏳ GitHub Environments設定
-└── ⏳ GitHub Secrets/Variables設定
+└── ⏳ GitHub Secrets/Variables設定（D1_DATABASE_ID, KV_NAMESPACE_ID含む）
 ```
 
 ### Phase 2: High（リリース後1週間以内）
