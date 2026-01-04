@@ -36,9 +36,11 @@ export const ScheduleFormModal = ({
     shopCandidates,
     isLoadingKeywords,
     isLoadingSearch,
+    isStreaming,
     suggestKeywords,
     regenerateKeywords,
-    searchAndSave,
+    searchAndSaveStream,
+    abortStream,
     reset,
   } = useAI();
   const [isSelectingShop, setIsSelectingShop] = useState(false);
@@ -74,9 +76,10 @@ export const ScheduleFormModal = ({
   const handleKeywordSelect = async (keywords: string[]) => {
     if (!formData || !createdSchedule) return;
 
-    // 検索＋保存を実行（結果が返り次第自動保存される）
-    await searchAndSave(createdSchedule.id, formData.title, formData.startAt, keywords);
+    // ストリーミング検索を開始して結果画面に遷移
     setStep("results");
+    // 検索＋保存を実行（ストリーミングで結果を表示しつつ、完了時に自動保存）
+    await searchAndSaveStream(createdSchedule.id, formData.title, formData.startAt, keywords);
   };
 
   const handleRegenerate = async () => {
@@ -120,6 +123,8 @@ export const ScheduleFormModal = ({
   };
 
   const handleClose = () => {
+    // ストリーミング中なら中断
+    abortStream();
     // スケジュールが作成されていれば通知（カレンダー更新のため）
     if (createdSchedule) {
       onScheduleCreated(createdSchedule);
@@ -170,6 +175,7 @@ export const ScheduleFormModal = ({
           result={searchResult}
           shopCandidates={shopCandidates}
           isLoading={isLoadingSearch}
+          isStreaming={isStreaming}
           isSelectingShop={isSelectingShop}
           onClose={handleCloseResult}
           onBack={handleBack}

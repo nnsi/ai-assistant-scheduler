@@ -19,6 +19,12 @@ export type SearchResult = {
   shopCandidates?: Shop[];
 };
 
+// ストリーミングイベントの型
+export type StreamEvent =
+  | { type: "text"; content: string }
+  | { type: "done"; shopCandidates?: Shop[] }
+  | { type: "error"; message: string };
+
 // AIサービス型定義
 export type AiService = {
   suggestKeywords: (
@@ -34,4 +40,11 @@ export type AiService = {
     agentTypes: AgentType[],
     userConditions?: UserConditions
   ) => Promise<SearchResult>;
+  searchWithKeywordsStream?: (
+    title: string,
+    startAt: string,
+    keywords: string[],
+    agentTypes: AgentType[],
+    userConditions?: UserConditions
+  ) => AsyncGenerator<StreamEvent>;
 };

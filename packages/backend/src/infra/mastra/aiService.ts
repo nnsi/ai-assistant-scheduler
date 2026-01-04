@@ -1,7 +1,7 @@
 import type { Agent } from "@mastra/core/agent";
 import type { AgentType, Shop } from "@ai-scheduler/shared";
 import { shopListSchema } from "@ai-scheduler/shared";
-import type { AiService, UserConditions, SearchResult } from "../../domain/infra/aiService";
+import type { AiService, UserConditions, SearchResult, StreamEvent } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
 
 // SearchAgentの出力からJSONブロックをパースする
@@ -249,6 +249,81 @@ export const createAiService = (
 
     return {
       result: mergedResult,
+      shopCandidates: allShopCandidates.length > 0 ? allShopCandidates : undefined,
+    };
+  },
+
+  searchWithKeywordsStream: async function* (
+    title,
+    startAt,
+    keywords,
+    agentTypes,
+    userConditions
+  ): AsyncGenerator<StreamEvent> {
+    const conditionsPrompt = buildConditionsPrompt(userConditions);
+
+    // デフォルトは search
+    const typesToUse =
+      agentTypes.length > 0 ? sortAgentTypes(agentTypes) : ["search"] as AgentType[];
+
+    let fullText = "";
+    let allShopCandidates: Shop[] = [];
+
+    for (let i = 0; i < typesToUse.length; i++) {
+      const agentType = typesToUse[i];
+      const agent = agents[agentType];
+      if (!agent) continue;
+
+      // 複数エージェントの場合はセクションヘッダーを出力
+      if (typesToUse.length > 1) {
+        const header = `## ${getAgentSectionTitle(agentType)}\n\n`;
+        yield { type: "text", content: header };
+        fullText += header;
+      }
+
+      try {
+        const streamResult = await agent.stream([
+          {
+            role: "user",
+            content: `以下の予定について、選択されたキーワードに関連する情報を検索してまとめてください。
+
+タイトル: ${title}
+日時: ${startAt}
+調べたいこと: ${keywords.join(", ")}${conditionsPrompt}`,
+          },
+        ]);
+
+        // ストリームからテキストを読み取る
+        for await (const chunk of streamResult.textStream) {
+          yield { type: "text", content: chunk };
+          fullText += chunk;
+        }
+
+        // SearchAgentの場合は完了後にJSONをパース
+        if (agentType === "search") {
+          const shopCandidates = parseShopCandidates(fullText);
+          if (shopCandidates) {
+            allShopCandidates = [...allShopCandidates, ...shopCandidates];
+          }
+        }
+
+        // 複数エージェントの場合はセパレーター
+        if (typesToUse.length > 1 && i < typesToUse.length - 1) {
+          const separator = "\n\n---\n\n";
+          yield { type: "text", content: separator };
+          fullText += separator;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        logger.error("Stream error", { category: "ai", error: message });
+        yield { type: "error", message };
+        return;
+      }
+    }
+
+    // 完了イベント
+    yield {
+      type: "done",
       shopCandidates: allShopCandidates.length > 0 ? allShopCandidates : undefined,
     };
   },

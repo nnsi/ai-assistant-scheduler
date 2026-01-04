@@ -238,6 +238,115 @@ export const searchAndSave = async (
   return handleResponse(res, searchResponseSchema);
 };
 
+// ストリーミングイベントの型
+export type StreamEvent =
+  | { type: "text"; content: string }
+  | { type: "done"; shopCandidates?: ShopList }
+  | { type: "error"; message: string };
+
+// SSEストリーミング検索
+export const searchWithKeywordsStream = async (
+  title: string,
+  startAt: string,
+  keywords: string[],
+  onEvent: (event: StreamEvent) => void,
+  abortSignal?: AbortSignal
+): Promise<void> => {
+  await streamRequest(
+    `${API_BASE_URL}/ai/search/stream`,
+    { title, startAt, keywords },
+    onEvent,
+    abortSignal
+  );
+};
+
+// SSEストリーミング検索＋保存
+export const searchAndSaveStream = async (
+  scheduleId: string,
+  title: string,
+  startAt: string,
+  keywords: string[],
+  onEvent: (event: StreamEvent) => void,
+  abortSignal?: AbortSignal
+): Promise<void> => {
+  await streamRequest(
+    `${API_BASE_URL}/ai/search-and-save/stream`,
+    { scheduleId, title, startAt, keywords },
+    onEvent,
+    abortSignal
+  );
+};
+
+// 共通のストリームリクエスト処理
+const streamRequest = async (
+  url: string,
+  body: Record<string, unknown>,
+  onEvent: (event: StreamEvent) => void,
+  abortSignal?: AbortSignal
+): Promise<void> => {
+  const token = getAccessToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    credentials: "include",
+    signal: abortSignal,
+  });
+
+  if (!res.ok) {
+    await handleErrorResponse(res);
+  }
+
+  if (!res.body) {
+    throw new Error("No response body");
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSEイベントをパース（data: {...}\n\n形式）
+      const lines = buffer.split("\n");
+      buffer = "";
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          try {
+            const event = JSON.parse(data) as StreamEvent;
+            onEvent(event);
+          } catch {
+            // JSONパース失敗は無視
+          }
+        } else if (line !== "" && !line.startsWith("event:") && !line.startsWith("id:")) {
+          // 不完全な行はバッファに戻す
+          buffer = lines.slice(i).join("\n");
+          break;
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+};
+
 // お店選択API
 export const selectShop = async (
   scheduleId: string,
