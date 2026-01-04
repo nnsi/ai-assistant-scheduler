@@ -28,6 +28,7 @@ export const ScheduleFormModal = ({
   const [formData, setFormData] = useState<CreateScheduleInput | null>(null);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const {
     keywords,
@@ -75,10 +76,13 @@ export const ScheduleFormModal = ({
   const handleRegenerate = async () => {
     if (!formData) return;
 
+    setIsRegenerating(true);
     try {
       await regenerateKeywords(formData.title, formData.startAt);
     } catch (error) {
       logger.error("Failed to regenerate keywords", { category: "ai", title: formData.title }, error);
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -126,6 +130,7 @@ export const ScheduleFormModal = ({
     setStep("form");
     setFormData(null);
     setSelectedKeywords([]);
+    setIsRegenerating(false);
     reset();
     onClose();
   };
@@ -154,7 +159,9 @@ export const ScheduleFormModal = ({
       {step === "keywords" && (
         <KeywordSuggestions
           keywords={keywords}
-          isLoading={isLoadingKeywords}
+          isLoading={isLoadingKeywords && !isRegenerating}
+          isSearching={isLoadingSearch}
+          isRegenerating={isRegenerating}
           hasConditions={hasConditions}
           onSelect={handleKeywordSelect}
           onSkip={handleSkip}

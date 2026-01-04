@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 type KeywordSuggestionsProps = {
   keywords: string[];
   isLoading?: boolean;
+  isSearching?: boolean;
+  isRegenerating?: boolean;
   hasConditions?: boolean;
   onSelect: (keywords: string[]) => void;
   onSkip: () => void;
@@ -15,6 +17,8 @@ type KeywordSuggestionsProps = {
 export const KeywordSuggestions = ({
   keywords,
   isLoading = false,
+  isSearching = false,
+  isRegenerating = false,
   hasConditions = false,
   onSelect,
   onSkip,
@@ -82,10 +86,16 @@ export const KeywordSuggestions = ({
       {onRegenerate && (
         <button
           onClick={onRegenerate}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 transition-colors"
+          disabled={isRegenerating || isSearching}
+          className={cn(
+            "inline-flex items-center gap-1.5 text-sm transition-colors",
+            isRegenerating || isSearching
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-gray-500 hover:text-primary-600"
+          )}
         >
-          <RefreshCw className="w-4 h-4" />
-          別のキーワードを提案してもらう
+          <RefreshCw className={cn("w-4 h-4", isRegenerating && "animate-spin")} />
+          {isRegenerating ? "提案中..." : "別のキーワードを提案してもらう"}
         </button>
       )}
 
@@ -96,14 +106,19 @@ export const KeywordSuggestions = ({
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="secondary" onClick={onSkip}>
+        <Button
+          variant="secondary"
+          onClick={onSkip}
+          disabled={isSearching || isRegenerating}
+        >
           スキップ
         </Button>
         <Button
           onClick={handleSelect}
-          disabled={selectedKeywords.size === 0 && !hasConditions}
+          disabled={(selectedKeywords.size === 0 && !hasConditions) || isRegenerating}
+          isLoading={isSearching}
         >
-          検索する ({selectedKeywords.size}件選択中)
+          {isSearching ? "検索中..." : `検索する (${selectedKeywords.size}件選択中)`}
         </Button>
       </div>
     </div>

@@ -117,3 +117,46 @@ export const FewKeywords: Story = {
     ),
   ],
 };
+
+export const Searching: Story = {
+  args: {
+    keywords: [
+      "子連れOK",
+      "ベビーカーOK",
+      "個室あり",
+      "駐車場あり",
+    ],
+    isLoading: false,
+    isSearching: true,
+    hasConditions: false,
+  },
+  decorators: [
+    (Story) => (
+      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Regenerating: Story = {
+  args: {
+    keywords: [
+      "子連れOK",
+      "ベビーカーOK",
+      "個室あり",
+      "駐車場あり",
+    ],
+    isLoading: false,
+    isRegenerating: true,
+    hasConditions: false,
+    onRegenerate: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
+        <Story />
+      </div>
+    ),
+  ],
+};
