@@ -19,6 +19,8 @@ migrations_dir = "drizzle"
 FRONTEND_URL = "http://localhost:5173"
 # モックAIを使用する場合は "true"（開発時のデフォルト）
 USE_MOCK_AI = "true"
+# 開発環境認証バイパス: ローカル開発時は .dev.vars で有効化
+ENABLE_DEV_AUTH = "false"
 # JWT_SECRET は .dev.vars で設定（セキュリティのため wrangler.toml には含めない）
 # 本番では wrangler secret put JWT_SECRET で設定
 
@@ -41,6 +43,8 @@ id = "YOUR_STAGING_KV_ID"
 
 [env.staging.vars]
 USE_MOCK_AI = "false"
+# 開発環境認証バイパス: ステージングでは無効
+ENABLE_DEV_AUTH = "false"
 # FRONTEND_URL: ステージング環境のフロントエンドURL
 # 例: FRONTEND_URL = "https://ai-scheduler-frontend.pages.dev"
 # ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）
@@ -72,6 +76,8 @@ id = "YOUR_PRODUCTION_KV_ID"
 
 [env.production.vars]
 USE_MOCK_AI = "false"
+# 開発環境認証バイパス: 本番では必ず無効
+ENABLE_DEV_AUTH = "false"
 # FRONTEND_URL: 本番環境のフロントエンドURL
 # 例: FRONTEND_URL = "https://your-app.example.com"
 # ALLOWED_REDIRECT_URIS: OAuthリダイレクト先の許可リスト（カンマ区切り）

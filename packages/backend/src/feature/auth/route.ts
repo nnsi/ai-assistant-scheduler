@@ -10,17 +10,29 @@ import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
 import { createGoogleAuthService } from "../../infra/auth/google";
-import { createJwtService } from "../../infra/auth/jwt";
+import { createJwtService, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../infra/auth/jwt";
 import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
 import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 import { createLogoutUseCase } from "./usecase/logout";
 import { createUpdateEmailUseCase } from "./usecase/updateEmail";
 import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
-import { createValidationError, createUnauthorizedError } from "../../shared/errors";
+import { createValidationError, createUnauthorizedError, createNotFoundError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { validateRedirectUri } from "../../shared/redirectUri";
 import { authRateLimitMiddleware } from "../../middleware/rateLimit";
+import { createRefreshToken } from "../../domain/model/refreshToken";
+import type { UserEntity } from "../../domain/model/user";
+
+// 開発環境テストユーザー設定
+const DEV_USER = {
+  id: "dev-user-001",
+  email: "dev@example.com",
+  name: "開発テストユーザー",
+  picture: null,
+  provider: "google" as const,
+  providerId: "dev-provider-001",
+};
 
 type Bindings = {
   DB: D1Database;
@@ -30,6 +42,7 @@ type Bindings = {
   ALLOWED_REDIRECT_URIS?: string;
   RATE_LIMIT_KV?: KVNamespace;
   FRONTEND_URL?: string;
+  ENABLE_DEV_AUTH?: string;
 };
 
 // リフレッシュトークン用Cookie設定
@@ -289,4 +302,58 @@ export const authRoute = app
 
       return c.json({ user: result.value }, 200);
     }
-  );
+  )
+  // POST /auth/dev-login - 開発環境用ログイン（Google認証をバイパス）
+  .post("/dev-login", async (c) => {
+    // 開発環境認証が無効な場合は404を返す
+    if (c.env.ENABLE_DEV_AUTH !== "true") {
+      return c.json(createNotFoundError("エンドポイント"), 404);
+    }
+
+    const db = createDb(c.env.DB);
+    const userRepo = createUserRepo(db);
+    const refreshTokenRepo = createRefreshTokenRepo(db);
+    const jwtService = c.get("jwtService");
+
+    // テストユーザーを検索または作成
+    let user = await userRepo.findByProviderId(DEV_USER.provider, DEV_USER.providerId);
+
+    if (!user) {
+      const now = new Date().toISOString();
+      const newUser: UserEntity = {
+        ...DEV_USER,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await userRepo.save(newUser);
+      user = newUser;
+    }
+
+    // リフレッシュトークンをDBに保存
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000);
+    const refreshTokenEntity = createRefreshToken(user.id, expiresAt);
+    await refreshTokenRepo.save(refreshTokenEntity);
+
+    // JWTトークンを生成
+    const tokens = await jwtService.generateTokens(user, refreshTokenEntity.id);
+
+    // リフレッシュトークンをHttpOnly Cookieで設定
+    const isProduction = c.env.FRONTEND_URL?.startsWith("https://");
+    setCookie(c, REFRESH_TOKEN_COOKIE, tokens.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "Strict",
+      path: "/api/auth",
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return c.json({
+      accessToken: tokens.accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+      },
+    }, 200);
+  });

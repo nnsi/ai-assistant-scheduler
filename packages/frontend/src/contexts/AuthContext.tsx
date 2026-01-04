@@ -34,6 +34,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (code: string, redirectUri: string) => Promise<void>;
+  devLogin: () => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
   updateEmail: (email: string) => Promise<void>;
@@ -200,6 +201,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // 開発環境用ログイン（Google認証をバイパス）
+  const devLogin = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/dev-login`, {
+        method: "POST",
+        credentials: "include", // Cookieを受け取る
+      });
+
+      if (!res.ok) {
+        const errorJson: unknown = await res.json();
+        const errorMessage =
+          typeof errorJson === "object" &&
+          errorJson !== null &&
+          "message" in errorJson &&
+          typeof errorJson.message === "string"
+            ? errorJson.message
+            : "開発環境ログインに失敗しました";
+        throw new Error(errorMessage);
+      }
+
+      const json: unknown = await res.json();
+      const result = loginResponseSchema.safeParse(json);
+      if (!result.success) {
+        throw new Error("レスポンスの形式が不正です");
+      }
+      setAccessToken(result.data.accessToken);
+      setUser(result.data.user);
+      localStorage.setItem(USER_KEY, JSON.stringify(result.data.user));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       // サーバーにログアウトを通知（リフレッシュトークンを無効化 + Cookieを削除）
@@ -295,6 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user && !!accessToken,
         login,
+        devLogin,
         logout,
         refreshAccessToken,
         updateEmail,
