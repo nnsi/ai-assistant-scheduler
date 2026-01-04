@@ -1,4 +1,4 @@
-import type { AiService, UserConditions } from "../../../domain/infra/aiService";
+import type { AiService, UserConditions, KeywordSuggestion } from "../../../domain/infra/aiService";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import { type Result, ok, err } from "../../../shared/result";
 import { createAiError } from "../../../shared/errors";
@@ -12,7 +12,7 @@ export const createSuggestKeywordsUseCase = (
     title: string,
     startAt: string,
     excludeKeywords?: string[]
-  ): Promise<Result<string[]>> => {
+  ): Promise<Result<KeywordSuggestion>> => {
     try {
       // ユーザーのプロファイルを取得
       const profile = await profileRepo.findByUserId(userId);
@@ -27,13 +27,13 @@ export const createSuggestKeywordsUseCase = (
         };
       }
 
-      const keywords = await aiService.suggestKeywords(
+      const suggestion = await aiService.suggestKeywords(
         title,
         startAt,
         userConditions,
         excludeKeywords
       );
-      return ok(keywords);
+      return ok(suggestion);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       return err(createAiError(message));

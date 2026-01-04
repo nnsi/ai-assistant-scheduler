@@ -1,7 +1,12 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { suggestKeywordsInputSchema, searchInputSchema } from "@ai-scheduler/shared";
-import { createKeywordAgent, createSearchAgent } from "../../infra/mastra/agents";
+import {
+  createKeywordAgent,
+  createSearchAgent,
+  createPlanAgent,
+  createAreaInfoAgent,
+} from "../../infra/mastra/agents";
 import { createAiService } from "../../infra/mastra/aiService";
 import { createMockAiService } from "../../infra/mock/aiService";
 import { createDb } from "../../infra/drizzle/client";
@@ -48,10 +53,11 @@ app.use("*", async (c, next) => {
   const useMock = c.env.USE_MOCK_AI === "true";
   const aiService = useMock
     ? createMockAiService()
-    : createAiService(
-        createKeywordAgent(c.env.OPENROUTER_API_KEY),
-        createSearchAgent(c.env.OPENROUTER_API_KEY)
-      );
+    : createAiService(createKeywordAgent(c.env.OPENROUTER_API_KEY), {
+        search: createSearchAgent(c.env.OPENROUTER_API_KEY),
+        plan: createPlanAgent(c.env.OPENROUTER_API_KEY),
+        "area-info": createAreaInfoAgent(c.env.OPENROUTER_API_KEY),
+      });
 
   c.set("suggestKeywords", createSuggestKeywordsUseCase(aiService, profileRepo));
   c.set("searchWithKeywords", createSearchWithKeywordsUseCase(aiService, profileRepo));
@@ -77,7 +83,10 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({ keywords: result.value }, 200);
+      return c.json(
+        { keywords: result.value.keywords, agentTypes: result.value.agentTypes },
+        200
+      );
     }
   )
   // POST /ai/search
@@ -90,8 +99,14 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, keywords } = c.req.valid("json");
-      const result = await c.get("searchWithKeywords")(userId, title, startAt, keywords);
+      const { title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const result = await c.get("searchWithKeywords")(
+        userId,
+        title,
+        startAt,
+        keywords,
+        agentTypes
+      );
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
