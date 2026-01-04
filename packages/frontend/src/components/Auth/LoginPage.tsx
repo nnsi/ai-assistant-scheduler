@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/common/Button";
 
@@ -30,7 +29,6 @@ const getGoogleOAuthUrl = () => {
 
 export function LoginPage() {
   const { isLoading, devLogin } = useAuth();
-  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isDevLoading, setIsDevLoading] = useState(false);
 
@@ -58,7 +56,7 @@ export function LoginPage() {
     setError(null);
     try {
       await devLogin();
-      navigate("/");
+      window.location.href = "/";
     } catch (e) {
       setError(e instanceof Error ? e.message : "開発環境ログインに失敗しました");
     } finally {
