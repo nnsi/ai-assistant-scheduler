@@ -11,16 +11,14 @@ test.describe("Schedule CRUD Operations", () => {
   const scheduleDate = new Date(today.getFullYear(), today.getMonth(), 15);
   const scheduleDateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, "0")}-15`;
 
+  // scheduleSchemaに合わせる
   const mockSchedule = {
     id: "schedule-1",
-    userId: "test-user-id",
     title: "テスト予定",
-    startAt: `${scheduleDateStr}T10:00:00`,
-    endAt: `${scheduleDateStr}T11:00:00`,
-    isAllDay: false,
-    memo: null,
-    createdAt: `${scheduleDateStr}T00:00:00`,
-    updatedAt: `${scheduleDateStr}T00:00:00`,
+    startAt: `${scheduleDateStr}T10:00:00+09:00`,
+    endAt: `${scheduleDateStr}T11:00:00+09:00`,
+    createdAt: `${scheduleDateStr}T00:00:00+09:00`,
+    updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
   };
 
   test.beforeEach(async ({ page }) => {
@@ -67,19 +65,11 @@ test.describe("Schedule CRUD Operations", () => {
       });
     });
 
-    await page.route("**/api/schedules*", async (route, request) => {
+    // スケジュール詳細取得のモック（先に設定することで優先度を高く）
+    await page.route("**/api/schedules/*", async (route, request) => {
       const method = request.method();
-      const url = request.url();
-
-      if (method === "GET" && !url.includes("/schedules/")) {
-        // スケジュール一覧取得（配列を直接返す）
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockSchedule]),
-        });
-      } else if (method === "GET" && url.includes("/schedules/")) {
-        // スケジュール詳細取得
+      if (method === "GET") {
+        // スケジュール詳細取得（scheduleWithSupplementSchemaに合わせる）
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -87,21 +77,13 @@ test.describe("Schedule CRUD Operations", () => {
             ...mockSchedule,
             supplement: {
               id: "supplement-1",
-              scheduleId: "schedule-1",
               keywords: ["キーワード1", "キーワード2"],
               aiResult: "AIの検索結果",
+              shopCandidates: null,
+              selectedShop: null,
               userMemo: null,
-              createdAt: `${scheduleDateStr}T00:00:00`,
-              updatedAt: `${scheduleDateStr}T00:00:00`,
             },
           }),
-        });
-      } else if (method === "POST") {
-        // スケジュール作成（スケジュールを直接返す）
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify(mockSchedule),
         });
       } else if (method === "PUT") {
         // スケジュール更新（スケジュールを直接返す）
@@ -116,6 +98,42 @@ test.describe("Schedule CRUD Operations", () => {
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({ success: true }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // スケジュール一覧・作成のモック
+    await page.route("**/api/schedules?*", async (route, request) => {
+      const method = request.method();
+      if (method === "GET") {
+        // スケジュール一覧取得（配列を直接返す）
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockSchedule]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/schedules", async (route, request) => {
+      const method = request.method();
+      if (method === "POST") {
+        // スケジュール作成（スケジュールを直接返す）
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify(mockSchedule),
+        });
+      } else if (method === "GET") {
+        // クエリパラメータなしのGET（一覧取得）
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockSchedule]),
         });
       } else {
         await route.continue();
@@ -169,8 +187,7 @@ test.describe("Schedule CRUD Operations", () => {
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
   });
 
-  test.fixme("should view schedule details", async ({ page }) => {
-    // TODO: スケジュール一覧のモックレスポンスがカレンダー表示と一致しない問題を修正する
+  test("should view schedule details", async ({ page }) => {
     // スケジュールが表示されるのを待つ
     await expect(page.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
 
