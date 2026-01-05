@@ -1,26 +1,117 @@
 import { test, expect } from "@playwright/test";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
 
 test.describe("Schedule Management", () => {
   test.beforeEach(async ({ page }) => {
+    // 認証状態を設定
+    await page.addInitScript(
+      ({ tokenKey, token }) => {
+        localStorage.setItem(tokenKey, token);
+        localStorage.setItem("auth_refresh_token", "test-refresh-token");
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify({
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+          })
+        );
+      },
+      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
+    );
+
+    // APIモックを設定
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
+      });
+    });
+
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+            picture: null,
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z",
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/schedules*", async (route, request) => {
+      const method = request.method();
+      if (method === "GET") {
+        // スケジュール一覧は配列を直接返す
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      } else if (method === "POST") {
+        // スケジュール作成は作成されたスケジュールを直接返す
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "new-schedule-1",
+            userId: "test-user-id",
+            title: "新しい予定",
+            startAt: "2025-01-15T10:00:00",
+            endAt: "2025-01-15T11:00:00",
+            isAllDay: false,
+            memo: null,
+            createdAt: "2025-01-01T00:00:00",
+            updatedAt: "2025-01-01T00:00:00",
+          }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/ai/suggest-keywords", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ keywords: ["キーワード1", "キーワード2", "キーワード3"] }),
+      });
+    });
+
+    await page.route("**/api/profile/conditions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
+      });
+    });
+
     await page.goto("/");
   });
 
   test("should display calendar with current month", async ({ page }) => {
     // カレンダーヘッダーが表示されていること
-    await expect(page.locator("header")).toContainText("AI Assistant Scheduler");
+    await expect(page.locator("header")).toContainText("AI Scheduler");
 
     // カレンダーが表示されていること
     const calendar = page.locator('[role="grid"]');
     await expect(calendar).toBeVisible();
 
-    // 曜日ヘッダーが表示されていること
-    await expect(page.getByText("日")).toBeVisible();
-    await expect(page.getByText("月")).toBeVisible();
-    await expect(page.getByText("火")).toBeVisible();
-    await expect(page.getByText("水")).toBeVisible();
-    await expect(page.getByText("木")).toBeVisible();
-    await expect(page.getByText("金")).toBeVisible();
-    await expect(page.getByText("土")).toBeVisible();
+    // 曜日ヘッダーが表示されていること（exact: trueで部分一致を避ける）
+    await expect(page.getByText("日", { exact: true })).toBeVisible();
+    await expect(page.getByText("月", { exact: true })).toBeVisible();
+    await expect(page.getByText("火", { exact: true })).toBeVisible();
+    await expect(page.getByText("水", { exact: true })).toBeVisible();
+    await expect(page.getByText("木", { exact: true })).toBeVisible();
+    await expect(page.getByText("金", { exact: true })).toBeVisible();
+    await expect(page.getByText("土", { exact: true })).toBeVisible();
   });
 
   test("should navigate between months", async ({ page }) => {

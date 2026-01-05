@@ -38,7 +38,15 @@ test.describe("AI Features", () => {
       { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
     );
 
-    // APIモックを設定
+    // APIモックを設定（ページ遷移前にルートを設定）
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
+      });
+    });
+
     await page.route("**/api/auth/me", async (route) => {
       await route.fulfill({
         status: 200,
@@ -59,28 +67,26 @@ test.describe("AI Features", () => {
     await page.route("**/api/schedules*", async (route, request) => {
       const method = request.method();
       if (method === "GET") {
+        // スケジュール一覧は配列を直接返す
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ schedules: [] }),
+          body: JSON.stringify([]),
         });
       } else if (method === "POST") {
         const body = await request.postDataJSON();
+        // スケジュール作成は作成されたスケジュールを直接返す
+        // scheduleSchemaに合わせる：endAtはnullable（undefinedではなくnull）
         await route.fulfill({
           status: 201,
           contentType: "application/json",
           body: JSON.stringify({
-            schedule: {
-              id: "new-schedule-1",
-              userId: "test-user-id",
-              title: body.title,
-              startAt: body.startAt,
-              endAt: body.endAt,
-              isAllDay: body.isAllDay,
-              memo: null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
+            id: "new-schedule-1",
+            title: body.title,
+            startAt: body.startAt,
+            endAt: body.endAt ?? null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           }),
         });
       } else {
@@ -108,6 +114,33 @@ test.describe("AI Features", () => {
       });
     });
 
+    // SSEストリーミング検索エンドポイントのモック
+    await page.route("**/api/ai/search-and-save/stream", async (route) => {
+      // SSEレスポンスを返す
+      const sseResponse = [
+        'data: {"type":"status","message":"検索中..."}',
+        '',
+        `data: {"type":"text","content":"${mockSearchResult.replace(/\n/g, '\\n')}"}`,
+        '',
+        'data: {"type":"done"}',
+        '',
+      ].join('\n');
+
+      await route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: sseResponse,
+      });
+    });
+
+    await page.route("**/api/profile/conditions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
+      });
+    });
+
     await page.goto("/");
   });
 
@@ -125,8 +158,8 @@ test.describe("AI Features", () => {
     // 次へボタンをクリック
     await page.getByRole("button", { name: "次へ" }).click();
 
-    // キーワード選択画面が表示されること
-    await expect(page.getByText("キーワード選択")).toBeVisible();
+    // キーワード選択画面が表示されること（APIレスポンスを待つためタイムアウトを長く）
+    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
 
     // 提案されたキーワードが表示されること
     for (const keyword of mockKeywords.slice(0, 3)) {
@@ -145,28 +178,19 @@ test.describe("AI Features", () => {
     // 次へボタンをクリック
     await page.getByRole("button", { name: "次へ" }).click();
 
-    // キーワード選択画面が表示されるまで待機
-    await expect(page.getByText("キーワード選択")).toBeVisible();
+    // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
+    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
 
-    // キーワードを選択（最初の2つ）
-    const keywordButtons = page.locator('[data-testid="keyword-button"]');
-    const keywordCount = await keywordButtons.count();
+    // キーワードを選択（キーワードテキストでボタンを探す）
+    // mockKeywordsの最初の2つを選択
+    await page.getByRole("button", { name: mockKeywords[0], exact: true }).click();
+    await page.getByRole("button", { name: mockKeywords[1], exact: true }).click();
 
-    if (keywordCount > 0) {
-      await keywordButtons.first().click();
-      if (keywordCount > 1) {
-        await keywordButtons.nth(1).click();
-      }
-    }
+    // 検索ボタンをクリック（2件選択中）
+    await page.getByRole("button", { name: /検索する/ }).click();
 
-    // 検索ボタンをクリック
-    const searchButton = page.getByRole("button", { name: /検索|調べる/i });
-    if (await searchButton.isVisible()) {
-      await searchButton.click();
-
-      // 検索結果が表示されること
-      await expect(page.getByText("検索結果")).toBeVisible();
-    }
+    // 検索結果画面が表示されること（モーダルタイトルで確認）
+    await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({ timeout: 10000 });
   });
 
   test("should skip AI suggestions and create schedule directly", async ({ page }) => {
@@ -180,8 +204,8 @@ test.describe("AI Features", () => {
     // 次へボタンをクリック
     await page.getByRole("button", { name: "次へ" }).click();
 
-    // キーワード選択画面が表示されるまで待機
-    await expect(page.getByText("キーワード選択")).toBeVisible();
+    // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
+    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
 
     // スキップボタンをクリック
     const skipButton = page.getByRole("button", { name: /スキップ/i });
@@ -204,31 +228,23 @@ test.describe("AI Features", () => {
     // 次へボタンをクリック
     await page.getByRole("button", { name: "次へ" }).click();
 
-    // キーワード選択画面が表示されるまで待機
-    await expect(page.getByText("キーワード選択")).toBeVisible();
+    // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
+    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
 
-    // キーワードを選択
-    const keywordButtons = page.locator('[data-testid="keyword-button"]');
-    if ((await keywordButtons.count()) > 0) {
-      await keywordButtons.first().click();
-    }
+    // キーワードを選択（最初のキーワードをクリック）
+    await page.getByRole("button", { name: mockKeywords[0], exact: true }).click();
 
-    // 検索ボタンをクリック
-    const searchButton = page.getByRole("button", { name: /検索|調べる/i });
-    if (await searchButton.isVisible()) {
-      await searchButton.click();
+    // 検索ボタンをクリック（1件選択中）
+    await page.getByRole("button", { name: /検索する/ }).click();
 
-      // 検索結果画面が表示されるまで待機
-      await expect(page.getByText("検索結果")).toBeVisible();
+    // 検索結果画面が表示されるまで待機（モーダルタイトルで確認）
+    await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({ timeout: 10000 });
 
-      // 保存ボタンをクリック
-      const saveButton = page.getByRole("button", { name: /保存/i });
-      if (await saveButton.isVisible()) {
-        await saveButton.click();
+    // 閉じる/終了するボタンをクリック（検索結果は自動保存されるので閉じるだけ）
+    // お店候補がない場合は「終了する」、ある場合は「閉じる」
+    await page.getByRole("button", { name: /閉じる|終了する/ }).click();
 
-        // モーダルが閉じること
-        await expect(page.getByRole("dialog")).not.toBeVisible();
-      }
-    }
+    // モーダルが閉じること
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
   });
 });
