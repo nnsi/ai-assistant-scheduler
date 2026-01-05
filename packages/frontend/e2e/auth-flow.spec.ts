@@ -7,7 +7,16 @@ import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
  */
 test.describe("Authentication Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // APIモックを設定
+    // APIモックを設定（ページ遷移前にルートを設定）
+    // 初回は未認証なので401を返す
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized" }),
+      });
+    });
+
     await page.route("**/api/auth/google", async (route) => {
       await route.fulfill({
         status: 200,
@@ -64,6 +73,16 @@ test.describe("Authentication Flow", () => {
   test("should redirect to OAuth callback and login", async ({ page }) => {
     await page.goto("/");
 
+    // 認証成功後のモックを設定
+    await page.unroute("**/api/auth/refresh");
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
+      });
+    });
+
     // localStorageに認証情報を設定（ログイン後の状態をシミュレート）
     await page.evaluate(
       ({ tokenKey, token }) => {
@@ -81,6 +100,23 @@ test.describe("Authentication Flow", () => {
       { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
     );
 
+    // スケジュール一覧のモック（配列を直接返す）
+    await page.route("**/api/schedules*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/api/profile/conditions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
+      });
+    });
+
     // ページをリロード
     await page.reload();
 
@@ -89,6 +125,33 @@ test.describe("Authentication Flow", () => {
   });
 
   test("should logout successfully", async ({ page }) => {
+    // 認証成功後のモックを設定
+    await page.unroute("**/api/auth/refresh");
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
+      });
+    });
+
+    // スケジュール一覧のモック（配列を直接返す）
+    await page.route("**/api/schedules*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/api/profile/conditions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
+      });
+    });
+
     // ログイン状態を設定
     await page.goto("/");
     await page.evaluate(
