@@ -1,0 +1,29 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    # Backend
+    backend-typecheck:
+      glob: "packages/backend/**/*.ts"
+      run: pnpm --filter backend typecheck
+    backend-test:
+      glob: "packages/backend/**/*.ts"
+      run: pnpm --filter backend test -- --run
+
+    # Frontend
+    frontend-typecheck:
+      glob: "packages/frontend/**/*.{ts,tsx}"
+      run: pnpm --filter frontend typecheck
+    frontend-test:
+      glob: "packages/frontend/**/*.{ts,tsx}"
+      run: pnpm --filter frontend test -- --run
+
+    # Shared (両方に影響)
+    shared-typecheck:
+      glob: "packages/shared/**/*.ts"
+      run: pnpm typecheck
+    shared-test:
+      glob: "packages/shared/**/*.ts"
+      run: pnpm test -- --run
