@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
 import { useAuth } from "@/contexts/AuthContext";
+import { LogOut } from "lucide-react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -33,7 +34,7 @@ const getGoogleReconnectUrl = () => {
 };
 
 export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalProps) {
-  const { user, updateEmail } = useAuth();
+  const { user, updateEmail, logout } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -162,6 +163,18 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
               />
             </svg>
             Googleアカウントを再設定
+          </Button>
+        </div>
+
+        {/* ログアウト */}
+        <div className="border-t pt-4">
+          <Button
+            onClick={logout}
+            variant="danger"
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            ログアウト
           </Button>
         </div>
       </div>

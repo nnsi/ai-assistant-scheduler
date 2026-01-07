@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Settings2, CalendarDays, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { getMonthLabel, getWeekLabel, getDayFullLabel } from "@/lib/date";
+import { cn } from "@/lib/cn";
 
 export type CalendarViewMode = "month" | "week" | "day";
 
@@ -45,58 +46,71 @@ export const CalendarHeader = ({
     }
   };
 
+  const viewModes: { mode: CalendarViewMode; icon: typeof CalendarDays; label: string }[] = [
+    { mode: "month", icon: CalendarDays, label: "月表示" },
+    { mode: "week", icon: CalendarIcon, label: "週表示" },
+    { mode: "day", icon: Clock, label: "日表示" },
+  ];
+
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 sm:mb-4">
-      <div className="flex items-center gap-1 sm:gap-2">
-        <Button variant="ghost" size="sm" onClick={onPrevious} aria-label="前へ">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+      {/* Navigation */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onPrevious}
+          className={cn(
+            "p-2 rounded-xl text-stone-500",
+            "hover:bg-stone-100 hover:text-stone-700",
+            "transition-all duration-200",
+            "active:scale-95"
+          )}
+          aria-label="前へ"
+        >
           <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <h2 className={`text-sm sm:text-xl font-semibold text-gray-900 ${getMinWidth()} text-center`}>
+        </button>
+        <h2 className={cn(
+          "text-lg sm:text-2xl font-display text-stone-900",
+          getMinWidth(),
+          "text-center"
+        )}>
           {getLabel()}
         </h2>
-        <Button variant="ghost" size="sm" onClick={onNext} aria-label="次へ">
+        <button
+          onClick={onNext}
+          className={cn(
+            "p-2 rounded-xl text-stone-500",
+            "hover:bg-stone-100 hover:text-stone-700",
+            "transition-all duration-200",
+            "active:scale-95"
+          )}
+          aria-label="次へ"
+        >
           <ChevronRight className="w-5 h-5" />
-        </Button>
+        </button>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2">
-        {/* ビュー切り替えボタン */}
-        <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-          <button
-            onClick={() => onViewModeChange("month")}
-            className={`p-1.5 rounded-md transition-colors ${
-              viewMode === "month"
-                ? "bg-white shadow-sm text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="月表示"
-          >
-            <CalendarDays className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onViewModeChange("week")}
-            className={`p-1.5 rounded-md transition-colors ${
-              viewMode === "week"
-                ? "bg-white shadow-sm text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="週表示"
-          >
-            <CalendarIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onViewModeChange("day")}
-            className={`p-1.5 rounded-md transition-colors ${
-              viewMode === "day"
-                ? "bg-white shadow-sm text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="日表示"
-          >
-            <Clock className="w-4 h-4" />
-          </button>
+      {/* Controls */}
+      <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl">
+          {viewModes.map(({ mode, icon: Icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => onViewModeChange(mode)}
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200",
+                viewMode === mode
+                  ? "bg-white shadow-sm text-accent"
+                  : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+              )}
+              title={label}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
         </div>
 
+        {/* Conditions Button */}
         {onConditionsClick && (
           <Button
             variant="ghost"
@@ -104,11 +118,14 @@ export const CalendarHeader = ({
             onClick={onConditionsClick}
             aria-label="こだわり条件設定"
             title="こだわり条件設定"
+            className="text-stone-600"
           >
             <Settings2 className="w-5 h-5" />
-            <span className="ml-1 hidden sm:inline">こだわり条件</span>
+            <span className="ml-1.5 hidden sm:inline">こだわり条件</span>
           </Button>
         )}
+
+        {/* Today Button */}
         <Button variant="secondary" size="sm" onClick={onToday}>
           今日
         </Button>

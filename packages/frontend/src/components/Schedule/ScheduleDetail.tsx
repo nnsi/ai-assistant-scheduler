@@ -32,24 +32,24 @@ export const ScheduleDetail = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* タイトルと日時 */}
       <div>
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl sm:text-2xl font-display text-stone-900 mb-3">
           {schedule.title}
         </h3>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
+        <div className="flex flex-wrap items-center gap-3 text-sm text-stone-600">
+          <div className="flex items-center gap-2 bg-stone-100 rounded-lg px-3 py-1.5">
+            <Calendar className="w-4 h-4 text-stone-500" />
             <span>{formatDateString(schedule.startAt, "yyyy年M月d日")}</span>
           </div>
           {schedule.isAllDay ? (
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+            <span className="px-3 py-1.5 bg-accent/10 text-accent-dark rounded-lg text-sm font-medium">
               終日
             </span>
           ) : (
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center gap-2 bg-stone-100 rounded-lg px-3 py-1.5">
+              <Clock className="w-4 h-4 text-stone-500" />
               <span>{formatDateString(schedule.startAt, "HH:mm")}</span>
             </div>
           )}
@@ -58,49 +58,51 @@ export const ScheduleDetail = ({
 
       {/* 選択されたお店 */}
       {schedule.supplement?.selectedShop && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-          <div className="flex items-center gap-2 mb-2 sm:mb-3">
-            <Store className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" />
-            <h4 className="text-xs sm:text-sm font-medium text-green-900">決定したお店</h4>
+        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Store className="w-4 h-4 text-emerald-700" />
+            </div>
+            <h4 className="text-sm font-medium text-emerald-900">決定したお店</h4>
           </div>
           <div className="space-y-2">
-            <p className="font-medium text-sm sm:text-base text-gray-900">
+            <p className="font-medium text-base text-stone-900">
               {schedule.supplement.selectedShop.name}
             </p>
             {schedule.supplement.selectedShop.summary && (
-              <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+              <p className="text-sm text-stone-600 line-clamp-2">
                 {schedule.supplement.selectedShop.summary}
               </p>
             )}
-            <div className="text-xs sm:text-sm text-gray-500 space-y-1">
+            <div className="text-sm text-stone-500 space-y-1.5">
               {schedule.supplement.selectedShop.businessHours && (
-                <div className="flex items-start gap-1">
-                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
                   <span className="break-words">{schedule.supplement.selectedShop.businessHours}</span>
                   {schedule.supplement.selectedShop.closedDays && (
-                    <span className="text-gray-400 hidden sm:inline">
+                    <span className="text-stone-400 hidden sm:inline">
                       （{schedule.supplement.selectedShop.closedDays}）
                     </span>
                   )}
                 </div>
               )}
               {schedule.supplement.selectedShop.address && (
-                <div className="flex items-start gap-1">
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
                   <span className="break-words">{schedule.supplement.selectedShop.address}</span>
                 </div>
               )}
             </div>
             {schedule.supplement.selectedShop.urls && (
-              <div className="flex flex-wrap gap-2 sm:gap-3 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {schedule.supplement.selectedShop.urls.official && (
                   <a
                     href={schedule.supplement.selectedShop.urls.official}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-sm text-green-700 hover:underline flex items-center gap-1"
+                    className="text-sm text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
                   >
-                    公式 <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    公式 <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
                 {schedule.supplement.selectedShop.urls.reservation && (
@@ -108,9 +110,9 @@ export const ScheduleDetail = ({
                     href={schedule.supplement.selectedShop.urls.reservation}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
                   >
-                    予約 <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    予約 <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
                 {schedule.supplement.selectedShop.urls.tabelog && (
@@ -118,9 +120,9 @@ export const ScheduleDetail = ({
                     href={schedule.supplement.selectedShop.urls.tabelog}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-sm text-orange-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
                   >
-                    食べログ <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    食べログ <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
                 {schedule.supplement.selectedShop.urls.googleMap && (
@@ -128,9 +130,9 @@ export const ScheduleDetail = ({
                     href={schedule.supplement.selectedShop.urls.googleMap}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
                   >
-                    地図 <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    地図 <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
               </div>
@@ -141,51 +143,53 @@ export const ScheduleDetail = ({
 
       {/* AI検索結果 */}
       {schedule.supplement?.aiResult && (
-        <details className="bg-purple-50 rounded-lg p-3 sm:p-4">
-          <summary className="text-xs sm:text-sm font-medium text-purple-900 cursor-pointer hover:text-purple-700">
+        <details className="bg-violet-50 border border-violet-100 rounded-xl overflow-hidden group">
+          <summary className="px-4 py-3 text-sm font-medium text-violet-900 cursor-pointer hover:bg-violet-100/50 transition-colors select-none">
             AI検索結果を表示
           </summary>
-          <div className="mt-2 sm:mt-3">
+          <div className="px-4 pb-4 pt-1 border-t border-violet-100">
             <MarkdownRenderer
               content={schedule.supplement.aiResult}
-              className="text-xs sm:text-sm"
+              className="text-sm"
             />
           </div>
         </details>
       )}
 
       {/* メモ */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs sm:text-sm font-medium text-gray-700">メモ</h4>
+      <div className="bg-stone-50 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-stone-700">メモ</h4>
           {!isEditingMemo && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsEditingMemo(true)}
+              className="text-stone-600"
             >
-              <Edit className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">編集</span>
+              <Edit className="w-4 h-4" />
+              <span className="ml-1 hidden sm:inline">編集</span>
             </Button>
           )}
         </div>
 
         {isEditingMemo ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               rows={4}
               placeholder="メモを入力..."
               className={cn(
-                "w-full px-3 py-2 border rounded-md shadow-sm text-sm",
-                "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
-                "border-gray-300"
+                "w-full px-4 py-3 rounded-xl border border-stone-200 bg-white",
+                "text-sm text-stone-800 placeholder:text-stone-400",
+                "focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent",
+                "transition-all duration-200"
               )}
             />
             <div className="flex justify-end gap-2">
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsEditingMemo(false)}
               >
@@ -197,26 +201,26 @@ export const ScheduleDetail = ({
             </div>
           </div>
         ) : schedule.supplement?.userMemo ? (
-          <MarkdownRenderer content={schedule.supplement.userMemo} className="text-xs sm:text-sm" />
+          <MarkdownRenderer content={schedule.supplement.userMemo} className="text-sm" />
         ) : (
-          <p className="text-xs sm:text-sm text-gray-400">メモはありません</p>
+          <p className="text-sm text-stone-400">メモはありません</p>
         )}
       </div>
 
       {/* アクションボタン */}
-      <div className="flex justify-between pt-4 border-t">
+      <div className="flex justify-between pt-4 border-t border-stone-100">
         <Button
           variant="danger"
           size="sm"
           onClick={onDelete}
           isLoading={isDeleting}
         >
-          <Trash2 className="w-4 h-4 sm:mr-1" />
-          <span className="hidden sm:inline">削除</span>
+          <Trash2 className="w-4 h-4" />
+          <span className="ml-1 hidden sm:inline">削除</span>
         </Button>
         <Button variant="secondary" size="sm" onClick={onEdit}>
-          <Edit className="w-4 h-4 sm:mr-1" />
-          <span className="hidden sm:inline">編集</span>
+          <Edit className="w-4 h-4" />
+          <span className="ml-1 hidden sm:inline">編集</span>
         </Button>
       </div>
     </div>

@@ -48,9 +48,9 @@ export const Modal = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
-        {/* Backdrop */}
+        {/* Backdrop with blur */}
         <div
-          className="fixed inset-0 bg-black/50 transition-opacity"
+          className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm animate-fade-in"
           onClick={onClose}
         />
 
@@ -60,17 +60,27 @@ export const Modal = ({
           aria-modal="true"
           aria-labelledby={title ? "modal-title" : undefined}
           className={cn(
-            "relative w-full bg-white rounded-lg shadow-xl",
+            "relative w-full bg-white rounded-2xl shadow-strong",
+            "animate-scale-in",
             sizes[size]
           )}
         >
           {/* Header */}
           {title && (
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
-              <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-gray-900">{title}</h2>
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-100">
+              <h2
+                id="modal-title"
+                className="text-lg sm:text-xl font-display text-stone-900"
+              >
+                {title}
+              </h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-500"
+                className={cn(
+                  "p-2 -mr-2 rounded-xl text-stone-400",
+                  "hover:text-stone-600 hover:bg-stone-100",
+                  "transition-colors duration-200"
+                )}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -78,7 +88,7 @@ export const Modal = ({
           )}
 
           {/* Body */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4">{children}</div>
+          <div className="px-5 sm:px-6 py-4 sm:py-5">{children}</div>
         </div>
       </div>
     </div>

@@ -43,14 +43,18 @@ export const Calendar = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-soft border border-stone-200/50 overflow-hidden flex-1 flex flex-col min-h-0">
       {/* 曜日ヘッダー */}
-      <div className="grid grid-cols-7 bg-gray-50 border-b">
+      <div className="grid grid-cols-7 bg-stone-50/80 border-b border-stone-100">
         {weekDays.map((day, index) => (
           <div
             key={day}
-            className={`py-1 sm:py-2 text-center text-xs sm:text-sm font-medium ${
-              index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-gray-700"
+            className={`py-2 sm:py-3 text-center text-xs sm:text-sm font-medium ${
+              index === 0
+                ? "text-rose-500"
+                : index === 6
+                ? "text-sky-500"
+                : "text-stone-600"
             }`}
           >
             {day}
@@ -59,7 +63,7 @@ export const Calendar = ({
       </div>
 
       {/* カレンダーグリッド */}
-      <div role="grid" className="grid grid-cols-7">
+      <div role="grid" className="grid grid-cols-7 flex-1 overflow-y-auto">
         {days.map((date) => (
           <CalendarDay
             key={date.toISOString()}

@@ -1,3 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm Slate Base */
+    --color-surface: 250 249 247;
+    --color-surface-elevated: 255 255 255;
+    --color-surface-muted: 245 243 240;
+
+    /* Text Colors */
+    --color-text-primary: 41 37 36;
+    --color-text-secondary: 87 83 78;
+    --color-text-muted: 156 152 145;
+
+    /* Accent - Warm Coral */
+    --color-accent: 234 88 12;
+    --color-accent-light: 255 237 213;
+    --color-accent-dark: 194 65 12;
+
+    /* Schedule Colors */
+    --color-schedule-primary: 59 130 246;
+    --color-schedule-ai: 139 92 246;
+
+    /* Borders & Shadows */
+    --color-border: 229 225 220;
+    --color-border-strong: 214 207 200;
+    --shadow-color: 41 37 36;
+  }
+
+  html {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface text-stone-800;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-stone-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-stone-400;
+  }
+}
+
+@layer components {
+  /* Typography */
+  .font-display {
+    font-family: 'DM Serif Display', serif;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-2xl shadow-soft border border-stone-200/50;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-medium hover:-translate-y-0.5;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-warm {
+    background: linear-gradient(135deg, rgb(var(--color-surface)) 0%, rgb(250, 247, 243) 100%);
+  }
+
+  /* Schedule item styles */
+  .schedule-item {
+    @apply px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200;
+    @apply hover:scale-[1.02] hover:shadow-sm;
+  }
+
+  /* Button base */
+  .btn {
+    @apply inline-flex items-center justify-center font-medium rounded-xl;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none;
+  }
+
+  .btn:active:not(:disabled) {
+    @apply scale-[0.98];
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-2.5 rounded-xl border border-stone-200;
+    @apply bg-white text-stone-800 placeholder:text-stone-400;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent;
+  }
+
+  /* View toggle styles */
+  .view-toggle {
+    @apply flex items-center gap-1 p-1 bg-stone-100 rounded-xl;
+  }
+
+  .view-toggle-btn {
+    @apply p-2 rounded-lg transition-all duration-200;
+  }
+
+  .view-toggle-btn-active {
+    @apply bg-white shadow-sm text-accent;
+  }
+
+  .view-toggle-btn-inactive {
+    @apply text-stone-500 hover:text-stone-700 hover:bg-stone-50;
+  }
+}
+
+@layer utilities {
+  /* Shadows */
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px rgb(var(--shadow-color) / 0.02),
+      0 4px 8px rgb(var(--shadow-color) / 0.04),
+      0 8px 16px rgb(var(--shadow-color) / 0.02);
+  }
+
+  .shadow-medium {
+    box-shadow:
+      0 2px 4px rgb(var(--shadow-color) / 0.02),
+      0 8px 16px rgb(var(--shadow-color) / 0.06),
+      0 16px 32px rgb(var(--shadow-color) / 0.04);
+  }
+
+  .shadow-strong {
+    box-shadow:
+      0 4px 8px rgb(var(--shadow-color) / 0.04),
+      0 12px 24px rgb(var(--shadow-color) / 0.08),
+      0 24px 48px rgb(var(--shadow-color) / 0.06);
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Backdrop blur fix for Safari */
+  .backdrop-blur-fix {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+}

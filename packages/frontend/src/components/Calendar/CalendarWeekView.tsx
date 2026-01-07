@@ -9,6 +9,7 @@ import {
   getHours,
   getMinutes,
 } from "@/lib/date";
+import { cn } from "@/lib/cn";
 import type { Schedule } from "@ai-scheduler/shared";
 
 type CalendarWeekViewProps = {
@@ -54,78 +55,94 @@ export const CalendarWeekView = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {/* 曜日ヘッダー */}
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] bg-gray-50 border-b sticky top-0 z-10">
-        <div className="py-2 text-center text-xs font-medium text-gray-500">
-          時間
-        </div>
-        {days.map((date, index) => (
-          <div
-            key={date.toISOString()}
-            className={`py-2 text-center border-l ${
-              isSameDay(date, today) ? "bg-blue-50" : ""
-            }`}
-          >
-            <div
-              className={`text-xs font-medium ${
-                index === 0
-                  ? "text-red-500"
-                  : index === 6
-                  ? "text-blue-500"
-                  : "text-gray-700"
-              }`}
-            >
-              {weekDayLabels[index]}
+    <div className="bg-white rounded-2xl shadow-soft border border-stone-200/50 overflow-hidden flex-1 flex flex-col min-h-0">
+      {/* 全体をスクロールコンテナに */}
+      <div className="overflow-y-auto flex-1">
+        {/* ヘッダー + 終日エリア - 1つのstickyコンテナ */}
+        <div className="sticky top-0 z-20 bg-stone-50 border-b border-stone-200">
+          {/* 曜日ヘッダー */}
+          <div className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)]">
+            <div className="py-2 sm:py-3 text-center text-[10px] sm:text-xs font-medium text-stone-500">
+              時間
             </div>
-            <div
-              className={`text-sm ${
-                isSameDay(date, today)
-                  ? "bg-blue-500 text-white rounded-full w-7 h-7 flex items-center justify-center mx-auto"
-                  : "text-gray-900"
-              }`}
-            >
-              {formatDate(date, "d")}
-            </div>
-          </div>
-        ))}
-      </div>
+            {days.map((date, index) => {
+              const isToday = isSameDay(date, today);
+              const isSunday = index === 0;
+              const isSaturday = index === 6;
 
-      {/* 終日イベントエリア */}
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b bg-gray-50">
-        <div className="py-1 text-center text-xs text-gray-500">終日</div>
-        {days.map((date) => {
-          const daySchedules = getSchedulesForDate(date).filter(
-            (s) => s.isAllDay
-          );
-          return (
-            <div
-              key={date.toISOString()}
-              className="py-1 px-1 border-l min-h-[28px]"
-            >
-              {daySchedules.map((schedule) => (
-                <button
-                  key={schedule.id}
-                  onClick={() => onScheduleClick(schedule)}
-                  className="w-full text-left text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 truncate hover:bg-blue-200 transition-colors"
+              return (
+                <div
+                  key={date.toISOString()}
+                  className={cn(
+                    "py-1.5 sm:py-2 text-center border-l border-stone-100",
+                    isToday && "bg-accent-light/30"
+                  )}
                 >
-                  {schedule.title}
-                </button>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+                  <div
+                    className={cn(
+                      "text-[10px] sm:text-xs font-medium",
+                      isSunday && "text-rose-500",
+                      isSaturday && "text-sky-500",
+                      !isSunday && !isSaturday && "text-stone-600"
+                    )}
+                  >
+                    {weekDayLabels[index]}
+                  </div>
+                  <div
+                    className={cn(
+                      "text-xs sm:text-sm font-medium mt-0.5",
+                      isToday
+                        ? "bg-accent text-white rounded-full w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center mx-auto text-[10px] sm:text-sm"
+                        : "text-stone-900"
+                    )}
+                  >
+                    {formatDate(date, "d")}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-      {/* 時間グリッド */}
-      <div className="overflow-y-auto max-h-[600px]">
-        <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+          {/* 終日イベントエリア */}
+          <div className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-t border-stone-100">
+            <div className="py-1 sm:py-1.5 text-center text-[10px] sm:text-xs text-stone-500 font-medium">終日</div>
+            {days.map((date) => {
+              const daySchedules = getSchedulesForDate(date).filter(
+                (s) => s.isAllDay
+              );
+              return (
+                <div
+                  key={date.toISOString()}
+                  className="py-0.5 px-0.5 sm:py-1 sm:px-1 border-l border-stone-100 min-h-[24px] sm:min-h-[28px] overflow-hidden"
+                >
+                  {daySchedules.map((schedule) => (
+                    <button
+                      key={schedule.id}
+                      onClick={() => onScheduleClick(schedule)}
+                      className={cn(
+                        "w-full text-left text-[10px] sm:text-xs rounded sm:rounded-lg px-1 sm:px-2 py-0.5 truncate block",
+                        "font-medium transition-all duration-200",
+                        "bg-accent/10 text-accent-dark",
+                        "hover:bg-accent/20"
+                      )}
+                    >
+                      {schedule.title}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 時間グリッド */}
+        <div className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)]">
           {/* 時間列 */}
           <div>
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="h-12 border-b text-right pr-2 text-xs text-gray-500"
+                className="h-10 sm:h-12 border-b border-stone-100 text-right pr-1 sm:pr-3 text-[10px] sm:text-xs text-stone-400 font-medium"
               >
                 {hour.toString().padStart(2, "0")}:00
               </div>
@@ -139,11 +156,11 @@ export const CalendarWeekView = ({
             );
 
             return (
-              <div key={date.toISOString()} className="relative border-l">
+              <div key={date.toISOString()} className="relative border-l border-stone-100">
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="h-12 border-b hover:bg-gray-50 cursor-pointer"
+                    className="h-10 sm:h-12 border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
                     onClick={() => onTimeSlotClick(date, hour)}
                   />
                 ))}
@@ -158,16 +175,21 @@ export const CalendarWeekView = ({
                         e.stopPropagation();
                         onScheduleClick(schedule);
                       }}
-                      className="absolute left-0.5 right-0.5 bg-blue-500 text-white text-xs rounded px-1 py-0.5 truncate hover:bg-blue-600 transition-colors shadow-sm"
+                      className={cn(
+                        "absolute left-px right-px sm:left-0.5 sm:right-0.5 rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 truncate text-left",
+                        "text-[10px] sm:text-xs font-medium transition-all duration-200",
+                        "bg-accent text-white shadow-sm",
+                        "hover:shadow-md hover:scale-[1.02]"
+                      )}
                       style={{
-                        top: `calc(${hour * 48}px + ${topOffset * 0.48}px)`,
-                        minHeight: "20px",
+                        top: `calc(${hour * 40}px + ${topOffset * 0.4}px)`,
+                        minHeight: "18px",
                       }}
                     >
-                      <span className="font-medium">
+                      <span className="opacity-80 hidden sm:inline">
                         {formatDateString(schedule.startAt, "HH:mm")}
                       </span>
-                      <span className="ml-1">{schedule.title}</span>
+                      <span className="sm:ml-1">{schedule.title}</span>
                     </button>
                   );
                 })}

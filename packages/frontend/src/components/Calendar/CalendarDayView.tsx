@@ -7,6 +7,7 @@ import {
   getHours,
   getMinutes,
 } from "@/lib/date";
+import { cn } from "@/lib/cn";
 import type { Schedule } from "@ai-scheduler/shared";
 
 type CalendarDayViewProps = {
@@ -44,16 +45,20 @@ export const CalendarDayView = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-soft border border-stone-200/50 overflow-hidden flex-1 flex flex-col min-h-0">
       {/* ヘッダー */}
-      <div className="bg-gray-50 border-b px-4 py-3 sticky top-0 z-10">
-        <div
-          className={`text-center ${isToday ? "text-blue-600" : "text-gray-900"}`}
-        >
-          <div className="text-lg font-semibold">
+      <div className={cn(
+        "border-b border-stone-100 px-5 py-4 sticky top-0 z-10",
+        isToday ? "bg-accent-light/30" : "bg-stone-50/80"
+      )}>
+        <div className="text-center">
+          <div className={cn(
+            "text-xl font-display",
+            isToday ? "text-accent-dark" : "text-stone-900"
+          )}>
             {formatDate(currentDate, "yyyy年M月d日")}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-stone-500 mt-0.5">
             {formatDate(currentDate, "EEEE")}
           </div>
         </div>
@@ -61,14 +66,19 @@ export const CalendarDayView = ({
 
       {/* 終日イベントエリア */}
       {allDaySchedules.length > 0 && (
-        <div className="border-b bg-gray-50 px-4 py-2">
-          <div className="text-xs text-gray-500 mb-1">終日</div>
-          <div className="space-y-1">
+        <div className="border-b border-stone-100 bg-stone-50/50 px-5 py-3">
+          <div className="text-xs text-stone-500 font-medium mb-2">終日</div>
+          <div className="space-y-1.5">
             {allDaySchedules.map((schedule) => (
               <button
                 key={schedule.id}
                 onClick={() => onScheduleClick(schedule)}
-                className="w-full text-left bg-blue-100 text-blue-800 rounded px-2 py-1 text-sm hover:bg-blue-200 transition-colors"
+                className={cn(
+                  "w-full text-left rounded-xl px-4 py-2.5",
+                  "font-medium transition-all duration-200",
+                  "bg-accent/10 text-accent-dark",
+                  "hover:bg-accent/20 hover:shadow-sm"
+                )}
               >
                 {schedule.title}
               </button>
@@ -78,14 +88,14 @@ export const CalendarDayView = ({
       )}
 
       {/* 時間グリッド */}
-      <div className="overflow-y-auto max-h-[600px]">
-        <div className="grid grid-cols-[60px_1fr]">
+      <div className="overflow-y-auto flex-1">
+        <div className="grid grid-cols-[70px_1fr]">
           {/* 時間列 */}
           <div>
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="h-16 border-b text-right pr-2 text-xs text-gray-500 pt-1"
+                className="h-16 border-b border-stone-100 text-right pr-4 text-xs text-stone-400 font-medium pt-1"
               >
                 {hour.toString().padStart(2, "0")}:00
               </div>
@@ -93,11 +103,11 @@ export const CalendarDayView = ({
           </div>
 
           {/* スケジュール表示エリア */}
-          <div className="relative border-l">
+          <div className="relative border-l border-stone-100">
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="h-16 border-b hover:bg-gray-50 cursor-pointer"
+                className="h-16 border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
                 onClick={() => onTimeSlotClick(currentDate, hour)}
               />
             ))}
@@ -112,15 +122,23 @@ export const CalendarDayView = ({
                     e.stopPropagation();
                     onScheduleClick(schedule);
                   }}
-                  className="absolute left-1 right-1 bg-blue-500 text-white text-sm rounded px-2 py-1 hover:bg-blue-600 transition-colors shadow-sm text-left"
+                  className={cn(
+                    "absolute left-2 right-2 rounded-xl px-4 py-2 text-left",
+                    "font-medium transition-all duration-200",
+                    "bg-accent text-white shadow-sm",
+                    "hover:shadow-md hover:scale-[1.01]"
+                  )}
                   style={{
                     top: `calc(${hour * 64}px + ${topOffset * 0.64}px)`,
-                    minHeight: "28px",
+                    minHeight: "32px",
                   }}
                 >
-                  <div className="font-medium">
-                    {formatDateString(schedule.startAt, "HH:mm")} -{" "}
-                    {schedule.title}
+                  <div className="flex items-center gap-2">
+                    <span className="opacity-80 text-sm">
+                      {formatDateString(schedule.startAt, "HH:mm")}
+                    </span>
+                    <span className="text-sm">-</span>
+                    <span>{schedule.title}</span>
                   </div>
                 </button>
               );

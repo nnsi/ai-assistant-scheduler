@@ -18,41 +18,59 @@ export const CalendarDay = ({
   onClick,
   onScheduleClick,
 }: CalendarDayProps) => {
+  const dayOfWeek = date.getDay();
+  const isSunday = dayOfWeek === 0;
+  const isSaturday = dayOfWeek === 6;
+
   return (
     <div
       data-testid="calendar-day"
       onClick={onClick}
       className={cn(
-        "min-h-16 sm:min-h-24 p-1 sm:p-2 border-b border-r cursor-pointer hover:bg-gray-50 transition-colors",
-        !isCurrentMonth && "bg-gray-50 text-gray-400",
-        isToday && "bg-blue-50"
+        "min-h-20 sm:min-h-28 p-0.5 sm:p-2 border-b border-r border-stone-100",
+        "cursor-pointer transition-colors duration-200",
+        "hover:bg-stone-50",
+        !isCurrentMonth && "bg-stone-50/50",
+        isToday && "bg-accent-light/30"
       )}
     >
       <span
         className={cn(
-          "inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 text-xs sm:text-sm",
-          isToday && "bg-primary-600 text-white rounded-full"
+          "inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 text-[10px] sm:text-sm font-medium rounded-full ml-0.5 sm:ml-0",
+          "transition-colors duration-200",
+          isToday && "bg-accent text-white shadow-sm",
+          !isToday && !isCurrentMonth && "text-stone-400",
+          !isToday && isCurrentMonth && isSunday && "text-rose-500",
+          !isToday && isCurrentMonth && isSaturday && "text-sky-500",
+          !isToday && isCurrentMonth && !isSunday && !isSaturday && "text-stone-700"
         )}
       >
         {date.getDate()}
       </span>
 
-      <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
-        {schedules.map((schedule) => (
-          <div
+      <div className="mt-0.5 sm:mt-1.5 space-y-0.5 sm:space-y-1">
+        {schedules.slice(0, 3).map((schedule) => (
+          <button
             key={schedule.id}
             onClick={(e) => {
               e.stopPropagation();
               onScheduleClick(schedule);
             }}
             className={cn(
-              "text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded truncate cursor-pointer transition-colors",
-              "bg-primary-100 text-primary-700 hover:bg-primary-200"
+              "w-full text-left text-[10px] sm:text-xs px-0.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-lg truncate",
+              "font-medium transition-all duration-200",
+              "bg-accent/10 text-accent-dark",
+              "hover:bg-accent/20 hover:scale-[1.02]"
             )}
           >
             {schedule.title}
-          </div>
+          </button>
         ))}
+        {schedules.length > 3 && (
+          <div className="text-[10px] sm:text-xs text-stone-500 px-0.5 font-medium">
+            +{schedules.length - 3}件
+          </div>
+        )}
       </div>
     </div>
   );

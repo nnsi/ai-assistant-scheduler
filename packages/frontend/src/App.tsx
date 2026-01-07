@@ -11,10 +11,11 @@ import { ConditionsModal } from "@/components/Profile";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useAuth } from "@/contexts/AuthContext";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "@/lib/date";
+import { CalendarDays, X } from "lucide-react";
 import type { Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
 
 function MainApp() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -131,60 +132,70 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-surface flex flex-col overflow-hidden">
       {/* 通知バー */}
       {notification && (
         <div
-          className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center ${
+          className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center animate-slide-up ${
             notification.type === 'success'
-              ? 'bg-green-500 text-white'
+              ? 'bg-emerald-500 text-white'
               : 'bg-red-500 text-white'
           }`}
         >
-          {notification.message}
+          <span className="font-medium">{notification.message}</span>
           <button
             onClick={() => setNotification(null)}
-            className="ml-4 text-white/80 hover:text-white"
+            className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"
           >
-            ×
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
-          <h1 className="text-base sm:text-xl font-semibold text-gray-900">
-            AI Scheduler
-          </h1>
-          <div className="flex items-center gap-2 sm:gap-4">
+      {/* ヘッダー */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center shadow-sm">
+                <CalendarDays className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-lg sm:text-xl font-display text-stone-900">
+                AI Scheduler
+              </h1>
+            </div>
+
+            {/* User Menu */}
             {user && (
-              <>
-                <button
-                  onClick={() => setIsProfileModalOpen(true)}
-                  className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
-                >
-                  {user.picture && (
-                    <img
-                      src={user.picture}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  )}
-                  <span className="hidden sm:inline text-sm text-gray-700">{user.name}</span>
-                </button>
-                <button
-                  onClick={logout}
-                  className="text-xs sm:text-sm text-gray-500 hover:text-gray-700"
-                >
-                  ログアウト
-                </button>
-              </>
+              <button
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-2 hover:bg-stone-100 rounded-xl px-2 py-1.5 transition-colors"
+              >
+                {user.picture ? (
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full ring-2 ring-white shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                    <span className="text-sm font-medium text-accent">
+                      {user.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <span className="hidden sm:block text-sm font-medium text-stone-700">
+                  {user.name}
+                </span>
+              </button>
             )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      {/* メインコンテンツ */}
+      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-2 sm:px-6 py-2 sm:py-4 overflow-hidden">
         <CalendarHeader
           currentDate={currentDate}
           viewMode={viewMode}
@@ -272,8 +283,13 @@ function App() {
   // 読み込み中
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center animate-pulse">
+            <CalendarDays className="w-6 h-6 text-white" />
+          </div>
+          <div className="text-stone-500 text-sm">読み込み中...</div>
+        </div>
       </div>
     );
   }
