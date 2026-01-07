@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useSchedules } from "./useSchedules";
 import * as api from "@/lib/api";
 import type { Schedule } from "@ai-scheduler/shared";
+import type { ScheduleOccurrence } from "@/lib/recurrence";
 
 // api モジュールをモック
 vi.mock("@/lib/api", () => ({
@@ -24,6 +25,14 @@ const mockSchedule: Schedule = {
   memo: null,
   createdAt: "2025-01-01T00:00:00",
   updatedAt: "2025-01-01T00:00:00",
+};
+
+// useSchedulesはScheduleOccurrence型を返すため、期待値もそれに合わせる
+const mockScheduleOccurrence: ScheduleOccurrence = {
+  ...mockSchedule,
+  isRecurring: false,
+  occurrenceDate: new Date("2025-01-15T10:00:00"),
+  originalScheduleId: "schedule-1",
 };
 
 // テスト用のQueryClientを作成するヘルパー
@@ -64,7 +73,7 @@ describe("useSchedules", () => {
       });
 
       expect(api.fetchSchedules).toHaveBeenCalledWith(2025, 1);
-      expect(result.current.schedules).toEqual([mockSchedule]);
+      expect(result.current.schedules).toEqual([mockScheduleOccurrence]);
       expect(result.current.error).toBeNull();
     });
 
@@ -134,7 +143,7 @@ describe("useSchedules", () => {
 
       expect(createdSchedule).toEqual(mockSchedule);
       await waitFor(() => {
-        expect(result.current.schedules).toContainEqual(mockSchedule);
+        expect(result.current.schedules).toContainEqual(mockScheduleOccurrence);
       });
     });
   });
