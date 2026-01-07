@@ -15,6 +15,7 @@ type ScheduleFormModalProps = {
   isOpen: boolean;
   onClose: () => void;
   defaultDate?: Date;
+  defaultTime?: string;
   onScheduleCreated: (schedule: Schedule) => void;
 };
 
@@ -22,6 +23,7 @@ export const ScheduleFormModal = ({
   isOpen,
   onClose,
   defaultDate,
+  defaultTime,
   onScheduleCreated,
 }: ScheduleFormModalProps) => {
   const [step, setStep] = useState<Step>("form");
@@ -154,6 +156,7 @@ export const ScheduleFormModal = ({
       {step === "form" && (
         <ScheduleForm
           defaultDate={defaultDate}
+          defaultTime={defaultTime}
           onSubmit={handleFormSubmit}
           onCancel={handleClose}
           isLoading={isSubmitting}

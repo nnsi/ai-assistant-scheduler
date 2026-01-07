@@ -1,36 +1,59 @@
 import { useState } from "react";
-import { createScheduleInputSchema } from "@ai-scheduler/shared";
+import { createScheduleInputSchema, updateScheduleInputSchema } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
-import { formatDate, getTimezoneOffset } from "@/lib/date";
+import { formatDate, formatDateString, getTimezoneOffset } from "@/lib/date";
 
 type ScheduleFormProps = {
   defaultDate?: Date;
-  onSubmit: (data: { title: string; startAt: string; endAt?: string }) => void;
+  defaultTime?: string;
+  initialValues?: {
+    title: string;
+    startAt: string;
+    endAt?: string | null;
+    isAllDay?: boolean;
+  };
+  onSubmit: (data: { title: string; startAt: string; endAt?: string; isAllDay?: boolean }) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  submitLabel?: string;
+  mode?: "create" | "edit";
 };
 
 export const ScheduleForm = ({
   defaultDate,
+  defaultTime,
+  initialValues,
   onSubmit,
   onCancel,
   isLoading = false,
+  submitLabel = "次へ",
+  mode = "create",
 }: ScheduleFormProps) => {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialValues?.title || "");
   const [date, setDate] = useState(
-    formatDate(defaultDate || new Date(), "yyyy-MM-dd")
+    initialValues?.startAt
+      ? formatDateString(initialValues.startAt, "yyyy-MM-dd")
+      : formatDate(defaultDate || new Date(), "yyyy-MM-dd")
   );
-  const [time, setTime] = useState("12:00");
+  const [time, setTime] = useState(
+    initialValues?.startAt
+      ? formatDateString(initialValues.startAt, "HH:mm")
+      : defaultTime ?? "12:00"
+  );
+  const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const startAt = `${date}T${time}:00${getTimezoneOffset()}`;
-    const data = { title, startAt };
+    // 終日の場合は00:00を使用
+    const timeValue = isAllDay ? "00:00" : time;
+    const startAt = `${date}T${timeValue}:00${getTimezoneOffset()}`;
+    const data = { title, startAt, isAllDay };
 
-    const result = createScheduleInputSchema.safeParse(data);
+    const schema = mode === "edit" ? updateScheduleInputSchema : createScheduleInputSchema;
+    const result = schema.safeParse(data);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -44,7 +67,7 @@ export const ScheduleForm = ({
     }
 
     setErrors({});
-    onSubmit(result.data);
+    onSubmit(data);
   };
 
   return (
@@ -70,6 +93,19 @@ export const ScheduleForm = ({
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        <input
+          id="schedule-all-day"
+          type="checkbox"
+          checked={isAllDay}
+          onChange={(e) => setIsAllDay(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+        />
+        <label htmlFor="schedule-all-day" className="text-sm font-medium text-gray-700">
+          終日
+        </label>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700 mb-1">
@@ -87,22 +123,24 @@ export const ScheduleForm = ({
             )}
           />
         </div>
-        <div>
-          <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-1">
-            時間
-          </label>
-          <input
-            id="schedule-time"
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className={cn(
-              "w-full px-3 py-2 border rounded-md shadow-sm",
-              "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
-              "border-gray-300"
-            )}
-          />
-        </div>
+        {!isAllDay && (
+          <div>
+            <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-1">
+              時間
+            </label>
+            <input
+              id="schedule-time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className={cn(
+                "w-full px-3 py-2 border rounded-md shadow-sm",
+                "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
+                "border-gray-300"
+              )}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
@@ -110,7 +148,7 @@ export const ScheduleForm = ({
           キャンセル
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          次へ
+          {submitLabel}
         </Button>
       </div>
     </form>

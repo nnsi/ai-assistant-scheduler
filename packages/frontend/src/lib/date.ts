@@ -9,7 +9,13 @@ import {
   isSameDay,
   addMonths,
   subMonths,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
   parseISO,
+  getHours,
+  getMinutes,
 } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -40,7 +46,36 @@ export const getWeekDayLabels = (): string[] => [
   "土",
 ];
 
-export { isSameMonth, isSameDay, addMonths, subMonths, parseISO };
+export {
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  getHours,
+  getMinutes,
+};
+
+export const getWeekDays = (date: Date): Date[] => {
+  const start = startOfWeek(date, { weekStartsOn: 0 });
+  const end = endOfWeek(date, { weekStartsOn: 0 });
+  return eachDayOfInterval({ start, end });
+};
+
+export const getWeekLabel = (date: Date): string => {
+  const start = startOfWeek(date, { weekStartsOn: 0 });
+  const end = endOfWeek(date, { weekStartsOn: 0 });
+  return `${formatDate(start, "M/d")} - ${formatDate(end, "M/d")}`;
+};
+
+export const getDayFullLabel = (date: Date): string =>
+  formatDate(date, "yyyy年M月d日 (E)");
 
 /**
  * ブラウザのタイムゾーンオフセットを取得する

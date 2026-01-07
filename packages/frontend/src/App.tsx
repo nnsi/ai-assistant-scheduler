@@ -1,24 +1,31 @@
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/Calendar/Calendar";
-import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
+import { CalendarHeader, type CalendarViewMode } from "@/components/Calendar/CalendarHeader";
+import { CalendarWeekView } from "@/components/Calendar/CalendarWeekView";
+import { CalendarDayView } from "@/components/Calendar/CalendarDayView";
 import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
 import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
+import { ScheduleEditModal } from "@/components/Schedule/ScheduleEditModal";
 import { LoginPage, AuthCallback, ReconnectCallback, ProfileSettingsModal } from "@/components/Auth";
 import { ConditionsModal } from "@/components/Profile";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useAuth } from "@/contexts/AuthContext";
-import { addMonths, subMonths } from "@/lib/date";
-import type { Schedule } from "@ai-scheduler/shared";
+import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "@/lib/date";
+import type { Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
 
 function MainApp() {
   const { user, logout } = useAuth();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
     null
   );
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isConditionsModalOpen, setIsConditionsModalOpen] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -45,25 +52,56 @@ function MainApp() {
     }
   }, [notification]);
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1;
 
-  const { schedules, remove, refetch } = useSchedules(year, month);
+  const { schedules, update, remove, refetch } = useSchedules(year, month);
 
-  const handlePreviousMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
+  const handlePrevious = () => {
+    switch (viewMode) {
+      case "month":
+        setCurrentDate(subMonths(currentDate, 1));
+        break;
+      case "week":
+        setCurrentDate(subWeeks(currentDate, 1));
+        break;
+      case "day":
+        setCurrentDate(subDays(currentDate, 1));
+        break;
+    }
   };
 
-  const handleNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
+  const handleNext = () => {
+    switch (viewMode) {
+      case "month":
+        setCurrentDate(addMonths(currentDate, 1));
+        break;
+      case "week":
+        setCurrentDate(addWeeks(currentDate, 1));
+        break;
+      case "day":
+        setCurrentDate(addDays(currentDate, 1));
+        break;
+    }
   };
 
   const handleToday = () => {
-    setCurrentMonth(new Date());
+    setCurrentDate(new Date());
+  };
+
+  const handleViewModeChange = (mode: CalendarViewMode) => {
+    setViewMode(mode);
   };
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
+    setSelectedTime(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleTimeSlotClick = (date: Date, hour: number) => {
+    setSelectedDate(date);
+    setSelectedTime(`${hour.toString().padStart(2, "0")}:00`);
     setIsFormModalOpen(true);
   };
 
@@ -77,9 +115,15 @@ function MainApp() {
     setIsFormModalOpen(false);
   };
 
-  const handleScheduleEdit = (_schedule: Schedule) => {
-    // TODO: 編集モーダルを実装
+  const handleScheduleEdit = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
     setIsPopupOpen(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleScheduleSave = async (id: string, input: UpdateScheduleInput): Promise<void> => {
+    await update(id, input);
+    refetch();
   };
 
   const handleScheduleDelete = async (id: string): Promise<void> => {
@@ -142,24 +186,45 @@ function MainApp() {
 
       <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <CalendarHeader
-          currentMonth={currentMonth}
-          onPreviousMonth={handlePreviousMonth}
-          onNextMonth={handleNextMonth}
+          currentDate={currentDate}
+          viewMode={viewMode}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
           onToday={handleToday}
+          onViewModeChange={handleViewModeChange}
           onConditionsClick={() => setIsConditionsModalOpen(true)}
         />
-        <Calendar
-          currentMonth={currentMonth}
-          schedules={schedules}
-          onDateClick={handleDateClick}
-          onScheduleClick={handleScheduleClick}
-        />
+        {viewMode === "month" && (
+          <Calendar
+            currentMonth={currentDate}
+            schedules={schedules}
+            onDateClick={handleDateClick}
+            onScheduleClick={handleScheduleClick}
+          />
+        )}
+        {viewMode === "week" && (
+          <CalendarWeekView
+            currentDate={currentDate}
+            schedules={schedules}
+            onTimeSlotClick={handleTimeSlotClick}
+            onScheduleClick={handleScheduleClick}
+          />
+        )}
+        {viewMode === "day" && (
+          <CalendarDayView
+            currentDate={currentDate}
+            schedules={schedules}
+            onTimeSlotClick={handleTimeSlotClick}
+            onScheduleClick={handleScheduleClick}
+          />
+        )}
       </main>
 
       <ScheduleFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
         defaultDate={selectedDate || undefined}
+        defaultTime={selectedTime || undefined}
         onScheduleCreated={handleScheduleCreated}
       />
 
@@ -169,6 +234,13 @@ function MainApp() {
         onClose={() => setIsPopupOpen(false)}
         onEdit={handleScheduleEdit}
         onDelete={handleScheduleDelete}
+      />
+
+      <ScheduleEditModal
+        schedule={editingSchedule}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleScheduleSave}
       />
 
       <ProfileSettingsModal
