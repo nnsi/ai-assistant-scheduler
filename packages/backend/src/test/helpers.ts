@@ -18,15 +18,27 @@ export const createTestDb = () => {
       created_at text NOT NULL,
       updated_at text NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS schedules (
+    CREATE TABLE IF NOT EXISTS categories (
       id text PRIMARY KEY NOT NULL,
       user_id text NOT NULL,
-      title text NOT NULL,
-      start_at text NOT NULL,
-      end_at text,
+      name text NOT NULL,
+      color text NOT NULL,
       created_at text NOT NULL,
       updated_at text NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS schedules (
+      id text PRIMARY KEY NOT NULL,
+      user_id text NOT NULL,
+      category_id text,
+      title text NOT NULL,
+      start_at text NOT NULL,
+      end_at text,
+      is_all_day integer NOT NULL DEFAULT 0,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS schedule_supplements (
       id text PRIMARY KEY NOT NULL,
@@ -48,8 +60,19 @@ export const createTestDb = () => {
       revoked_at text,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      id text PRIMARY KEY NOT NULL,
+      user_id text NOT NULL UNIQUE,
+      required_conditions text,
+      preferred_conditions text,
+      subjective_conditions text,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
     CREATE INDEX IF NOT EXISTS idx_users_provider_id ON users (provider, provider_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+    CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_user_id ON schedules (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_start_at ON schedules (start_at);
     CREATE INDEX IF NOT EXISTS idx_supplements_schedule_id ON schedule_supplements (schedule_id);
@@ -153,6 +176,8 @@ export const createTestSupplement = async (
 export const resetDatabase = async (db: TestDb) => {
   await db.delete(schema.scheduleSupplements);
   await db.delete(schema.schedules);
+  await db.delete(schema.categories);
   await db.delete(schema.refreshTokens);
+  await db.delete(schema.userProfiles);
   await db.delete(schema.users);
 };
