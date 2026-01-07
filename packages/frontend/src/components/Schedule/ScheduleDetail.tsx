@@ -43,10 +43,16 @@ export const ScheduleDetail = ({
             <Calendar className="w-4 h-4" />
             <span>{formatDateString(schedule.startAt, "yyyy年M月d日")}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            <span>{formatDateString(schedule.startAt, "HH:mm")}</span>
-          </div>
+          {schedule.isAllDay ? (
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+              終日
+            </span>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{formatDateString(schedule.startAt, "HH:mm")}</span>
+            </div>
+          )}
         </div>
       </div>
 

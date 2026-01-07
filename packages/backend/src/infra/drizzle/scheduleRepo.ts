@@ -69,6 +69,8 @@ const toSchedule = (row: ScheduleRow): ScheduleEntity => ({
   title: row.title,
   startAt: row.startAt,
   endAt: row.endAt,
+  isAllDay: row.isAllDay,
+  categoryId: row.categoryId,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
@@ -77,9 +79,11 @@ const toSchedule = (row: ScheduleRow): ScheduleEntity => ({
 const toRow = (schedule: ScheduleEntity): ScheduleRow => ({
   id: schedule.id,
   userId: schedule.userId,
+  categoryId: schedule.categoryId ?? null,
   title: schedule.title,
   startAt: schedule.startAt,
   endAt: schedule.endAt,
+  isAllDay: schedule.isAllDay,
   createdAt: schedule.createdAt,
   updatedAt: schedule.updatedAt,
 });

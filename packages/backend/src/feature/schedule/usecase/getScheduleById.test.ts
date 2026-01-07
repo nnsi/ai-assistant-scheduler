@@ -14,6 +14,7 @@ describe("getScheduleByIdUseCase", () => {
     title: "テスト予定",
     startAt: "2025-01-10T12:00:00+09:00",
     endAt: null,
+    isAllDay: false,
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };

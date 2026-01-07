@@ -1,4 +1,4 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -11,14 +11,27 @@ export const users = sqliteTable("users", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const categories = sqliteTable("categories", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export const schedules = sqliteTable("schedules", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  categoryId: text("category_id").references(() => categories.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   startAt: text("start_at").notNull(),
   endAt: text("end_at"),
+  isAllDay: integer("is_all_day", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -63,6 +76,8 @@ export const userProfiles = sqliteTable("user_profiles", {
 // 型エクスポート
 export type UserRow = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
+export type CategoryRow = typeof categories.$inferSelect;
+export type CategoryInsert = typeof categories.$inferInsert;
 export type ScheduleRow = typeof schedules.$inferSelect;
 export type ScheduleInsert = typeof schedules.$inferInsert;
 export type SupplementRow = typeof scheduleSupplements.$inferSelect;

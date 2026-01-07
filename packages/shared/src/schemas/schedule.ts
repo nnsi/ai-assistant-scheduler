@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { shopSchema, shopListSchema } from "./shop";
+import { categorySchema } from "./category";
 
 // 入力スキーマ
 export const createScheduleInputSchema = z
@@ -7,6 +8,8 @@ export const createScheduleInputSchema = z
     title: z.string().min(1, "タイトルは必須です").max(100, "タイトルは100文字以内です"),
     startAt: z.string().datetime({ offset: true, message: "有効な日時形式で入力してください" }),
     endAt: z.string().datetime({ offset: true }).optional(),
+    isAllDay: z.boolean().optional(),
+    categoryId: z.string().optional(),
     // AI検索結果（オプショナル）
     keywords: z
       .array(z.string().max(50, "キーワードは50文字以内です"))
@@ -30,6 +33,8 @@ export const updateScheduleInputSchema = z.object({
   title: z.string().min(1).max(100).optional(),
   startAt: z.string().datetime({ offset: true }).optional(),
   endAt: z.string().datetime({ offset: true }).nullable().optional(),
+  isAllDay: z.boolean().optional(),
+  categoryId: z.string().nullable().optional(),
 });
 
 export type UpdateScheduleInput = z.infer<typeof updateScheduleInputSchema>;
@@ -40,6 +45,9 @@ export const scheduleSchema = z.object({
   title: z.string(),
   startAt: z.string(),
   endAt: z.string().nullable(),
+  isAllDay: z.boolean(),
+  categoryId: z.string().nullable().optional(),
+  category: categorySchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

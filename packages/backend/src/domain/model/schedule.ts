@@ -25,6 +25,7 @@ export const createSchedule = (
     title: input.title,
     startAt: input.startAt,
     endAt: input.endAt ?? null,
+    isAllDay: input.isAllDay ?? false,
     createdAt: now,
     updatedAt: now,
   };
@@ -36,6 +37,7 @@ export const toPublicSchedule = (entity: ScheduleEntity): Schedule => ({
   title: entity.title,
   startAt: entity.startAt,
   endAt: entity.endAt,
+  isAllDay: entity.isAllDay,
   createdAt: entity.createdAt,
   updatedAt: entity.updatedAt,
 });
@@ -50,6 +52,7 @@ export const updateSchedule = (
     title: input.title ?? schedule.title,
     startAt: input.startAt ?? schedule.startAt,
     endAt: input.endAt !== undefined ? input.endAt : schedule.endAt,
+    isAllDay: input.isAllDay ?? schedule.isAllDay,
     updatedAt: new Date().toISOString(),
   };
 };
