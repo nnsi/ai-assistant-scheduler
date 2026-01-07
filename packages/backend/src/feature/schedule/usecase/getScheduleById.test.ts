@@ -15,6 +15,7 @@ describe("getScheduleByIdUseCase", () => {
     startAt: "2025-01-10T12:00:00+09:00",
     endAt: null,
     isAllDay: false,
+    categoryId: null,
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
@@ -37,6 +38,7 @@ describe("getScheduleByIdUseCase", () => {
       findByMonthAndUserId: vi.fn(),
       findById: vi.fn().mockResolvedValue(mockSchedule),
       findByIdAndUserId: vi.fn().mockResolvedValue(mockSchedule),
+      search: vi.fn(),
       save: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),

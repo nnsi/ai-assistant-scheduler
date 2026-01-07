@@ -69,20 +69,26 @@ export const CalendarDayView = ({
         <div className="border-b border-stone-100 bg-stone-50/50 px-5 py-3">
           <div className="text-xs text-stone-500 font-medium mb-2">終日</div>
           <div className="space-y-1.5">
-            {allDaySchedules.map((schedule) => (
-              <button
-                key={schedule.id}
-                onClick={() => onScheduleClick(schedule)}
-                className={cn(
-                  "w-full text-left rounded-xl px-4 py-2.5",
-                  "font-medium transition-all duration-200",
-                  "bg-accent/10 text-accent-dark",
-                  "hover:bg-accent/20 hover:shadow-sm"
-                )}
-              >
-                {schedule.title}
-              </button>
-            ))}
+            {allDaySchedules.map((schedule) => {
+              const categoryColor = schedule.category?.color;
+              return (
+                <button
+                  key={schedule.id}
+                  onClick={() => onScheduleClick(schedule)}
+                  className={cn(
+                    "w-full text-left rounded-xl px-4 py-2.5",
+                    "font-medium transition-all duration-200",
+                    !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20 hover:shadow-sm"
+                  )}
+                  style={categoryColor ? {
+                    backgroundColor: `${categoryColor}20`,
+                    color: categoryColor,
+                  } : undefined}
+                >
+                  {schedule.title}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -115,6 +121,7 @@ export const CalendarDayView = ({
             {/* スケジュール表示 */}
             {timedSchedules.map((schedule) => {
               const { hour, topOffset } = getSchedulePosition(schedule);
+              const categoryColor = schedule.category?.color;
               return (
                 <button
                   key={schedule.id}
@@ -125,12 +132,13 @@ export const CalendarDayView = ({
                   className={cn(
                     "absolute left-2 right-2 rounded-xl px-4 py-2 text-left",
                     "font-medium transition-all duration-200",
-                    "bg-accent text-white shadow-sm",
-                    "hover:shadow-md hover:scale-[1.01]"
+                    "shadow-sm hover:shadow-md hover:scale-[1.01]",
+                    !categoryColor && "bg-accent text-white"
                   )}
                   style={{
                     top: `calc(${hour * 64}px + ${topOffset * 0.64}px)`,
                     minHeight: "32px",
+                    ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                   }}
                 >
                   <div className="flex items-center gap-2">

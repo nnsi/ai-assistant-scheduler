@@ -1,8 +1,18 @@
-import { useState } from "react";
-import { createScheduleInputSchema, updateScheduleInputSchema } from "@ai-scheduler/shared";
+import { useState, useCallback } from "react";
+import { createScheduleInputSchema, updateScheduleInputSchema, type Category, type CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
+import { RecurrenceSettings } from "@/components/Recurrence";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateString, getTimezoneOffset } from "@/lib/date";
+
+type ScheduleFormData = {
+  title: string;
+  startAt: string;
+  endAt?: string;
+  isAllDay?: boolean;
+  categoryId?: string;
+  recurrence?: CreateRecurrenceRuleInput | null;
+};
 
 type ScheduleFormProps = {
   defaultDate?: Date;
@@ -12,23 +22,33 @@ type ScheduleFormProps = {
     startAt: string;
     endAt?: string | null;
     isAllDay?: boolean;
+    categoryId?: string | null;
+    recurrence?: CreateRecurrenceRuleInput | null;
   };
-  onSubmit: (data: { title: string; startAt: string; endAt?: string; isAllDay?: boolean }) => void;
+  categories?: Category[];
+  onSubmit: (data: ScheduleFormData) => void;
+  onSimpleSave?: (data: ScheduleFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  isSimpleSaving?: boolean;
   submitLabel?: string;
   mode?: "create" | "edit";
+  showRecurrence?: boolean;
 };
 
 export const ScheduleForm = ({
   defaultDate,
   defaultTime,
   initialValues,
+  categories = [],
   onSubmit,
+  onSimpleSave,
   onCancel,
   isLoading = false,
-  submitLabel = "次へ",
+  isSimpleSaving = false,
+  submitLabel = "AIで補完",
   mode = "create",
+  showRecurrence = true,
 }: ScheduleFormProps) => {
   const [title, setTitle] = useState(initialValues?.title || "");
   const [date, setDate] = useState(
@@ -42,18 +62,24 @@ export const ScheduleForm = ({
       : defaultTime ?? "12:00"
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
+  const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
+  const [recurrence, setRecurrence] = useState<CreateRecurrenceRuleInput | null>(
+    initialValues?.recurrence ?? null
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRecurrenceChange = useCallback((value: CreateRecurrenceRuleInput | null) => {
+    setRecurrence(value);
+  }, []);
 
+  const validateAndGetData = (): ScheduleFormData | null => {
     // 終日の場合は00:00を使用
     const timeValue = isAllDay ? "00:00" : time;
     const startAt = `${date}T${timeValue}:00${getTimezoneOffset()}`;
-    const data = { title, startAt, isAllDay };
+    const data: ScheduleFormData = { title, startAt, isAllDay, categoryId, recurrence };
 
     const schema = mode === "edit" ? updateScheduleInputSchema : createScheduleInputSchema;
-    const result = schema.safeParse(data);
+    const result = schema.safeParse({ title, startAt, isAllDay, categoryId });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -63,11 +89,26 @@ export const ScheduleForm = ({
         }
       });
       setErrors(fieldErrors);
-      return;
+      return null;
     }
 
     setErrors({});
-    onSubmit(data);
+    return data;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = validateAndGetData();
+    if (data) {
+      onSubmit(data);
+    }
+  };
+
+  const handleSimpleSave = () => {
+    const data = validateAndGetData();
+    if (data && onSimpleSave) {
+      onSimpleSave(data);
+    }
   };
 
   return (
@@ -107,6 +148,48 @@ export const ScheduleForm = ({
           終日
         </label>
       </div>
+
+      {categories.length > 0 && (
+        <div>
+          <label htmlFor="schedule-category" className="block text-sm font-medium text-stone-700 mb-2">
+            カテゴリ
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCategoryId(undefined)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-sm transition-all",
+                categoryId === undefined
+                  ? "bg-stone-600 text-white"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              なし
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryId(cat.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
+                  categoryId === cat.id
+                    ? "text-white"
+                    : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                )}
+                style={categoryId === cat.id ? { backgroundColor: cat.color } : undefined}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: cat.color }}
+                />
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={cn("grid gap-4", isAllDay ? "grid-cols-1" : "grid-cols-2")}>
         <div>
@@ -149,11 +232,30 @@ export const ScheduleForm = ({
         )}
       </div>
 
+      {showRecurrence && (
+        <RecurrenceSettings
+          value={recurrence}
+          onChange={handleRecurrenceChange}
+          disabled={isLoading}
+        />
+      )}
+
       <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading || isSimpleSaving}>
           キャンセル
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        {onSimpleSave && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleSimpleSave}
+            isLoading={isSimpleSaving}
+            disabled={isLoading}
+          >
+            保存のみ
+          </Button>
+        )}
+        <Button type="submit" isLoading={isLoading} disabled={isSimpleSaving}>
           {submitLabel}
         </Button>
       </div>

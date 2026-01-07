@@ -9,6 +9,7 @@ describe("createScheduleUseCase", () => {
     findByMonthAndUserId: vi.fn(),
     findById: vi.fn(),
     findByIdAndUserId: vi.fn(),
+    search: vi.fn(),
     save: vi.fn().mockResolvedValue(undefined),
     update: vi.fn(),
     delete: vi.fn(),

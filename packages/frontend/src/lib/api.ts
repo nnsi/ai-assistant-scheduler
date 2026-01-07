@@ -6,14 +6,23 @@ import {
   apiErrorSchema,
   profileResponseSchema,
   shopListSchema,
+  categorySchema,
+  recurrenceRuleSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
   type UpdateScheduleInput,
+  type SearchScheduleInput,
   type UserProfile,
   type UpdateProfileConditionsRequest,
   type Shop,
   type ShopList,
+  type Category,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
+  type RecurrenceRule,
+  type CreateRecurrenceRuleInput,
+  type UpdateRecurrenceRuleInput,
 } from "@ai-scheduler/shared";
 import { z } from "zod";
 
@@ -81,6 +90,7 @@ const client = hc<ApiRoutes>(API_BASE_URL, {
 
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
+const categoryArraySchema = z.array(categorySchema);
 const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
 const searchResponseSchema = z.object({
   result: z.string(),
@@ -192,6 +202,16 @@ export const deleteSchedule = async (id: string): Promise<void> => {
   });
 
   await handleVoidResponse(res);
+};
+
+export const searchSchedules = async (
+  params: SearchScheduleInput
+): Promise<Schedule[]> => {
+  const res = await client.schedules.search.$get({
+    query: params,
+  });
+
+  return handleResponse(res, scheduleArraySchema);
 };
 
 // AI API
@@ -410,6 +430,80 @@ export const updateProfileConditions = async (
 
   const data = await handleResponse(res, profileResponseSchema);
   return data.profile;
+};
+
+// Category API
+export const fetchCategories = async (): Promise<Category[]> => {
+  const res = await client.categories.$get();
+  return handleResponse(res, categoryArraySchema);
+};
+
+export const createCategory = async (
+  input: CreateCategoryInput
+): Promise<Category> => {
+  const res = await client.categories.$post({
+    json: input,
+  });
+  return handleResponse(res, categorySchema);
+};
+
+export const updateCategory = async (
+  id: string,
+  input: UpdateCategoryInput
+): Promise<Category> => {
+  const res = await client.categories[":id"].$put({
+    param: { id },
+    json: input,
+  });
+  return handleResponse(res, categorySchema);
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  const res = await client.categories[":id"].$delete({
+    param: { id },
+  });
+  await handleVoidResponse(res);
+};
+
+// Recurrence API
+const nullableRecurrenceRuleSchema = recurrenceRuleSchema.nullable();
+
+export const fetchRecurrence = async (
+  scheduleId: string
+): Promise<RecurrenceRule | null> => {
+  const res = await client.recurrence[":scheduleId"].$get({
+    param: { scheduleId },
+  });
+  return handleResponse(res, nullableRecurrenceRuleSchema);
+};
+
+export const createRecurrence = async (
+  scheduleId: string,
+  input: CreateRecurrenceRuleInput
+): Promise<RecurrenceRule> => {
+  const res = await client.recurrence[":scheduleId"].$post({
+    param: { scheduleId },
+    json: input,
+  });
+  return handleResponse(res, recurrenceRuleSchema);
+};
+
+export const updateRecurrence = async (
+  scheduleId: string,
+  input: UpdateRecurrenceRuleInput
+): Promise<RecurrenceRule> => {
+  const res = await client.recurrence[":scheduleId"].$put({
+    param: { scheduleId },
+    json: input,
+  });
+  return handleResponse(res, recurrenceRuleSchema);
+};
+
+export const deleteRecurrence = async (scheduleId: string): Promise<void> => {
+  const res = await client.recurrence[":scheduleId"].$delete({
+    param: { scheduleId },
+  });
+  await handleVoidResponse(res);
 };
 
 export { ApiClientError };

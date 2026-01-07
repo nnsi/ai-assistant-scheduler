@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { shopSchema, shopListSchema } from "./shop";
 import { categorySchema } from "./category";
+import { recurrenceRuleSchema } from "./recurrence";
 
 // 入力スキーマ
 export const createScheduleInputSchema = z
@@ -48,6 +49,7 @@ export const scheduleSchema = z.object({
   isAllDay: z.boolean(),
   categoryId: z.string().nullable().optional(),
   category: categorySchema.nullable().optional(),
+  recurrence: recurrenceRuleSchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -69,3 +71,13 @@ export const scheduleWithSupplementSchema = scheduleSchema.extend({
 });
 
 export type ScheduleWithSupplement = z.infer<typeof scheduleWithSupplementSchema>;
+
+// 検索スキーマ
+export const searchScheduleInputSchema = z.object({
+  query: z.string().max(100, "検索クエリは100文字以内です").optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD形式で入力してください").optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD形式で入力してください").optional(),
+  categoryId: z.string().optional(),
+});
+
+export type SearchScheduleInput = z.infer<typeof searchScheduleInputSchema>;

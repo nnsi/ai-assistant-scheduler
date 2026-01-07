@@ -5,9 +5,14 @@ import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
 import { SearchResults } from "@/components/AI/SearchResults";
 import { useAI } from "@/hooks/useAI";
 import { useProfile } from "@/hooks/useProfile";
+import { useCategories } from "@/hooks/useCategories";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
-import type { Schedule, CreateScheduleInput, Shop } from "@ai-scheduler/shared";
+import type { Schedule, CreateScheduleInput, Shop, CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
+
+type FormData = CreateScheduleInput & {
+  recurrence?: CreateRecurrenceRuleInput | null;
+};
 
 type Step = "form" | "keywords" | "results";
 
@@ -27,9 +32,10 @@ export const ScheduleFormModal = ({
   onScheduleCreated,
 }: ScheduleFormModalProps) => {
   const [step, setStep] = useState<Step>("form");
-  const [formData, setFormData] = useState<CreateScheduleInput | null>(null);
+  const [formData, setFormData] = useState<FormData | null>(null);
   const [createdSchedule, setCreatedSchedule] = useState<Schedule | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSimpleSaving, setIsSimpleSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   const {
@@ -49,6 +55,7 @@ export const ScheduleFormModal = ({
   const [isSelectingShop, setIsSelectingShop] = useState(false);
 
   const { profile } = useProfile();
+  const { categories } = useCategories();
 
   // こだわり条件が設定されているかどうか
   const hasConditions = Boolean(
@@ -57,22 +64,64 @@ export const ScheduleFormModal = ({
     profile?.subjectiveConditions?.trim()
   );
 
-  const handleFormSubmit = async (data: CreateScheduleInput) => {
+  const handleFormSubmit = async (data: FormData) => {
     setFormData(data);
     setIsSubmitting(true);
 
     try {
+      // スケジュールデータから繰り返しを除外
+      const { recurrence, ...scheduleData } = data;
+
       // スケジュールを即座に保存し、キーワード提案を並行取得
       const [schedule] = await Promise.all([
-        api.createSchedule(data),
-        suggestKeywords(data.title, data.startAt),
+        api.createSchedule(scheduleData),
+        suggestKeywords(scheduleData.title, scheduleData.startAt),
       ]);
+
+      // 繰り返しルールがあれば作成
+      if (recurrence) {
+        try {
+          await api.createRecurrence(schedule.id, recurrence);
+        } catch (error) {
+          logger.error("Failed to create recurrence rule", { category: "api", scheduleId: schedule.id }, error);
+        }
+      }
+
       setCreatedSchedule(schedule);
       setStep("keywords");
     } catch (error) {
       logger.error("Failed to create schedule or get keyword suggestions", { category: "api", title: data.title }, error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSimpleSave = async (data: FormData) => {
+    setIsSimpleSaving(true);
+
+    try {
+      // スケジュールデータから繰り返しを除外
+      const { recurrence, ...scheduleData } = data;
+
+      // スケジュールを保存（AI補完なし）
+      const schedule = await api.createSchedule(scheduleData);
+
+      // 繰り返しルールがあれば作成
+      if (recurrence) {
+        try {
+          await api.createRecurrence(schedule.id, recurrence);
+        } catch (error) {
+          logger.error("Failed to create recurrence rule", { category: "api", scheduleId: schedule.id }, error);
+        }
+      }
+
+      // 保存完了、モーダルを閉じる
+      onScheduleCreated(schedule);
+      onClose();
+    } catch (error) {
+      logger.error("Failed to create schedule", { category: "api", title: data.title }, error);
+    } finally {
+      setIsSimpleSaving(false);
     }
   };
 
@@ -157,9 +206,12 @@ export const ScheduleFormModal = ({
         <ScheduleForm
           defaultDate={defaultDate}
           defaultTime={defaultTime}
+          categories={categories}
           onSubmit={handleFormSubmit}
+          onSimpleSave={handleSimpleSave}
           onCancel={handleClose}
           isLoading={isSubmitting}
+          isSimpleSaving={isSimpleSaving}
         />
       )}
       {step === "keywords" && (

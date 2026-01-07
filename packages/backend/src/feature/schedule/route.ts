@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   createScheduleInputSchema,
   updateScheduleInputSchema,
+  searchScheduleInputSchema,
 } from "@ai-scheduler/shared";
 import { createDb } from "../../infra/drizzle/client";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
@@ -13,6 +14,7 @@ import { createGetSchedulesUseCase } from "./usecase/getSchedules";
 import { createGetScheduleByIdUseCase } from "./usecase/getScheduleById";
 import { createUpdateScheduleUseCase } from "./usecase/updateSchedule";
 import { createDeleteScheduleUseCase } from "./usecase/deleteSchedule";
+import { createSearchSchedulesUseCase } from "./usecase/searchSchedules";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { authMiddleware } from "../../middleware/auth";
@@ -30,6 +32,7 @@ type Variables = {
   getScheduleById: ReturnType<typeof createGetScheduleByIdUseCase>;
   updateSchedule: ReturnType<typeof createUpdateScheduleUseCase>;
   deleteSchedule: ReturnType<typeof createDeleteScheduleUseCase>;
+  searchSchedules: ReturnType<typeof createSearchSchedulesUseCase>;
 };
 
 const app = new Hono<{
@@ -54,6 +57,7 @@ app.use("*", async (c, next) => {
   );
   c.set("updateSchedule", createUpdateScheduleUseCase(scheduleRepo));
   c.set("deleteSchedule", createDeleteScheduleUseCase(scheduleRepo));
+  c.set("searchSchedules", createSearchSchedulesUseCase(scheduleRepo));
 
   await next();
 });
@@ -95,6 +99,31 @@ export const scheduleRoute = app
 
     return c.json(result.value, 200);
   })
+  // GET /schedules/search
+  .get(
+    "/search",
+    zValidator("query", searchScheduleInputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const { query, startDate, endDate, categoryId } = c.req.valid("query");
+      const userId = c.get("userId");
+      const result = await c.get("searchSchedules")(userId, {
+        query,
+        startDate,
+        endDate,
+        categoryId,
+      });
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  )
   // POST /schedules
   .post(
     "/",

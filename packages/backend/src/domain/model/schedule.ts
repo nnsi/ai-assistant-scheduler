@@ -2,6 +2,8 @@ import {
   type Schedule,
   type CreateScheduleInput,
   type UpdateScheduleInput,
+  type Category,
+  type RecurrenceRule,
 } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 
@@ -9,8 +11,11 @@ import { generateId } from "../../shared/id";
 export type { Schedule, CreateScheduleInput, UpdateScheduleInput };
 
 // 内部エンティティ型（userIdを含む）
-export type ScheduleEntity = Schedule & {
+export type ScheduleEntity = Omit<Schedule, "category" | "recurrence"> & {
   userId: string;
+  categoryId: string | null;
+  category?: Category | null;
+  recurrence?: RecurrenceRule | null;
 };
 
 // ファクトリ関数
@@ -26,6 +31,7 @@ export const createSchedule = (
     startAt: input.startAt,
     endAt: input.endAt ?? null,
     isAllDay: input.isAllDay ?? false,
+    categoryId: input.categoryId ?? null,
     createdAt: now,
     updatedAt: now,
   };
@@ -38,6 +44,9 @@ export const toPublicSchedule = (entity: ScheduleEntity): Schedule => ({
   startAt: entity.startAt,
   endAt: entity.endAt,
   isAllDay: entity.isAllDay,
+  categoryId: entity.categoryId,
+  category: entity.category ?? null,
+  recurrence: entity.recurrence ?? null,
   createdAt: entity.createdAt,
   updatedAt: entity.updatedAt,
 });
@@ -53,6 +62,7 @@ export const updateSchedule = (
     startAt: input.startAt ?? schedule.startAt,
     endAt: input.endAt !== undefined ? input.endAt : schedule.endAt,
     isAllDay: input.isAllDay ?? schedule.isAllDay,
+    categoryId: input.categoryId !== undefined ? input.categoryId : schedule.categoryId,
     updatedAt: new Date().toISOString(),
   };
 };

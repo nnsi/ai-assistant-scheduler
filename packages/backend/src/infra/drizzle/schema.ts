@@ -73,6 +73,23 @@ export const userProfiles = sqliteTable("user_profiles", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const recurrenceRules = sqliteTable("recurrence_rules", {
+  id: text("id").primaryKey(),
+  scheduleId: text("schedule_id")
+    .notNull()
+    .references(() => schedules.id, { onDelete: "cascade" }),
+  frequency: text("frequency").notNull(), // 'daily', 'weekly', 'monthly', 'yearly'
+  intervalValue: integer("interval_value").notNull().default(1), // 繰り返し間隔
+  daysOfWeek: text("days_of_week"), // JSON array: ['MO','TU','WE','TH','FR','SA','SU']
+  dayOfMonth: integer("day_of_month"), // 月の何日目か (1-31)
+  weekOfMonth: integer("week_of_month"), // 月の第何週か (1-5, -1は最終週)
+  endType: text("end_type").notNull().default("never"), // 'never', 'date', 'count'
+  endDate: text("end_date"), // 終了日 (YYYY-MM-DD)
+  endCount: integer("end_count"), // 終了回数
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // 型エクスポート
 export type UserRow = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
@@ -86,3 +103,5 @@ export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
 export type UserProfileRow = typeof userProfiles.$inferSelect;
 export type UserProfileInsert = typeof userProfiles.$inferInsert;
+export type RecurrenceRuleRow = typeof recurrenceRules.$inferSelect;
+export type RecurrenceRuleInsert = typeof recurrenceRules.$inferInsert;

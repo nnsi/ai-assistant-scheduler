@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import type { Schedule, CreateScheduleInput, UpdateScheduleInput } from "@ai-scheduler/shared";
+import { expandRecurringSchedules, type ScheduleOccurrence } from "@/lib/recurrence";
+import { startOfMonth, endOfMonth, addMonths, subMonths } from "@/lib/date";
 
 const SCHEDULES_QUERY_KEY = "schedules";
 
@@ -9,10 +12,30 @@ export const useSchedules = (year?: number, month?: number) => {
 
   const queryKey = [SCHEDULES_QUERY_KEY, year, month];
 
-  const { data: schedules = [], isLoading, error, refetch } = useQuery({
+  const { data: rawSchedules = [], isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => api.fetchSchedules(year, month),
   });
+
+  // 繰り返しスケジュールを展開
+  const schedules = useMemo<ScheduleOccurrence[]>(() => {
+    if (!year || !month) {
+      // year/monthが指定されていない場合は展開しない
+      return rawSchedules.map((s) => ({
+        ...s,
+        isRecurring: false,
+        occurrenceDate: new Date(s.startAt),
+        originalScheduleId: s.id,
+      }));
+    }
+
+    // 表示範囲を計算（前後1ヶ月を含めて繰り返しを正しく表示）
+    const baseDate = new Date(year, month - 1, 1);
+    const rangeStart = subMonths(startOfMonth(baseDate), 1);
+    const rangeEnd = addMonths(endOfMonth(baseDate), 1);
+
+    return expandRecurringSchedules(rawSchedules, rangeStart, rangeEnd);
+  }, [rawSchedules, year, month]);
 
   const createMutation = useMutation({
     mutationFn: (input: CreateScheduleInput) => api.createSchedule(input),

@@ -6,6 +6,8 @@ import { CalendarDayView } from "@/components/Calendar/CalendarDayView";
 import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
 import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
 import { ScheduleEditModal } from "@/components/Schedule/ScheduleEditModal";
+import { CategoryModal } from "@/components/Category/CategoryModal";
+import { SearchModal } from "@/components/Schedule/SearchModal";
 import { LoginPage, AuthCallback, ReconnectCallback, ProfileSettingsModal } from "@/components/Auth";
 import { ConditionsModal } from "@/components/Profile";
 import { useSchedules } from "@/hooks/useSchedules";
@@ -29,6 +31,8 @@ function MainApp() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isConditionsModalOpen, setIsConditionsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // URLパラメータから通知を取得
@@ -203,6 +207,8 @@ function MainApp() {
           onNext={handleNext}
           onToday={handleToday}
           onViewModeChange={handleViewModeChange}
+          onSearchClick={() => setIsSearchModalOpen(true)}
+          onCategoryClick={() => setIsCategoryModalOpen(true)}
           onConditionsClick={() => setIsConditionsModalOpen(true)}
         />
         {viewMode === "month" && (
@@ -262,6 +268,17 @@ function MainApp() {
       <ConditionsModal
         isOpen={isConditionsModalOpen}
         onClose={() => setIsConditionsModalOpen(false)}
+      />
+
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
+
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onScheduleClick={handleScheduleClick}
       />
     </div>
   );

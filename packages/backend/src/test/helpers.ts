@@ -70,6 +70,21 @@ export const createTestDb = () => {
       updated_at text NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS recurrence_rules (
+      id text PRIMARY KEY NOT NULL,
+      schedule_id text NOT NULL,
+      frequency text NOT NULL,
+      interval_value integer NOT NULL DEFAULT 1,
+      days_of_week text,
+      day_of_month integer,
+      week_of_month integer,
+      end_type text NOT NULL DEFAULT 'never',
+      end_date text,
+      end_count integer,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
+    );
     CREATE INDEX IF NOT EXISTS idx_users_provider_id ON users (provider, provider_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
     CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories (user_id);
@@ -78,6 +93,7 @@ export const createTestDb = () => {
     CREATE INDEX IF NOT EXISTS idx_supplements_schedule_id ON schedule_supplements (schedule_id);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_revoked_at ON refresh_tokens (revoked_at);
+    CREATE INDEX IF NOT EXISTS idx_recurrence_rules_schedule_id ON recurrence_rules (schedule_id);
   `);
 
   // 外部キー制約を有効化
@@ -174,6 +190,7 @@ export const createTestSupplement = async (
 
 // DBをリセット
 export const resetDatabase = async (db: TestDb) => {
+  await db.delete(schema.recurrenceRules);
   await db.delete(schema.scheduleSupplements);
   await db.delete(schema.schedules);
   await db.delete(schema.categories);

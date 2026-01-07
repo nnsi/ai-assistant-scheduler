@@ -13,9 +13,13 @@ import {
   subWeeks,
   addDays,
   subDays,
+  addYears,
   parseISO,
   getHours,
   getMinutes,
+  getDay,
+  isBefore,
+  isAfter,
 } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -55,11 +59,17 @@ export {
   subWeeks,
   addDays,
   subDays,
+  addYears,
   parseISO,
   startOfWeek,
   endOfWeek,
+  startOfMonth,
+  endOfMonth,
   getHours,
   getMinutes,
+  getDay,
+  isBefore,
+  isAfter,
 };
 
 export const getWeekDays = (date: Date): Date[] => {

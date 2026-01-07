@@ -49,23 +49,40 @@ export const CalendarDay = ({
       </span>
 
       <div className="mt-0.5 sm:mt-1.5 space-y-0.5 sm:space-y-1">
-        {schedules.slice(0, 3).map((schedule) => (
-          <button
-            key={schedule.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              onScheduleClick(schedule);
-            }}
-            className={cn(
-              "w-full text-left text-[10px] sm:text-xs px-0.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-lg truncate",
-              "font-medium transition-all duration-200",
-              "bg-accent/10 text-accent-dark",
-              "hover:bg-accent/20 hover:scale-[1.02]"
-            )}
-          >
-            {schedule.title}
-          </button>
-        ))}
+        {schedules.slice(0, 3).map((schedule) => {
+          const categoryColor = schedule.category?.color;
+          return (
+            <button
+              key={schedule.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                onScheduleClick(schedule);
+              }}
+              className={cn(
+                "w-full text-left text-[10px] sm:text-xs px-0.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-lg truncate",
+                "font-medium transition-all duration-200",
+                "hover:scale-[1.02]",
+                !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20"
+              )}
+              style={categoryColor ? {
+                backgroundColor: `${categoryColor}20`,
+                color: categoryColor,
+              } : undefined}
+              onMouseEnter={(e) => {
+                if (categoryColor) {
+                  e.currentTarget.style.backgroundColor = `${categoryColor}35`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (categoryColor) {
+                  e.currentTarget.style.backgroundColor = `${categoryColor}20`;
+                }
+              }}
+            >
+              {schedule.title}
+            </button>
+          );
+        })}
         {schedules.length > 3 && (
           <div className="text-[10px] sm:text-xs text-stone-500 px-0.5 font-medium">
             +{schedules.length - 3}件

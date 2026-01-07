@@ -4,6 +4,8 @@ import { supplementRoute } from "./feature/supplement/route";
 import { aiRoute } from "./feature/ai/route";
 import { authRoute } from "./feature/auth/route";
 import { profileRoute } from "./feature/profile/route";
+import { categoryRoute } from "./feature/category/route";
+import { recurrenceRoute } from "./feature/recurrence/route";
 
 type Bindings = {
   DB: D1Database;
@@ -21,6 +23,8 @@ export const apiRoutes = app
   .route("/schedules", scheduleRoute)
   .route("/supplements", supplementRoute)
   .route("/ai", aiRoute)
-  .route("/profile", profileRoute);
+  .route("/profile", profileRoute)
+  .route("/categories", categoryRoute)
+  .route("/recurrence", recurrenceRoute);
 
 export type ApiRoutes = typeof apiRoutes;

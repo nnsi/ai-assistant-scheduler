@@ -115,20 +115,26 @@ export const CalendarWeekView = ({
                   key={date.toISOString()}
                   className="py-0.5 px-0.5 sm:py-1 sm:px-1 border-l border-stone-100 min-h-[24px] sm:min-h-[28px] overflow-hidden"
                 >
-                  {daySchedules.map((schedule) => (
-                    <button
-                      key={schedule.id}
-                      onClick={() => onScheduleClick(schedule)}
-                      className={cn(
-                        "w-full text-left text-[10px] sm:text-xs rounded sm:rounded-lg px-1 sm:px-2 py-0.5 truncate block",
-                        "font-medium transition-all duration-200",
-                        "bg-accent/10 text-accent-dark",
-                        "hover:bg-accent/20"
-                      )}
-                    >
-                      {schedule.title}
-                    </button>
-                  ))}
+                  {daySchedules.map((schedule) => {
+                    const categoryColor = schedule.category?.color;
+                    return (
+                      <button
+                        key={schedule.id}
+                        onClick={() => onScheduleClick(schedule)}
+                        className={cn(
+                          "w-full text-left text-[10px] sm:text-xs rounded sm:rounded-lg px-1 sm:px-2 py-0.5 truncate block",
+                          "font-medium transition-all duration-200",
+                          !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20"
+                        )}
+                        style={categoryColor ? {
+                          backgroundColor: `${categoryColor}20`,
+                          color: categoryColor,
+                        } : undefined}
+                      >
+                        {schedule.title}
+                      </button>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -168,6 +174,7 @@ export const CalendarWeekView = ({
                 {/* スケジュール表示 */}
                 {daySchedules.map((schedule) => {
                   const { hour, topOffset } = getSchedulePosition(schedule);
+                  const categoryColor = schedule.category?.color;
                   return (
                     <button
                       key={schedule.id}
@@ -178,12 +185,13 @@ export const CalendarWeekView = ({
                       className={cn(
                         "absolute left-px right-px sm:left-0.5 sm:right-0.5 rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 truncate text-left",
                         "text-[10px] sm:text-xs font-medium transition-all duration-200",
-                        "bg-accent text-white shadow-sm",
-                        "hover:shadow-md hover:scale-[1.02]"
+                        "shadow-sm hover:shadow-md hover:scale-[1.02]",
+                        !categoryColor && "bg-accent text-white"
                       )}
                       style={{
                         top: `calc(${hour * 40}px + ${topOffset * 0.4}px)`,
                         minHeight: "18px",
+                        ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                       }}
                     >
                       <span className="opacity-80 hidden sm:inline">
