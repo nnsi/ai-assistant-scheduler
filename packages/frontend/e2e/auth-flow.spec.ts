@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
 
 /**
  * 認証フローのE2Eテスト
@@ -117,6 +117,9 @@ test.describe("Authentication Flow", () => {
       });
     });
 
+    // カレンダーとカテゴリのモックを設定
+    await setupCalendarMocks(page);
+
     // ページをリロード
     await page.reload();
 
@@ -152,6 +155,9 @@ test.describe("Authentication Flow", () => {
       });
     });
 
+    // カレンダーとカテゴリのモックを設定
+    await setupCalendarMocks(page);
+
     // ログイン状態を設定
     await page.goto("/");
     await page.evaluate(
@@ -171,22 +177,25 @@ test.describe("Authentication Flow", () => {
     );
     await page.reload();
 
-    // ユーザーメニューを探す
-    const userMenu = page.getByRole("button", { name: /Test User|ユーザー/i });
-    if (await userMenu.isVisible()) {
-      await userMenu.click();
+    // ユーザーメニューをクリック（Test Userの名前またはイニシャルを含むボタン）
+    const userMenu = page.getByRole("button", { name: /Test User|T/i }).first();
+    await expect(userMenu).toBeVisible({ timeout: 10000 });
+    await userMenu.click();
 
-      // ログアウトボタンをクリック
-      const logoutButton = page.getByRole("button", { name: /ログアウト/i });
-      if (await logoutButton.isVisible()) {
-        await logoutButton.click();
+    // プロフィール設定モーダルが開くこと
+    await expect(page.getByRole("dialog")).toBeVisible();
 
-        // localStorageがクリアされていること
-        const accessToken = await page.evaluate(() =>
-          localStorage.getItem("auth_access_token")
-        );
-        expect(accessToken).toBeNull();
-      }
-    }
+    // ログアウトボタンをクリック
+    const logoutButton = page.getByRole("button", { name: /ログアウト/i });
+    await expect(logoutButton).toBeVisible();
+    await logoutButton.click();
+
+    // localStorageのauth_userがクリアされていること（アプリはauth_userを管理する）
+    await expect(async () => {
+      const authUser = await page.evaluate(() =>
+        localStorage.getItem("auth_user")
+      );
+      expect(authUser).toBeNull();
+    }).toPass({ timeout: 5000 });
   });
 });

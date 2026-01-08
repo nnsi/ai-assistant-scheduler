@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
 
 test.describe("Schedule Management", () => {
   test.beforeEach(async ({ page }) => {
@@ -62,14 +62,12 @@ test.describe("Schedule Management", () => {
           contentType: "application/json",
           body: JSON.stringify({
             id: "new-schedule-1",
-            userId: "test-user-id",
             title: "新しい予定",
-            startAt: "2025-01-15T10:00:00",
-            endAt: "2025-01-15T11:00:00",
+            startAt: "2025-01-15T10:00:00+09:00",
+            endAt: "2025-01-15T11:00:00+09:00",
             isAllDay: false,
-            memo: null,
-            createdAt: "2025-01-01T00:00:00",
-            updatedAt: "2025-01-01T00:00:00",
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z",
           }),
         });
       } else {
@@ -92,6 +90,9 @@ test.describe("Schedule Management", () => {
         body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
       });
     });
+
+    // カレンダーとカテゴリのモックを設定
+    await setupCalendarMocks(page);
 
     await page.goto("/");
   });
@@ -119,12 +120,12 @@ test.describe("Schedule Management", () => {
     const monthDisplay = page.locator("h2");
     const initialMonth = await monthDisplay.textContent();
 
-    // 次の月へ移動
-    await page.getByRole("button", { name: "次の月" }).click();
+    // 次へ移動
+    await page.getByRole("button", { name: "次へ" }).click();
     await expect(monthDisplay).not.toHaveText(initialMonth || "");
 
-    // 前の月へ移動
-    await page.getByRole("button", { name: "前の月" }).click();
+    // 前へ移動
+    await page.getByRole("button", { name: "前へ" }).click();
     await expect(monthDisplay).toHaveText(initialMonth || "");
   });
 
@@ -151,8 +152,8 @@ test.describe("Schedule Management", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("E2Eテストの予定");
 
-    // 次へボタンが表示されていること（APIモックが必要なため、この段階ではフォーム入力まで確認）
-    const submitButton = page.getByRole("button", { name: "次へ" });
+    // AIで補完ボタンが表示されていること（APIモックが必要なため、この段階ではフォーム入力まで確認）
+    const submitButton = page.getByRole("button", { name: "AIで補完" });
     await expect(submitButton).toBeVisible();
   });
 
@@ -173,9 +174,9 @@ test.describe("Schedule Management", () => {
   });
 
   test("should navigate to today", async ({ page }) => {
-    // 次の月へ移動
-    await page.getByRole("button", { name: "次の月" }).click();
-    await page.getByRole("button", { name: "次の月" }).click();
+    // 次へ移動（2回クリック）
+    await page.getByRole("button", { name: "次へ" }).click();
+    await page.getByRole("button", { name: "次へ" }).click();
 
     // 今日ボタンをクリック
     await page.getByRole("button", { name: "今日" }).click();
