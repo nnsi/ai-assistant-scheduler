@@ -7,23 +7,48 @@ description: 複数のセキュリティレビュアーを並列起動し、結�
 
 複数の視点からセキュリティレビューを実施し、実際の攻撃テストで検証する。
 
+## 重要な注意事項
+
+**security-reviewerサブエージェントにはBashツールがない。**
+
+したがって：
+- サブエージェントは**コード分析のみ**を行う
+- **攻撃テスト（curl等）は自分で実施**する必要がある
+- 「攻撃者シミュレーション」を依頼しても、コードを読んだ感想が返ってくるだけ
+
 ## 手順
 
 ### 1. 並列レビューの実施
 
-security-reviewerサブエージェントを3つ並列で起動：
-
-1. **脆弱性レビュー A** - 認証・認可、入力検証、XSS、CSRF等
-2. **脆弱性レビュー B** - 同じ観点で独立してレビュー（一致度で信頼性を判断）
-3. **攻撃者シミュレーション** - 攻撃者の視点で「どこから攻めるか」を分析
+security-reviewerサブエージェントを**2つ**並列で起動：
 
 ```
-Task(security-reviewer): "認証・認可、入力検証、XSS、CSRFの観点でレビューして"
-Task(security-reviewer): "同じ観点で独立してレビューして"
-Task(security-reviewer): "攻撃者として、どこから攻めるか分析して。実際にcurlで攻撃テストも実施して"
+Task(security-reviewer): "認証・認可、入力検証、XSS、CSRFの観点でコードレビューして"
+Task(security-reviewer): "同じ観点で独立してレビューして（一致度で信頼性を判断）"
 ```
 
-### 2. 結果の統合
+注意：「攻撃テストを実施して」と依頼してもBashがないので実行できない。
+
+### 2. 結果の検証
+
+**サブエージェントの指摘を鵜呑みにしない。** 以下を必ず確認：
+
+```bash
+# 「〜が実装されていない」→ 実際にコードをgrepして確認
+grep -r "authMiddleware" packages/backend/src/
+
+# 「ファイルがGitに混入」→ git ls-filesで確認
+git ls-files | grep ".dev.vars"
+
+# 「〜の検証がない」→ 該当コードを読んで確認
+```
+
+**過去の誤検出例：**
+- 「.dev.varsがGitに混入」→ 実際は.gitignoreに入っており混入していなかった
+- 「認証の欠如」→ 実際はOAuth実装済みだった
+- 「JWT exp検証がない」→ hono/jwtは自動でexp検証する
+
+### 3. 結果の統合
 
 `docs/SECURITY_REPORT.md` に統合する：
 
@@ -31,14 +56,9 @@ Task(security-reviewer): "攻撃者として、どこから攻めるか分析し
 # Security Report
 
 ## 診断一致（複数が指摘）
-| 脆弱性 | レビューA | レビューB | 攻撃者 | 重大度 |
-|--------|-----------|-----------|--------|--------|
-| OAuth state欠如 | Yes | Yes | Yes | Critical |
-
-## TOP 3 攻撃ベクター
-1. [攻撃者エージェントが特定した最も危険な箇所]
-2. ...
-3. ...
+| 脆弱性 | レビューA | レビューB | 重大度 |
+|--------|-----------|-----------|--------|
+| OAuth state欠如 | Yes | Yes | Critical |
 
 ## Critical
 ...
@@ -47,13 +67,13 @@ Task(security-reviewer): "攻撃者として、どこから攻めるか分析し
 ...
 ```
 
-### 3. 実際の攻撃テスト
+### 4. 自分で攻撃テストを実施
 
-レビュー結果を検証するため、実際にcurlで攻撃テストを実施：
+開発サーバーを起動して、curlで攻撃テストを実行：
 
 ```bash
 # 開発サーバーを起動
-pnpm dev
+pnpm dev &
 
 # 認証なしアクセス
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8787/api/schedules
@@ -74,14 +94,19 @@ curl -s -I http://localhost:8787/api/schedules \
   -H "Origin: https://evil.com" | grep -i "access-control"
 # 期待: Access-Control-Allow-Originヘッダーなし
 
-# SQLインジェクション（該当箇所があれば）
-curl -s http://localhost:8787/api/schedules?title="'; DROP TABLE schedules;--"
-# 期待: 正常に処理される（クエリがパラメータ化されている）
+# リダイレクトURI改ざん
+curl -s -o /dev/null -w "%{http_code}" \
+  "http://localhost:8787/api/auth/google?redirect_uri=https://evil.com"
+# 期待: 400
+
+# SQLインジェクション（Drizzle使用なら通常は安全）
+curl -s "http://localhost:8787/api/schedules?title='; DROP TABLE schedules;--"
+# 期待: 正常に処理される
 ```
 
-### 4. レポート更新
+### 5. レポート更新
 
-テスト結果を反映し、総合評価を更新：
+テスト結果を反映：
 
 ```markdown
 ## 攻撃テスト結果
@@ -97,9 +122,10 @@ curl -s http://localhost:8787/api/schedules?title="'; DROP TABLE schedules;--"
 **A** - 主要な攻撃ベクターは全て防御されている
 ```
 
-## 注意事項
+## チェックリスト
 
-- レビュー結果を鵜呑みにしない。「ファイルがGitに混入」など致命的な指摘は `git ls-files` で必ず検証
-- 両者が同じ問題を指摘していれば信頼性が高い
-- 片方だけが指摘している問題は特に慎重に検討する
-- 攻撃テストは開発環境でのみ実施する
+- [ ] security-reviewerを2つ並列で起動した
+- [ ] 両者の指摘を比較した（一致=信頼度高）
+- [ ] 致命的な指摘は`git ls-files`等で検証した
+- [ ] 攻撃テストを**自分で**curlで実施した
+- [ ] レポートを作成した

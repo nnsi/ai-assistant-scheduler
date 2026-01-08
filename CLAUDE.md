@@ -77,3 +77,76 @@ useEffect(() => {
 - 問題が出たら「このルールを足そう」ではなく「何を達成したいか」から考え直す
 - 曖昧なケースの処理方針を決める（例：「不明なら除外」）
 - 出力フォーマットを目的に合わせて設計する
+
+## テストDBスキーマの同期
+
+**本番スキーマを変更したら、必ず `test/helpers.ts` の `createTestDb` も更新する。**
+
+これは繰り返し発生する問題パターン：
+1. 新しいテーブルやカラムを追加
+2. 本番は動くがテストが落ちる
+3. 原因は `createTestDb` にテーブル/カラムがない
+
+変更するべきファイル：
+- `packages/backend/src/infrastructure/db/schema.ts` → 本番スキーマ
+- `packages/backend/test/helpers.ts` → テスト用スキーマ（同期必須）
+
+## E2Eテストのモック同期
+
+新しいAPIエンドポイントを追加したら：
+1. E2Eテストに対応するモックを追加
+2. Zodスキーマの必須フィールドがモックに全て含まれているか確認
+3. `nullable`と`optional`の違いに注意（`null` vs `undefined`）
+
+Playwrightでテストが失敗したときのデバッグ：
+```typescript
+// ブラウザコンソールのエラーを確認
+page.on("console", msg => console.log(msg.text()));
+
+// スクリーンショットを撮ってから操作
+await page.screenshot({ path: 'debug.png' });
+```
+
+## Hono RPC Clientの制限
+
+- 全てのルートで型推論できるわけではない
+- パスパラメータを含むルートで型推論が効かない場合がある
+- fallbackとして`fetchWithAuth`を直接使う
+
+```typescript
+// Hono RPCで型推論できる場合
+const res = await client.schedules.$get();
+
+// 型推論できない場合のfallback
+const res = await fetchWithAuth(`/api/invitations/${token}`);
+```
+
+## Cloudflare Workers固有の制約
+
+- `process`オブジェクトが存在しない（`globalThis`で代替）
+- `better-sqlite3`はテスト用のみ。本番はD1を使用
+- SSEは100秒間イベントなしで524エラー
+- `vitest-pool-workers`はMastraの依存で動かない場合がある
+
+## CI/CDの重複確認
+
+ワークフローを変更したとき：
+1. 複数のワークフローが同時にトリガーされないか確認
+2. ジョブ間でビルドやテストが重複していないか確認
+3. アーティファクトを使い回すか、各ジョブで再ビルドするか明確にする
+
+```yaml
+# PRのみでCI実行し、push時はdeploy.ymlに任せる
+on:
+  pull_request:
+    branches: [master, release]
+```
+
+## 設計変更時のドキュメント同期
+
+設計を変更したら、全ての関連ドキュメントを更新する：
+- `docs/design/` 配下のファイル
+- `docs/tasks.md` などのタスクリスト
+- 各パッケージのREADME
+
+片方のドキュメントだけ更新して、他を忘れがち。
