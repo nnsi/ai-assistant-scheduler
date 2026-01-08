@@ -109,6 +109,7 @@
 - [ ] `UpdateMemberRoleUseCase`
 - [ ] `RemoveMemberUseCase`
 - [ ] `LeaveCalendarUseCase`
+- [ ] `TransferOwnershipUseCase`
 
 ### 3.3 APIルート実装
 
@@ -117,6 +118,7 @@
 - [ ] `PUT /calendars/:id/members/:userId`
 - [ ] `DELETE /calendars/:id/members/:userId`
 - [ ] `POST /calendars/:id/leave`
+- [ ] `PUT /calendars/:id/transfer`（オーナー移譲）
 
 ### 3.4 テスト
 
@@ -140,24 +142,15 @@
 
 ### 4.2 APIルート実装
 
-- [ ] `POST /calendars/:id/invitations`
-- [ ] `GET /calendars/:id/invitations`
+- [ ] `POST /calendars/:id/invitations`（admin以上）
+- [ ] `GET /calendars/:id/invitations`（admin以上）
+- [ ] `DELETE /calendars/:id/invitations/:id`（admin以上）
 - [ ] `GET /invitations/:token`（認証不要）
-- [ ] `POST /invitations/:token/accept`
-- [ ] `DELETE /invitations/:token`
+- [ ] `POST /invitations/:token/accept`（認証必須）
 
-### 4.3 公開カレンダー機能
-
-- [ ] `UpdatePublicSettingUseCase`
-- [ ] `GetPublicCalendarUseCase`
-- [ ] `PUT /calendars/:id/public`
-- [ ] `GET /public/:token`（認証不要）
-- [ ] `GET /public/:token/schedules`（認証不要）
-
-### 4.4 テスト
+### 4.3 テスト
 
 - [ ] 招待リンクのユニットテスト
-- [ ] 公開カレンダーのテスト
 - [ ] 招待APIのE2Eテスト
 
 **推定作業量**: 中〜大
@@ -245,12 +238,7 @@
   - [ ] 未ログイン時: ログイン誘導 → 招待受諾
   - [ ] ログイン済み: 招待内容表示 → 受諾/拒否
 
-### 7.3 公開カレンダー表示
-
-- [ ] `/public/:token`ルート追加
-- [ ] `PublicCalendarView`（読み取り専用表示）
-
-### 7.4 共有状態の表示
+### 7.3 共有状態の表示
 
 - [ ] カレンダー一覧に共有アイコン表示
 - [ ] メンバー数バッジ
@@ -295,7 +283,6 @@
 
 - [ ] カレンダー作成〜スケジュール追加フロー
 - [ ] メンバー招待〜受諾フロー
-- [ ] 公開カレンダー閲覧フロー
 - [ ] 権限に応じた操作制限テスト
 
 ### 9.3 手動テスト
@@ -381,3 +368,7 @@ Phase 10 (リリース)
 ## 更新履歴
 
 - 2026-01-08: 初版作成
+- 2026-01-08: 第3回レビュー結果を反映
+  - 公開カレンダー関連タスクを削除（4.3, 7.3, E2Eテスト）
+  - オーナー移譲API（TransferOwnershipUseCase, PUT /calendars/:id/transfer）を追加
+  - 招待リンクAPIの認証要件を明記

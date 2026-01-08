@@ -294,12 +294,22 @@ POST   /calendars/:id/leave          - カレンダーから離脱
 ### 招待リンク
 
 ```
-POST   /calendars/:id/invitations    - 招待リンク生成（レスポンスに完全なトークンを含む）
-GET    /calendars/:id/invitations    - 招待リンク一覧（トークンはマスク表示: abc12...xyz）
-DELETE /invitations/:token           - 招待リンク無効化
-POST   /invitations/:token/accept    - 招待リンクで参加
-GET    /invitations/:token           - 招待リンク情報取得（未ログインでも可）
+POST   /calendars/:id/invitations    - 招待リンク生成（admin以上、完全トークンをレスポンス）
+GET    /calendars/:id/invitations    - 招待リンク一覧（admin以上、トークンはマスク表示）
+DELETE /calendars/:id/invitations/:id - 招待リンク無効化（admin以上、そのカレンダーの招待のみ削除可能）
+GET    /invitations/:token           - 招待リンク情報取得（認証不要、カレンダー名と権限のみ返却）
+POST   /invitations/:token/accept    - 招待リンクで参加（認証必須、すでにメンバーなら409）
 ```
+
+#### 認証・認可要件
+
+| エンドポイント | 認証 | 認可 |
+|---------------|------|------|
+| `POST /calendars/:id/invitations` | 必須 | admin以上 |
+| `GET /calendars/:id/invitations` | 必須 | admin以上 |
+| `DELETE /calendars/:id/invitations/:id` | 必須 | admin以上、該当カレンダーの招待のみ |
+| `GET /invitations/:token` | 不要 | - |
+| `POST /invitations/:token/accept` | 必須 | 有効な招待リンク所持 |
 
 #### 招待フローの詳細
 
@@ -730,3 +740,7 @@ RETURNING *;
   - calendarsからis_public, public_tokenを削除
   - 公開カレンダーAPI（/public/:token）を削除
   - 関連するスキーマ、レスポンス、セキュリティ考慮事項を削除
+- 2026-01-08: 第3回レビュー結果を反映
+  - 招待リンクAPIの認証・認可要件を明確化
+  - DELETE /invitations/:tokenを/calendars/:id/invitations/:idに変更（IDOR防止）
+  - POST /invitations/:token/acceptの認証必須を明記
