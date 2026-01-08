@@ -13,6 +13,8 @@ export type { Schedule, CreateScheduleInput, UpdateScheduleInput };
 // 内部エンティティ型（userIdを含む）
 export type ScheduleEntity = Omit<Schedule, "category" | "recurrence"> & {
   userId: string;
+  calendarId: string | null;
+  createdBy: string | null;
   categoryId: string | null;
   category?: Category | null;
   recurrence?: RecurrenceRule | null;
@@ -21,12 +23,15 @@ export type ScheduleEntity = Omit<Schedule, "category" | "recurrence"> & {
 // ファクトリ関数
 export const createSchedule = (
   input: CreateScheduleInput,
-  userId: string
+  userId: string,
+  calendarId: string | null = null
 ): ScheduleEntity => {
   const now = new Date().toISOString();
   return {
     id: generateId(),
     userId,
+    calendarId: input.calendarId ?? calendarId,
+    createdBy: userId, // スケジュール作成者
     title: input.title,
     startAt: input.startAt,
     endAt: input.endAt ?? null,
@@ -44,6 +49,7 @@ export const toPublicSchedule = (entity: ScheduleEntity): Schedule => ({
   startAt: entity.startAt,
   endAt: entity.endAt,
   isAllDay: entity.isAllDay,
+  calendarId: entity.calendarId,
   categoryId: entity.categoryId,
   category: entity.category ?? null,
   recurrence: entity.recurrence ?? null,

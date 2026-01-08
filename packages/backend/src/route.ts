@@ -6,6 +6,9 @@ import { authRoute } from "./feature/auth/route";
 import { profileRoute } from "./feature/profile/route";
 import { categoryRoute } from "./feature/category/route";
 import { recurrenceRoute } from "./feature/recurrence/route";
+import { calendarRoute } from "./feature/calendar/route";
+import { calendarMemberRoute } from "./feature/calendar-member/route";
+import { calendarInvitationRoute, invitationRoute } from "./feature/invitation/route";
 
 type Bindings = {
   DB: D1Database;
@@ -25,6 +28,10 @@ export const apiRoutes = app
   .route("/ai", aiRoute)
   .route("/profile", profileRoute)
   .route("/categories", categoryRoute)
-  .route("/recurrence", recurrenceRoute);
+  .route("/recurrence", recurrenceRoute)
+  .route("/calendars", calendarRoute)
+  .route("/calendars", calendarMemberRoute)
+  .route("/calendars", calendarInvitationRoute)
+  .route("/invitations", invitationRoute);
 
 export type ApiRoutes = typeof apiRoutes;

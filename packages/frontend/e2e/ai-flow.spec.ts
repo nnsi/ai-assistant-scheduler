@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
 
 /**
  * AI機能のE2Eテスト
@@ -85,6 +85,7 @@ test.describe("AI Features", () => {
             title: body.title,
             startAt: body.startAt,
             endAt: body.endAt ?? null,
+            isAllDay: body.isAllDay ?? false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           }),
@@ -141,6 +142,9 @@ test.describe("AI Features", () => {
       });
     });
 
+    // カレンダーとカテゴリのモックを設定
+    await setupCalendarMocks(page);
+
     await page.goto("/");
   });
 
@@ -155,8 +159,8 @@ test.describe("AI Features", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("週次定例会議");
 
-    // 次へボタンをクリック
-    await page.getByRole("button", { name: "次へ" }).click();
+    // AIで補完ボタンをクリック
+    await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されること（APIレスポンスを待つためタイムアウトを長く）
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
@@ -175,8 +179,8 @@ test.describe("AI Features", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("週次定例会議");
 
-    // 次へボタンをクリック
-    await page.getByRole("button", { name: "次へ" }).click();
+    // AIで補完ボタンをクリック
+    await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
@@ -201,8 +205,8 @@ test.describe("AI Features", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("シンプルな予定");
 
-    // 次へボタンをクリック
-    await page.getByRole("button", { name: "次へ" }).click();
+    // AIで補完ボタンをクリック
+    await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
@@ -225,8 +229,8 @@ test.describe("AI Features", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("会議の準備");
 
-    // 次へボタンをクリック
-    await page.getByRole("button", { name: "次へ" }).click();
+    // AIで補完ボタンをクリック
+    await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されるまで待機（APIレスポンスを待つ）
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });

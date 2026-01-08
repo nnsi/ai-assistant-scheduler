@@ -107,6 +107,8 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
       return rows.map((row) => ({
         id: row.schedules.id,
         userId: row.schedules.userId,
+        calendarId: row.schedules.calendarId,
+        createdBy: row.schedules.createdBy,
         title: row.schedules.title,
         startAt: row.schedules.startAt,
         endAt: row.schedules.endAt,
@@ -157,6 +159,8 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
 const toScheduleWithCategoryAndRecurrence = (row: ScheduleWithCategoryAndRecurrence): ScheduleEntity => ({
   id: row.schedules.id,
   userId: row.schedules.userId,
+  calendarId: row.schedules.calendarId,
+  createdBy: row.schedules.createdBy,
   title: row.schedules.title,
   startAt: row.schedules.startAt,
   endAt: row.schedules.endAt,
@@ -191,6 +195,8 @@ const toScheduleWithCategoryAndRecurrence = (row: ScheduleWithCategoryAndRecurre
 const toRow = (schedule: ScheduleEntity): ScheduleRow => ({
   id: schedule.id,
   userId: schedule.userId,
+  calendarId: schedule.calendarId,
+  createdBy: schedule.createdBy,
   categoryId: schedule.categoryId ?? null,
   title: schedule.title,
   startAt: schedule.startAt,

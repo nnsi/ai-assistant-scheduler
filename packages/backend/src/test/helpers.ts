@@ -18,18 +18,58 @@ export const createTestDb = () => {
       created_at text NOT NULL,
       updated_at text NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS calendars (
+      id text PRIMARY KEY NOT NULL,
+      owner_id text NOT NULL,
+      name text NOT NULL,
+      color text NOT NULL DEFAULT '#3B82F6',
+      deleted_at text,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS calendar_members (
+      id text PRIMARY KEY NOT NULL,
+      calendar_id text NOT NULL,
+      user_id text NOT NULL,
+      role text NOT NULL DEFAULT 'viewer',
+      invited_by text,
+      accepted_at text,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (invited_by) REFERENCES users(id)
+    );
+    CREATE TABLE IF NOT EXISTS calendar_invitations (
+      id text PRIMARY KEY NOT NULL,
+      calendar_id text NOT NULL,
+      token text NOT NULL UNIQUE,
+      role text NOT NULL DEFAULT 'viewer',
+      expires_at text NOT NULL,
+      max_uses integer,
+      use_count integer NOT NULL DEFAULT 0,
+      created_by text NOT NULL,
+      created_at text NOT NULL,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    );
     CREATE TABLE IF NOT EXISTS categories (
       id text PRIMARY KEY NOT NULL,
       user_id text NOT NULL,
+      calendar_id text,
       name text NOT NULL,
       color text NOT NULL,
       created_at text NOT NULL,
       updated_at text NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS schedules (
       id text PRIMARY KEY NOT NULL,
       user_id text NOT NULL,
+      calendar_id text,
+      created_by text,
       category_id text,
       title text NOT NULL,
       start_at text NOT NULL,
@@ -38,6 +78,8 @@ export const createTestDb = () => {
       created_at text NOT NULL,
       updated_at text NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by) REFERENCES users(id),
       FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS schedule_supplements (
@@ -87,8 +129,13 @@ export const createTestDb = () => {
     );
     CREATE INDEX IF NOT EXISTS idx_users_provider_id ON users (provider, provider_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+    CREATE INDEX IF NOT EXISTS idx_calendars_owner_id ON calendars (owner_id);
+    CREATE INDEX IF NOT EXISTS idx_calendar_members_calendar_id ON calendar_members (calendar_id);
+    CREATE INDEX IF NOT EXISTS idx_calendar_members_user_id ON calendar_members (user_id);
+    CREATE INDEX IF NOT EXISTS idx_calendar_invitations_token ON calendar_invitations (token);
     CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories (user_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_user_id ON schedules (user_id);
+    CREATE INDEX IF NOT EXISTS idx_schedules_calendar_id ON schedules (calendar_id);
     CREATE INDEX IF NOT EXISTS idx_schedules_start_at ON schedules (start_at);
     CREATE INDEX IF NOT EXISTS idx_supplements_schedule_id ON schedule_supplements (schedule_id);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
@@ -194,6 +241,9 @@ export const resetDatabase = async (db: TestDb) => {
   await db.delete(schema.scheduleSupplements);
   await db.delete(schema.schedules);
   await db.delete(schema.categories);
+  await db.delete(schema.calendarInvitations);
+  await db.delete(schema.calendarMembers);
+  await db.delete(schema.calendars);
   await db.delete(schema.refreshTokens);
   await db.delete(schema.userProfiles);
   await db.delete(schema.users);

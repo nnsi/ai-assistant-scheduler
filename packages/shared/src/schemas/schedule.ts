@@ -11,6 +11,7 @@ export const createScheduleInputSchema = z
     endAt: z.string().datetime({ offset: true }).optional(),
     isAllDay: z.boolean().optional(),
     categoryId: z.string().optional(),
+    calendarId: z.string().optional(), // 省略時はデフォルトカレンダー
     // AI検索結果（オプショナル）
     keywords: z
       .array(z.string().max(50, "キーワードは50文字以内です"))
@@ -47,6 +48,7 @@ export const scheduleSchema = z.object({
   startAt: z.string(),
   endAt: z.string().nullable(),
   isAllDay: z.boolean(),
+  calendarId: z.string().nullable().optional(),
   categoryId: z.string().nullable().optional(),
   category: categorySchema.nullable().optional(),
   recurrence: recurrenceRuleSchema.nullable().optional(),
@@ -78,6 +80,7 @@ export const searchScheduleInputSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD形式で入力してください").optional(),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD形式で入力してください").optional(),
   categoryId: z.string().optional(),
+  calendarId: z.string().optional(), // カレンダーIDでフィルタ
 });
 
 export type SearchScheduleInput = z.infer<typeof searchScheduleInputSchema>;

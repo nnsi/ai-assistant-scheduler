@@ -6,6 +6,7 @@ import { SearchResults } from "@/components/AI/SearchResults";
 import { useAI } from "@/hooks/useAI";
 import { useProfile } from "@/hooks/useProfile";
 import { useCategories } from "@/hooks/useCategories";
+import { useCalendarContext } from "@/contexts/CalendarContext";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
 import type { Schedule, CreateScheduleInput, Shop, CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
@@ -56,6 +57,7 @@ export const ScheduleFormModal = ({
 
   const { profile } = useProfile();
   const { categories } = useCategories();
+  const { calendars, defaultCalendarId } = useCalendarContext();
 
   // こだわり条件が設定されているかどうか
   const hasConditions = Boolean(
@@ -207,6 +209,8 @@ export const ScheduleFormModal = ({
           defaultDate={defaultDate}
           defaultTime={defaultTime}
           categories={categories}
+          calendars={calendars}
+          defaultCalendarId={defaultCalendarId}
           onSubmit={handleFormSubmit}
           onSimpleSave={handleSimpleSave}
           onCancel={handleClose}

@@ -10,45 +10,45 @@
 
 ### 1.1 スキーマ定義
 
-- [ ] `calendars`テーブルのDrizzleスキーマ定義
-- [ ] `calendar_members`テーブルのDrizzleスキーマ定義
-- [ ] `calendar_invitations`テーブルのDrizzleスキーマ定義
-- [ ] `schedules`テーブルに`calendar_id`カラム追加
-- [ ] `categories`テーブルに`calendar_id`カラム追加
-- [ ] 型エクスポートの追加
+- [x] `calendars`テーブルのDrizzleスキーマ定義
+- [x] `calendar_members`テーブルのDrizzleスキーマ定義
+- [x] `calendar_invitations`テーブルのDrizzleスキーマ定義
+- [x] `schedules`テーブルに`calendar_id`カラム追加
+- [x] `categories`テーブルに`calendar_id`カラム追加
+- [x] 型エクスポートの追加
 
 ### 1.2 マイグレーション
 
-- [ ] マイグレーションファイル作成（0005_add_calendars.sql）
-- [ ] ローカル環境でマイグレーション実行・検証
-- [ ] 既存データのマイグレーションスクリプト作成
-  - [ ] 各ユーザーにデフォルトカレンダー作成
-  - [ ] 既存schedules, categoriesにcalendar_id設定
-  - [ ] calendar_membersにownerレコード作成
+- [x] マイグレーションファイル作成（0009_add_calendars.sql）
+- [x] ローカル環境でマイグレーション実行・検証
+- [x] 既存データのマイグレーションスクリプト作成
+  - [x] 各ユーザーにデフォルトカレンダー作成
+  - [x] 既存schedules, categoriesにcalendar_id設定
+  - [x] calendar_membersにownerレコード作成
 
 ### 1.3 リポジトリ層
 
-- [ ] `CalendarRepository`の実装
-  - [ ] `create`
-  - [ ] `findById`
-  - [ ] `findByUserId`（アクセス可能なカレンダー一覧）
-  - [ ] `update`
-  - [ ] `delete`
-- [ ] `CalendarMemberRepository`の実装
-  - [ ] `create`
-  - [ ] `findByCalendarId`
-  - [ ] `findByUserIdAndCalendarId`
-  - [ ] `updateRole`
-  - [ ] `delete`
-- [ ] `CalendarInvitationRepository`の実装
-  - [ ] `create`
-  - [ ] `findByToken`
-  - [ ] `findByCalendarId`
-  - [ ] `incrementUseCount`
-  - [ ] `delete`
-- [ ] 既存リポジトリの更新
-  - [ ] `ScheduleRepository`に`calendar_id`対応追加
-  - [ ] `CategoryRepository`に`calendar_id`対応追加
+- [x] `CalendarRepository`の実装
+  - [x] `create`
+  - [x] `findById`
+  - [x] `findByUserId`（アクセス可能なカレンダー一覧）
+  - [x] `update`
+  - [x] `delete`
+- [x] `CalendarMemberRepository`の実装
+  - [x] `create`
+  - [x] `findByCalendarId`
+  - [x] `findByUserIdAndCalendarId`
+  - [x] `updateRole`
+  - [x] `delete`
+- [x] `CalendarInvitationRepository`の実装
+  - [x] `create`
+  - [x] `findByToken`
+  - [x] `findByCalendarId`
+  - [x] `incrementUseCount`
+  - [x] `delete`
+- [x] 既存リポジトリの更新
+  - [x] `ScheduleRepository`に`calendar_id`対応追加
+  - [x] `CategoryRepository`に`calendar_id`対応追加
 
 **推定作業量**: 中
 
@@ -58,33 +58,33 @@
 
 ### 2.1 Zodスキーマ定義（shared）
 
-- [ ] `calendarInput`スキーマ
-- [ ] `calendarResponse`スキーマ
-- [ ] `calendarMemberInput`スキーマ
-- [ ] `calendarMemberResponse`スキーマ
-- [ ] `calendarInvitationInput`スキーマ
-- [ ] `calendarInvitationResponse`スキーマ
+- [x] `calendarInput`スキーマ
+- [x] `calendarResponse`スキーマ
+- [x] `calendarMemberInput`スキーマ
+- [x] `calendarMemberResponse`スキーマ
+- [x] `calendarInvitationInput`スキーマ
+- [x] `calendarInvitationResponse`スキーマ
 
 ### 2.2 ユースケース実装
 
-- [ ] `CreateCalendarUseCase`
-- [ ] `GetCalendarsUseCase`（アクセス可能なカレンダー一覧）
-- [ ] `GetCalendarDetailUseCase`
-- [ ] `UpdateCalendarUseCase`
-- [ ] `DeleteCalendarUseCase`
+- [x] `CreateCalendarUseCase`
+- [x] `GetCalendarsUseCase`（アクセス可能なカレンダー一覧）
+- [x] `GetCalendarDetailUseCase`
+- [x] `UpdateCalendarUseCase`
+- [x] `DeleteCalendarUseCase`
 
 ### 2.3 APIルート実装
 
-- [ ] `GET /calendars`
-- [ ] `POST /calendars`
-- [ ] `GET /calendars/:id`
-- [ ] `PUT /calendars/:id`
-- [ ] `DELETE /calendars/:id`
+- [x] `GET /calendars`
+- [x] `POST /calendars`
+- [x] `GET /calendars/:id`
+- [x] `PUT /calendars/:id`
+- [x] `DELETE /calendars/:id`
 
 ### 2.4 テスト
 
-- [ ] カレンダーCRUDのユニットテスト
-- [ ] カレンダーAPIのE2Eテスト
+- [x] カレンダーCRUDのユニットテスト
+- [x] カレンダーAPIのE2Eテスト
 
 **推定作業量**: 中
 
@@ -94,37 +94,37 @@
 
 ### 3.1 権限チェックミドルウェア
 
-- [ ] `calendarAuthMiddleware`の実装
-  - [ ] カレンダーへのアクセス権確認
-  - [ ] ロールに基づく操作権限確認
-- [ ] 権限ヘルパー関数
-  - [ ] `canEdit(role): boolean`
-  - [ ] `canManageMembers(role): boolean`
-  - [ ] `isOwner(role): boolean`
+- [x] `calendarAuthMiddleware`の実装
+  - [x] カレンダーへのアクセス権確認
+  - [x] ロールに基づく操作権限確認
+- [x] 権限ヘルパー関数
+  - [x] `canEdit(role): boolean`
+  - [x] `canManageMembers(role): boolean`
+  - [x] `isOwner(role): boolean`
 
 ### 3.2 ユースケース実装
 
-- [ ] `AddMemberUseCase`
-- [ ] `GetMembersUseCase`
-- [ ] `UpdateMemberRoleUseCase`
-- [ ] `RemoveMemberUseCase`
-- [ ] `LeaveCalendarUseCase`
-- [ ] `TransferOwnershipUseCase`
+- [x] `AddMemberUseCase`
+- [x] `GetMembersUseCase`
+- [x] `UpdateMemberRoleUseCase`
+- [x] `RemoveMemberUseCase`
+- [x] `LeaveCalendarUseCase`
+- [x] `TransferOwnershipUseCase`
 
 ### 3.3 APIルート実装
 
-- [ ] `GET /calendars/:id/members`
-- [ ] `POST /calendars/:id/members`
-- [ ] `PUT /calendars/:id/members/:userId`
-- [ ] `DELETE /calendars/:id/members/:userId`
-- [ ] `POST /calendars/:id/leave`
-- [ ] `PUT /calendars/:id/transfer`（オーナー移譲）
+- [x] `GET /calendars/:id/members`
+- [x] `POST /calendars/:id/members`
+- [x] `PUT /calendars/:id/members/:userId`
+- [x] `DELETE /calendars/:id/members/:userId`
+- [x] `POST /calendars/:id/leave`
+- [x] `PUT /calendars/:id/transfer`（オーナー移譲）
 
 ### 3.4 テスト
 
-- [ ] メンバー管理のユニットテスト
-- [ ] 権限チェックのテスト
-- [ ] メンバーAPIのE2Eテスト
+- [x] メンバー管理のユニットテスト
+- [x] 権限チェックのテスト
+- [x] メンバーAPIのE2Eテスト
 
 **推定作業量**: 中
 
@@ -134,24 +134,24 @@
 
 ### 4.1 招待リンク機能
 
-- [ ] トークン生成ユーティリティ
-- [ ] `CreateInvitationUseCase`
-- [ ] `GetInvitationsUseCase`
-- [ ] `AcceptInvitationUseCase`
-- [ ] `RevokeInvitationUseCase`
+- [x] トークン生成ユーティリティ
+- [x] `CreateInvitationUseCase`
+- [x] `GetInvitationsUseCase`
+- [x] `AcceptInvitationUseCase`
+- [x] `RevokeInvitationUseCase`
 
 ### 4.2 APIルート実装
 
-- [ ] `POST /calendars/:id/invitations`（admin以上）
-- [ ] `GET /calendars/:id/invitations`（admin以上）
-- [ ] `DELETE /calendars/:id/invitations/:id`（admin以上）
-- [ ] `GET /invitations/:token`（認証不要）
-- [ ] `POST /invitations/:token/accept`（認証必須）
+- [x] `POST /calendars/:id/invitations`（admin以上）
+- [x] `GET /calendars/:id/invitations`（admin以上）
+- [x] `DELETE /calendars/:id/invitations/:id`（admin以上）
+- [x] `GET /invitations/:token`（認証不要）
+- [x] `POST /invitations/:token/accept`（認証必須）
 
 ### 4.3 テスト
 
-- [ ] 招待リンクのユニットテスト
-- [ ] 招待APIのE2Eテスト
+- [x] 招待リンクのユニットテスト
+- [x] 招待APIのE2Eテスト
 
 **推定作業量**: 中〜大
 
@@ -161,27 +161,27 @@
 
 ### 5.1 スケジュールAPI更新
 
-- [ ] `POST /schedules`に`calendarId`パラメータ追加
-- [ ] `GET /schedules`にカレンダー権限チェック追加
-- [ ] `PUT /schedules/:id`に権限チェック追加
-- [ ] `DELETE /schedules/:id`に権限チェック追加
-- [ ] 繰り返しスケジュールAPIの権限チェック追加
+- [x] `POST /schedules`に`calendarId`パラメータ追加
+- [x] `GET /schedules`にカレンダー権限チェック追加
+- [x] `PUT /schedules/:id`に権限チェック追加
+- [x] `DELETE /schedules/:id`に権限チェック追加
+- [x] 繰り返しスケジュールAPIの権限チェック追加
 
 ### 5.2 カテゴリAPI更新
 
-- [ ] `POST /categories`に`calendarId`パラメータ追加
-- [ ] `GET /categories`にカレンダー別フィルタ追加
-- [ ] カテゴリ編集・削除の権限チェック追加
+- [x] `POST /categories`に`calendarId`パラメータ追加
+- [x] `GET /categories`にカレンダー別フィルタ追加
+- [x] カテゴリ編集・削除の権限チェック追加
 
 ### 5.3 後方互換性
 
-- [ ] `calendarId`省略時はデフォルトカレンダーを使用
-- [ ] 既存テストの更新
+- [x] `calendarId`省略時はデフォルトカレンダーを使用
+- [x] 既存テストの更新
 
 ### 5.4 テスト更新
 
-- [ ] 既存スケジュールテストの更新
-- [ ] 権限チェックを含む新規テスト追加
+- [x] 既存スケジュールテストの更新
+- [x] 権限チェックを含む新規テスト追加
 
 **推定作業量**: 中
 
@@ -191,31 +191,31 @@
 
 ### 6.1 API クライアント更新
 
-- [ ] カレンダー関連APIの追加
-  - [ ] `fetchCalendars`
-  - [ ] `createCalendar`
-  - [ ] `updateCalendar`
-  - [ ] `deleteCalendar`
-- [ ] メンバー関連APIの追加
-- [ ] 招待関連APIの追加
+- [x] カレンダー関連APIの追加
+  - [x] `fetchCalendars`
+  - [x] `createCalendar`
+  - [x] `updateCalendar`
+  - [x] `deleteCalendar`
+- [x] メンバー関連APIの追加
+- [x] 招待関連APIの追加
 
 ### 6.2 状態管理
 
-- [ ] `CalendarContext`の実装
-- [ ] カレンダー選択状態の永続化（localStorage）
-- [ ] React Queryキーの更新
+- [x] `CalendarContext`の実装
+- [x] カレンダー選択状態の永続化（localStorage）
+- [x] React Queryキーの更新
 
 ### 6.3 カレンダー選択UI
 
-- [ ] `CalendarSelector`コンポーネント
-- [ ] `CalendarColorDot`コンポーネント
-- [ ] サイドバーへの統合
+- [x] `CalendarSelector`コンポーネント
+- [x] `CalendarColorDot`コンポーネント
+- [x] サイドバーへの統合
 
 ### 6.4 カレンダー管理モーダル
 
-- [ ] `CalendarListModal`
-- [ ] `CalendarCreateModal`
-- [ ] `CalendarSettingsModal`
+- [x] `CalendarListModal`
+- [x] `CalendarCreateModal`
+- [x] `CalendarSettingsModal`
 
 **推定作業量**: 大
 
@@ -225,24 +225,24 @@
 
 ### 7.1 メンバー管理UI
 
-- [ ] `MemberListModal`
-- [ ] `InviteMemberModal`（メールアドレス入力）
-- [ ] `InviteLinkModal`（リンク生成・管理）
-- [ ] メンバー権限変更UI
-- [ ] メンバー削除確認UI
+- [x] `MemberListModal`
+- [x] `InviteMemberModal`（メールアドレス入力）
+- [x] `InviteLinkModal`（リンク生成・管理）
+- [x] メンバー権限変更UI
+- [x] メンバー削除確認UI
 
 ### 7.2 招待受諾フロー
 
-- [ ] `/invite/:token`ルート追加
-- [ ] `InvitationAcceptPage`
-  - [ ] 未ログイン時: ログイン誘導 → 招待受諾
-  - [ ] ログイン済み: 招待内容表示 → 受諾/拒否
+- [x] `/invite/:token`ルート追加
+- [x] `InvitationAcceptPage`
+  - [x] 未ログイン時: ログイン誘導 → 招待受諾
+  - [x] ログイン済み: 招待内容表示 → 受諾/拒否
 
 ### 7.3 共有状態の表示
 
-- [ ] カレンダー一覧に共有アイコン表示
-- [ ] メンバー数バッジ
-- [ ] 「共有されたカレンダー」セクション
+- [x] カレンダー一覧に共有アイコン表示
+- [x] メンバー数バッジ
+- [x] 「共有されたカレンダー」セクション
 
 **推定作業量**: 大
 
@@ -252,20 +252,20 @@
 
 ### 8.1 スケジュール作成・編集
 
-- [ ] カレンダー選択ドロップダウン追加
-- [ ] デフォルトカレンダー自動選択
-- [ ] 権限に応じたUI制御（閲覧者は編集不可）
+- [x] カレンダー選択ドロップダウン追加
+- [x] デフォルトカレンダー自動選択
+- [x] 権限に応じたUI制御（閲覧者は編集不可）
 
 ### 8.2 カレンダー表示
 
-- [ ] 複数カレンダーの色分け表示
-- [ ] カレンダー別フィルタ適用
-- [ ] スケジュールにカレンダー名/色表示
+- [x] 複数カレンダーの色分け表示
+- [x] カレンダー別フィルタ適用
+- [x] スケジュールにカレンダー名/色表示
 
 ### 8.3 カテゴリ管理
 
-- [ ] カレンダー別カテゴリ表示
-- [ ] カテゴリ作成時のカレンダー選択
+- [x] カレンダー別カテゴリ表示
+- [x] カテゴリ作成時のカレンダー選択
 
 **推定作業量**: 中
 
@@ -275,21 +275,21 @@
 
 ### 9.1 ユニットテスト
 
-- [ ] 権限チェックロジックのテスト
-- [ ] ユースケースのテスト
-- [ ] リポジトリのテスト
+- [x] 権限チェックロジックのテスト
+- [x] ユースケースのテスト
+- [x] リポジトリのテスト
 
 ### 9.2 E2Eテスト
 
-- [ ] カレンダー作成〜スケジュール追加フロー
-- [ ] メンバー招待〜受諾フロー
-- [ ] 権限に応じた操作制限テスト
+- [x] カレンダー作成〜スケジュール追加フロー
+- [x] メンバー招待〜受諾フロー
+- [x] 権限に応じた操作制限テスト
 
 ### 9.3 手動テスト
 
-- [ ] 複数ユーザーでの同時操作確認
-- [ ] 招待リンクの有効期限・回数制限テスト
-- [ ] エッジケースの確認
+- [x] 複数ユーザーでの同時操作確認
+- [x] 招待リンクの有効期限・回数制限テスト
+- [x] エッジケースの確認
 
 **推定作業量**: 中
 
@@ -372,3 +372,4 @@ Phase 10 (リリース)
   - 公開カレンダー関連タスクを削除（4.3, 7.3, E2Eテスト）
   - オーナー移譲API（TransferOwnershipUseCase, PUT /calendars/:id/transfer）を追加
   - 招待リンクAPIの認証要件を明記
+- 2026-01-08: Phase 1〜9 実装完了

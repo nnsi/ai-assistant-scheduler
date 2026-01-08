@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY } from "./test-constants";
+import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
 
 /**
  * スケジュールCRUD操作のE2Eテスト
@@ -17,6 +17,7 @@ test.describe("Schedule CRUD Operations", () => {
     title: "テスト予定",
     startAt: `${scheduleDateStr}T10:00:00+09:00`,
     endAt: `${scheduleDateStr}T11:00:00+09:00`,
+    isAllDay: false,
     createdAt: `${scheduleDateStr}T00:00:00+09:00`,
     updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
   };
@@ -148,6 +149,9 @@ test.describe("Schedule CRUD Operations", () => {
       });
     });
 
+    // カレンダーとカテゴリのモックを設定
+    await setupCalendarMocks(page);
+
     await page.goto("/");
   });
 
@@ -180,8 +184,8 @@ test.describe("Schedule CRUD Operations", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("新しい予定");
 
-    // 次へボタンをクリック
-    await page.getByRole("button", { name: "次へ" }).click();
+    // AIで補完ボタンをクリック
+    await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されること（APIレスポンスを待つ）
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });

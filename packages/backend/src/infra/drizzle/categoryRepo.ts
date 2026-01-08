@@ -47,6 +47,7 @@ export const createCategoryRepo = (db: Database): CategoryRepo => ({
 const toCategory = (row: CategoryRow): CategoryEntity => ({
   id: row.id,
   userId: row.userId,
+  calendarId: row.calendarId,
   name: row.name,
   color: row.color,
   createdAt: row.createdAt,
@@ -57,6 +58,7 @@ const toCategory = (row: CategoryRow): CategoryEntity => ({
 const toRow = (category: CategoryEntity): CategoryRow => ({
   id: category.id,
   userId: category.userId,
+  calendarId: category.calendarId,
   name: category.name,
   color: category.color,
   createdAt: category.createdAt,

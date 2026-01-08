@@ -11,11 +11,58 @@ export const users = sqliteTable("users", {
   updatedAt: text("updated_at").notNull(),
 });
 
+// カレンダーテーブル
+export const calendars = sqliteTable("calendars", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#3B82F6"),
+  deletedAt: text("deleted_at"), // NULL = active, 値あり = ソフトデリート済み
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// カレンダーメンバー（共有）テーブル
+export const calendarMembers = sqliteTable("calendar_members", {
+  id: text("id").primaryKey(),
+  calendarId: text("calendar_id")
+    .notNull()
+    .references(() => calendars.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("viewer"), // 'viewer' | 'editor' | 'admin'
+  invitedBy: text("invited_by").references(() => users.id),
+  acceptedAt: text("accepted_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// 招待リンクテーブル
+export const calendarInvitations = sqliteTable("calendar_invitations", {
+  id: text("id").primaryKey(),
+  calendarId: text("calendar_id")
+    .notNull()
+    .references(() => calendars.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  role: text("role").notNull().default("viewer"), // 'viewer' | 'editor'
+  expiresAt: text("expires_at").notNull(),
+  maxUses: integer("max_uses"),
+  useCount: integer("use_count").notNull().default(0),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: text("created_at").notNull(),
+});
+
 export const categories = sqliteTable("categories", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  calendarId: text("calendar_id").references(() => calendars.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   color: text("color").notNull(),
   createdAt: text("created_at").notNull(),
@@ -27,6 +74,8 @@ export const schedules = sqliteTable("schedules", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  calendarId: text("calendar_id").references(() => calendars.id, { onDelete: "cascade" }),
+  createdBy: text("created_by").references(() => users.id),
   categoryId: text("category_id").references(() => categories.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   startAt: text("start_at").notNull(),
@@ -93,6 +142,12 @@ export const recurrenceRules = sqliteTable("recurrence_rules", {
 // 型エクスポート
 export type UserRow = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
+export type CalendarRow = typeof calendars.$inferSelect;
+export type CalendarInsert = typeof calendars.$inferInsert;
+export type CalendarMemberRow = typeof calendarMembers.$inferSelect;
+export type CalendarMemberInsert = typeof calendarMembers.$inferInsert;
+export type CalendarInvitationRow = typeof calendarInvitations.$inferSelect;
+export type CalendarInvitationInsert = typeof calendarInvitations.$inferInsert;
 export type CategoryRow = typeof categories.$inferSelect;
 export type CategoryInsert = typeof categories.$inferInsert;
 export type ScheduleRow = typeof schedules.$inferSelect;

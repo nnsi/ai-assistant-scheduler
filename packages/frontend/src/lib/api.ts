@@ -8,6 +8,11 @@ import {
   shopListSchema,
   categorySchema,
   recurrenceRuleSchema,
+  calendarResponseSchema,
+  calendarMemberResponseSchema,
+  invitationListItemResponseSchema,
+  createInvitationResponseSchema,
+  invitationInfoResponseSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
@@ -23,6 +28,17 @@ import {
   type RecurrenceRule,
   type CreateRecurrenceRuleInput,
   type UpdateRecurrenceRuleInput,
+  type CalendarResponse,
+  type CreateCalendarInput,
+  type UpdateCalendarInput,
+  type CalendarMemberResponse,
+  type AddMemberInput,
+  type UpdateMemberRoleInput,
+  type CreateInvitationInput,
+  type CreateInvitationResponse,
+  type InvitationListItemResponse,
+  type InvitationInfoResponse,
+  type TransferOwnershipInput,
 } from "@ai-scheduler/shared";
 import { z } from "zod";
 
@@ -91,6 +107,9 @@ const client = hc<ApiRoutes>(API_BASE_URL, {
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
 const categoryArraySchema = z.array(categorySchema);
+const calendarArraySchema = z.array(calendarResponseSchema);
+const calendarMemberArraySchema = z.array(calendarMemberResponseSchema);
+const invitationArraySchema = z.array(invitationListItemResponseSchema);
 const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
 const searchResponseSchema = z.object({
   result: z.string(),
@@ -504,6 +523,159 @@ export const deleteRecurrence = async (scheduleId: string): Promise<void> => {
     param: { scheduleId },
   });
   await handleVoidResponse(res);
+};
+
+// Calendar API
+export const fetchCalendars = async (): Promise<CalendarResponse[]> => {
+  const res = await client.calendars.$get();
+  return handleResponse(res, calendarArraySchema);
+};
+
+export const fetchCalendarById = async (
+  id: string
+): Promise<CalendarResponse> => {
+  const res = await client.calendars[":id"].$get({
+    param: { id },
+  });
+  return handleResponse(res, calendarResponseSchema);
+};
+
+export const createCalendar = async (
+  input: CreateCalendarInput
+): Promise<CalendarResponse> => {
+  const res = await client.calendars.$post({
+    json: input,
+  });
+  return handleResponse(res, calendarResponseSchema);
+};
+
+export const updateCalendar = async (
+  id: string,
+  input: UpdateCalendarInput
+): Promise<CalendarResponse> => {
+  const res = await client.calendars[":id"].$put({
+    param: { id },
+    json: input,
+  });
+  return handleResponse(res, calendarResponseSchema);
+};
+
+export const deleteCalendar = async (id: string): Promise<void> => {
+  const res = await client.calendars[":id"].$delete({
+    param: { id },
+  });
+  await handleVoidResponse(res);
+};
+
+// Calendar Member API
+export const fetchCalendarMembers = async (
+  calendarId: string
+): Promise<CalendarMemberResponse[]> => {
+  const res = await client.calendars[":id"].members.$get({
+    param: { id: calendarId },
+  });
+  return handleResponse(res, calendarMemberArraySchema);
+};
+
+export const addCalendarMember = async (
+  calendarId: string,
+  input: AddMemberInput
+): Promise<CalendarMemberResponse> => {
+  const res = await client.calendars[":id"].members.$post({
+    param: { id: calendarId },
+    json: input,
+  });
+  return handleResponse(res, calendarMemberResponseSchema);
+};
+
+export const updateCalendarMemberRole = async (
+  calendarId: string,
+  targetUserId: string,
+  input: UpdateMemberRoleInput
+): Promise<void> => {
+  const res = await client.calendars[":id"].members[":targetUserId"].$put({
+    param: { id: calendarId, targetUserId },
+    json: input,
+  });
+  await handleVoidResponse(res);
+};
+
+export const removeCalendarMember = async (
+  calendarId: string,
+  targetUserId: string
+): Promise<void> => {
+  const res = await client.calendars[":id"].members[":targetUserId"].$delete({
+    param: { id: calendarId, targetUserId },
+  });
+  await handleVoidResponse(res);
+};
+
+export const leaveCalendar = async (calendarId: string): Promise<void> => {
+  const res = await client.calendars[":id"].leave.$post({
+    param: { id: calendarId },
+  });
+  await handleVoidResponse(res);
+};
+
+export const transferCalendarOwnership = async (
+  calendarId: string,
+  input: TransferOwnershipInput
+): Promise<void> => {
+  const res = await client.calendars[":id"].transfer.$put({
+    param: { id: calendarId },
+    json: input,
+  });
+  await handleVoidResponse(res);
+};
+
+// Calendar Invitation API
+export const fetchCalendarInvitations = async (
+  calendarId: string
+): Promise<InvitationListItemResponse[]> => {
+  const res = await client.calendars[":id"].invitations.$get({
+    param: { id: calendarId },
+  });
+  return handleResponse(res, invitationArraySchema);
+};
+
+export const createCalendarInvitation = async (
+  calendarId: string,
+  input: CreateInvitationInput
+): Promise<CreateInvitationResponse> => {
+  const res = await client.calendars[":id"].invitations.$post({
+    param: { id: calendarId },
+    json: input,
+  });
+  return handleResponse(res, createInvitationResponseSchema);
+};
+
+export const revokeCalendarInvitation = async (
+  calendarId: string,
+  invitationId: string
+): Promise<void> => {
+  const res = await client.calendars[":id"].invitations[":invitationId"].$delete({
+    param: { id: calendarId, invitationId },
+  });
+  await handleVoidResponse(res);
+};
+
+// Invitation Token API (直接fetchを使用 - Hono RPC型推論の制約回避)
+export const fetchInvitationInfo = async (
+  token: string
+): Promise<InvitationInfoResponse> => {
+  const res = await fetchWithAuth(`${API_BASE_URL}/invitations/${token}`);
+  return handleResponse(res, invitationInfoResponseSchema);
+};
+
+const acceptInvitationResponseSchema = z.object({ calendarId: z.string() });
+
+export const acceptInvitation = async (
+  token: string
+): Promise<{ calendarId: string }> => {
+  const res = await fetchWithAuth(`${API_BASE_URL}/invitations/${token}/accept`, {
+    method: "POST",
+  });
+  return handleResponse(res, acceptInvitationResponseSchema);
 };
 
 export { ApiClientError };
