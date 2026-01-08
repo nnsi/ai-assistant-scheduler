@@ -7,27 +7,19 @@ description: 複数のセキュリティレビュアーを並列起動し、結�
 
 複数の視点からセキュリティレビューを実施し、実際の攻撃テストで検証する。
 
-## 重要な注意事項
-
-**security-reviewerサブエージェントにはBashツールがない。**
-
-したがって：
-- サブエージェントは**コード分析のみ**を行う
-- **攻撃テスト（curl等）は自分で実施**する必要がある
-- 「攻撃者シミュレーション」を依頼しても、コードを読んだ感想が返ってくるだけ
-
 ## 手順
 
 ### 1. 並列レビューの実施
 
-security-reviewerサブエージェントを**2つ**並列で起動：
+security-reviewerサブエージェントを**3つ**並列で起動：
 
 ```
 Task(security-reviewer): "認証・認可、入力検証、XSS、CSRFの観点でコードレビューして"
 Task(security-reviewer): "同じ観点で独立してレビューして（一致度で信頼性を判断）"
+Task(security-reviewer): "攻撃者として、どこから攻めるか分析して。開発サーバー(localhost:8787)に対してcurlで攻撃テストを実施して"
 ```
 
-注意：「攻撃テストを実施して」と依頼してもBashがないので実行できない。
+security-reviewerはBashツールを持っているので、攻撃テストを依頼可能。
 
 ### 2. 結果の検証
 
@@ -56,9 +48,14 @@ git ls-files | grep ".dev.vars"
 # Security Report
 
 ## 診断一致（複数が指摘）
-| 脆弱性 | レビューA | レビューB | 重大度 |
-|--------|-----------|-----------|--------|
-| OAuth state欠如 | Yes | Yes | Critical |
+| 脆弱性 | レビューA | レビューB | 攻撃者 | 重大度 |
+|--------|-----------|-----------|--------|--------|
+| OAuth state欠如 | Yes | Yes | Yes | Critical |
+
+## TOP 3 攻撃ベクター
+1. [攻撃者エージェントが特定した最も危険な箇所]
+2. ...
+3. ...
 
 ## Critical
 ...
@@ -67,9 +64,9 @@ git ls-files | grep ".dev.vars"
 ...
 ```
 
-### 4. 自分で攻撃テストを実施
+### 4. 攻撃テストの例
 
-開発サーバーを起動して、curlで攻撃テストを実行：
+攻撃者エージェントに依頼する、または自分で実施するテスト例：
 
 ```bash
 # 開発サーバーを起動
@@ -98,10 +95,6 @@ curl -s -I http://localhost:8787/api/schedules \
 curl -s -o /dev/null -w "%{http_code}" \
   "http://localhost:8787/api/auth/google?redirect_uri=https://evil.com"
 # 期待: 400
-
-# SQLインジェクション（Drizzle使用なら通常は安全）
-curl -s "http://localhost:8787/api/schedules?title='; DROP TABLE schedules;--"
-# 期待: 正常に処理される
 ```
 
 ### 5. レポート更新
@@ -124,8 +117,8 @@ curl -s "http://localhost:8787/api/schedules?title='; DROP TABLE schedules;--"
 
 ## チェックリスト
 
-- [ ] security-reviewerを2つ並列で起動した
+- [ ] security-reviewerを3つ並列で起動した（うち1つは攻撃テスト担当）
 - [ ] 両者の指摘を比較した（一致=信頼度高）
 - [ ] 致命的な指摘は`git ls-files`等で検証した
-- [ ] 攻撃テストを**自分で**curlで実施した
+- [ ] 攻撃テスト結果を確認した
 - [ ] レポートを作成した
