@@ -11,6 +11,8 @@ describe("getScheduleByIdUseCase", () => {
   const mockSchedule: ScheduleEntity = {
     id: "1",
     userId: testUserId,
+    calendarId: null,
+    createdBy: null,
     title: "テスト予定",
     startAt: "2025-01-10T12:00:00+09:00",
     endAt: null,

@@ -10,6 +10,17 @@ import { CategoryModal } from "@/components/Category/CategoryModal";
 import { SearchModal } from "@/components/Schedule/SearchModal";
 import { LoginPage, AuthCallback, ReconnectCallback, ProfileSettingsModal } from "@/components/Auth";
 import { ConditionsModal } from "@/components/Profile";
+import {
+  CalendarCreateModal,
+  CalendarSettingsModal,
+  CalendarManagementModal,
+} from "@/components/CalendarManagement";
+import {
+  MemberListModal,
+  InviteMemberModal,
+  InviteLinkModal,
+  InvitationAcceptPage,
+} from "@/components/CalendarSharing";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useAuth } from "@/contexts/AuthContext";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "@/lib/date";
@@ -33,6 +44,12 @@ function MainApp() {
   const [isConditionsModalOpen, setIsConditionsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isCalendarManagementModalOpen, setIsCalendarManagementModalOpen] = useState(false);
+  const [isCalendarCreateModalOpen, setIsCalendarCreateModalOpen] = useState(false);
+  const [settingsCalendarId, setSettingsCalendarId] = useState<string | null>(null);
+  const [membersCalendarId, setMembersCalendarId] = useState<string | null>(null);
+  const [inviteMemberCalendarId, setInviteMemberCalendarId] = useState<string | null>(null);
+  const [inviteLinkCalendarId, setInviteLinkCalendarId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // URLパラメータから通知を取得
@@ -210,6 +227,7 @@ function MainApp() {
           onSearchClick={() => setIsSearchModalOpen(true)}
           onCategoryClick={() => setIsCategoryModalOpen(true)}
           onConditionsClick={() => setIsConditionsModalOpen(true)}
+          onCalendarManageClick={() => setIsCalendarManagementModalOpen(true)}
         />
         {viewMode === "month" && (
           <Calendar
@@ -280,6 +298,50 @@ function MainApp() {
         onClose={() => setIsSearchModalOpen(false)}
         onScheduleClick={handleScheduleClick}
       />
+
+      <CalendarManagementModal
+        isOpen={isCalendarManagementModalOpen}
+        onClose={() => setIsCalendarManagementModalOpen(false)}
+        onCreateClick={() => setIsCalendarCreateModalOpen(true)}
+        onSettingsClick={(id) => setSettingsCalendarId(id)}
+      />
+
+      <CalendarCreateModal
+        isOpen={isCalendarCreateModalOpen}
+        onClose={() => setIsCalendarCreateModalOpen(false)}
+      />
+
+      <CalendarSettingsModal
+        calendarId={settingsCalendarId}
+        isOpen={!!settingsCalendarId}
+        onClose={() => setSettingsCalendarId(null)}
+        onMembersClick={() => {
+          setMembersCalendarId(settingsCalendarId);
+          setSettingsCalendarId(null);
+        }}
+        onInvitationsClick={() => {
+          setInviteLinkCalendarId(settingsCalendarId);
+          setSettingsCalendarId(null);
+        }}
+      />
+
+      <MemberListModal
+        calendarId={membersCalendarId}
+        isOpen={!!membersCalendarId}
+        onClose={() => setMembersCalendarId(null)}
+      />
+
+      <InviteMemberModal
+        calendarId={inviteMemberCalendarId}
+        isOpen={!!inviteMemberCalendarId}
+        onClose={() => setInviteMemberCalendarId(null)}
+      />
+
+      <InviteLinkModal
+        calendarId={inviteLinkCalendarId}
+        isOpen={!!inviteLinkCalendarId}
+        onClose={() => setInviteLinkCalendarId(null)}
+      />
     </div>
   );
 }
@@ -295,6 +357,11 @@ function App() {
   // Google再認証コールバックのルーティング
   if (window.location.pathname === "/auth/reconnect-callback") {
     return <ReconnectCallback />;
+  }
+
+  // 招待リンク受け入れページのルーティング
+  if (window.location.pathname.startsWith("/invite/")) {
+    return <InvitationAcceptPage />;
   }
 
   // 読み込み中

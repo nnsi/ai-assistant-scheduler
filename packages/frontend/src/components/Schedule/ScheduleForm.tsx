@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
-import { createScheduleInputSchema, updateScheduleInputSchema, type Category, type CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
+import { createScheduleInputSchema, updateScheduleInputSchema, type Category, type CreateRecurrenceRuleInput, type CalendarResponse } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
 import { RecurrenceSettings } from "@/components/Recurrence";
+import { CalendarColorDot } from "@/components/CalendarManagement/CalendarColorDot";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateString, getTimezoneOffset } from "@/lib/date";
 
@@ -11,6 +12,7 @@ type ScheduleFormData = {
   endAt?: string;
   isAllDay?: boolean;
   categoryId?: string;
+  calendarId?: string;
   recurrence?: CreateRecurrenceRuleInput | null;
 };
 
@@ -23,9 +25,12 @@ type ScheduleFormProps = {
     endAt?: string | null;
     isAllDay?: boolean;
     categoryId?: string | null;
+    calendarId?: string | null;
     recurrence?: CreateRecurrenceRuleInput | null;
   };
   categories?: Category[];
+  calendars?: CalendarResponse[];
+  defaultCalendarId?: string | null;
   onSubmit: (data: ScheduleFormData) => void;
   onSimpleSave?: (data: ScheduleFormData) => void;
   onCancel: () => void;
@@ -41,6 +46,8 @@ export const ScheduleForm = ({
   defaultTime,
   initialValues,
   categories = [],
+  calendars = [],
+  defaultCalendarId,
   onSubmit,
   onSimpleSave,
   onCancel,
@@ -63,6 +70,9 @@ export const ScheduleForm = ({
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
   const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
+  const [calendarId, setCalendarId] = useState<string | undefined>(
+    initialValues?.calendarId ?? defaultCalendarId ?? undefined
+  );
   const [recurrence, setRecurrence] = useState<CreateRecurrenceRuleInput | null>(
     initialValues?.recurrence ?? null
   );
@@ -76,10 +86,10 @@ export const ScheduleForm = ({
     // 終日の場合は00:00を使用
     const timeValue = isAllDay ? "00:00" : time;
     const startAt = `${date}T${timeValue}:00${getTimezoneOffset()}`;
-    const data: ScheduleFormData = { title, startAt, isAllDay, categoryId, recurrence };
+    const data: ScheduleFormData = { title, startAt, isAllDay, categoryId, calendarId, recurrence };
 
     const schema = mode === "edit" ? updateScheduleInputSchema : createScheduleInputSchema;
-    const result = schema.safeParse({ title, startAt, isAllDay, categoryId });
+    const result = schema.safeParse({ title, startAt, isAllDay, categoryId, calendarId });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -148,6 +158,34 @@ export const ScheduleForm = ({
           終日
         </label>
       </div>
+
+      {calendars.length > 1 && (
+        <div>
+          <label htmlFor="schedule-calendar" className="block text-sm font-medium text-stone-700 mb-2">
+            カレンダー
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {calendars
+              .filter((cal) => cal.role !== "viewer")
+              .map((cal) => (
+                <button
+                  key={cal.id}
+                  type="button"
+                  onClick={() => setCalendarId(cal.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
+                    calendarId === cal.id
+                      ? "ring-2 ring-offset-1 ring-stone-400 bg-stone-100"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  )}
+                >
+                  <CalendarColorDot color={cal.color} />
+                  {cal.name}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
 
       {categories.length > 0 && (
         <div>

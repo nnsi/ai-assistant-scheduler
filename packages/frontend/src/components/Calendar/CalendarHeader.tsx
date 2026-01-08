@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Settings2, CalendarDays, Calendar as CalendarIcon, Clock, Tag, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2, CalendarDays, Calendar as CalendarIcon, Clock, Tag, Search, Users } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { getMonthLabel, getWeekLabel, getDayFullLabel } from "@/lib/date";
 import { cn } from "@/lib/cn";
@@ -15,6 +15,7 @@ type CalendarHeaderProps = {
   onConditionsClick?: () => void;
   onCategoryClick?: () => void;
   onSearchClick?: () => void;
+  onCalendarManageClick?: () => void;
 };
 
 export const CalendarHeader = ({
@@ -27,6 +28,7 @@ export const CalendarHeader = ({
   onConditionsClick,
   onCategoryClick,
   onSearchClick,
+  onCalendarManageClick,
 }: CalendarHeaderProps) => {
   const getLabel = () => {
     switch (viewMode) {
@@ -141,6 +143,21 @@ export const CalendarHeader = ({
           >
             <Tag className="w-5 h-5" />
             <span className="ml-1.5 hidden sm:inline">カテゴリ</span>
+          </Button>
+        )}
+
+        {/* Calendar Manage Button */}
+        {onCalendarManageClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCalendarManageClick}
+            aria-label="カレンダー管理"
+            title="カレンダー管理"
+            className="text-stone-600"
+          >
+            <Users className="w-5 h-5" />
+            <span className="ml-1.5 hidden sm:inline">カレンダー</span>
           </Button>
         )}
 

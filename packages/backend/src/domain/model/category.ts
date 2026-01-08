@@ -11,17 +11,20 @@ export type { Category, CreateCategoryInput, UpdateCategoryInput };
 // 内部エンティティ型（userIdを含む）
 export type CategoryEntity = Category & {
   userId: string;
+  calendarId: string | null;
 };
 
 // ファクトリ関数
 export const createCategory = (
   input: CreateCategoryInput,
-  userId: string
+  userId: string,
+  calendarId?: string
 ): CategoryEntity => {
   const now = new Date().toISOString();
   return {
     id: generateId(),
     userId,
+    calendarId: calendarId ?? null,
     name: input.name,
     color: input.color,
     createdAt: now,
