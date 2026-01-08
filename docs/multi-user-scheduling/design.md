@@ -14,8 +14,7 @@
 2. **カレンダー共有**: 他のユーザーにカレンダーを共有できる
 3. **権限管理**: 閲覧のみ / 編集可能 / 管理者 の3段階
 4. **招待フロー**: リンク招待 / メールアドレス招待
-5. **公開カレンダー**: URL共有で誰でも閲覧可能なモード
-6. **複数カレンダー表示**: 複数のカレンダーを1画面で表示・切替
+5. **複数カレンダー表示**: 複数のカレンダーを1画面で表示・切替
 
 ### 非機能要件
 
@@ -36,8 +35,7 @@ CREATE TABLE calendars (
   owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT NOT NULL DEFAULT '#3B82F6',
-  is_public INTEGER NOT NULL DEFAULT 0,  -- 公開カレンダーかどうか
-  public_token TEXT UNIQUE,              -- 公開URL用トークン
+  deleted_at TEXT,                        -- ソフトデリート用
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -94,7 +92,6 @@ CREATE UNIQUE INDEX idx_calendar_members_user_calendar ON calendar_members(user_
 
 -- calendars の検索高速化
 CREATE INDEX idx_calendars_owner_id ON calendars(owner_id);
-CREATE INDEX idx_calendars_public_token ON calendars(public_token);
 
 -- schedules のカレンダー検索
 CREATE INDEX idx_schedules_calendar_id ON schedules(calendar_id);
@@ -116,8 +113,6 @@ export const calendars = sqliteTable("calendars", {
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   color: text("color").notNull().default("#3B82F6"),
-  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
-  publicToken: text("public_token").unique(),
   deletedAt: text("deleted_at"), // NULL = active, 値あり = ソフトデリート済み
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -171,9 +166,8 @@ export const calendarInvitations = sqliteTable("calendar_invitations", {
 │ email       │       │ id (PK)         │◄──────│ calendar_id │
 │ name        │       │ name            │       │ user_id     │
 │ ...         │       │ color           │       │ title       │
-└─────────────┘       │ is_public       │       │ ...         │
-      │               │ public_token    │       └─────────────┘
-      │               └─────────────────┘
+└─────────────┘       │ deleted_at      │       │ ...         │
+      │               └─────────────────┘       └─────────────┘
       │                       │
       │               ┌───────┴───────┐
       │               │               │
@@ -206,18 +200,18 @@ export const calendarInvitations = sqliteTable("calendar_invitations", {
 
 ### 権限マトリクス
 
-| 操作 | owner | admin | editor | viewer | public |
-|------|-------|-------|--------|--------|--------|
-| スケジュール閲覧 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| スケジュール作成 | ✅ | ✅ | ✅ | ❌ | ❌ |
-| スケジュール編集 | ✅ | ✅ | ✅* | ❌ | ❌ |
-| スケジュール削除 | ✅ | ✅ | ✅* | ❌ | ❌ |
-| カテゴリ管理 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| メンバー招待 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| メンバー削除 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| カレンダー設定変更 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| カレンダー削除 | ✅ | ❌ | ❌ | ❌ | ❌ |
-| カレンダー離脱 | - | ✅ | ✅ | ✅ | - |
+| 操作 | owner | admin | editor | viewer |
+|------|-------|-------|--------|--------|
+| スケジュール閲覧 | ✅ | ✅ | ✅ | ✅ |
+| スケジュール作成 | ✅ | ✅ | ✅ | ❌ |
+| スケジュール編集 | ✅ | ✅ | ✅* | ❌ |
+| スケジュール削除 | ✅ | ✅ | ✅* | ❌ |
+| カテゴリ管理 | ✅ | ✅ | ❌ | ❌ |
+| メンバー招待 | ✅ | ✅ | ❌ | ❌ |
+| メンバー削除 | ✅ | ✅ | ❌ | ❌ |
+| カレンダー設定変更 | ✅ | ✅ | ❌ | ❌ |
+| カレンダー削除 | ✅ | ❌ | ❌ | ❌ |
+| カレンダー離脱 | - | ✅ | ✅ | ✅ |
 
 *editor は自分が作成したスケジュール（created_by = 自分）のみ編集・削除可能
 
@@ -321,22 +315,6 @@ GET    /invitations/:token           - 招待リンク情報取得（未ログ�
 - 受諾時に`calendar_members`レコードを作成
 - 有効期限・使用回数制限あり
 
-### 公開カレンダー
-
-```
-PUT    /calendars/:id/public         - 公開設定変更
-GET    /public/:token                - 公開カレンダー閲覧（認証不要）
-GET    /public/:token/schedules      - 公開カレンダーのスケジュール一覧（認証不要）
-```
-
-#### 公開トークンのライフサイクル
-
-- **公開有効化時**: `public_token`を`generateSecureToken()`で新規生成
-- **公開無効化時**: `public_token`を`NULL`にクリア（URLを無効化）
-- **再有効化時**: 新しいトークンを生成（以前のURLは無効のまま）
-
-これにより、一度共有を停止したカレンダーは以前のURLでアクセスできなくなる。
-
 ### 既存APIの変更
 
 ```
@@ -370,8 +348,6 @@ const calendarResponse = z.object({
   id: z.string(),
   name: z.string(),
   color: z.string(),
-  isPublic: z.boolean(),
-  publicUrl: z.string().nullable(),
   role: z.enum(["owner", "admin", "editor", "viewer"]),
   memberCount: z.number(),
   owner: z.object({
@@ -419,19 +395,6 @@ const invitationListItemResponse = z.object({
 const transferOwnershipInput = z.object({
   newOwnerId: z.string(),  // 新しいオーナーのユーザーID（admin権限必須）
 });
-
-// 公開カレンダー用スケジュールレスポンス（個人情報を除外）
-const publicScheduleResponse = z.object({
-  id: z.string(),
-  title: z.string(),
-  startAt: z.string(),
-  endAt: z.string().nullable(),
-  isAllDay: z.boolean(),
-  categoryId: z.string().nullable(),
-  categoryName: z.string().nullable(),
-  categoryColor: z.string().nullable(),
-  // 以下は含めない: created_by, user情報, メモ, AI結果など
-});
 ```
 
 ---
@@ -453,8 +416,7 @@ components/
 │   ├─ InviteMemberModal.tsx     - メンバー招待モーダル
 │   └─ InviteLinkModal.tsx       - 招待リンク管理モーダル
 ├─ Share/
-│   ├─ ShareButton.tsx           - 共有ボタン
-│   └─ PublicCalendarView.tsx    - 公開カレンダー表示
+│   └─ ShareButton.tsx           - 共有ボタン
 └─ Invitation/
     └─ InvitationAcceptPage.tsx  - 招待受諾ページ
 ```
@@ -541,8 +503,6 @@ CREATE TABLE calendars (
   owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT NOT NULL DEFAULT '#3B82F6',
-  is_public INTEGER NOT NULL DEFAULT 0,
-  public_token TEXT UNIQUE,
   deleted_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -613,7 +573,6 @@ export const createDefaultCalendarsMigration = async (db: Database) => {
       ownerId: user.id,  // オーナー判定はここで行う
       name: "マイカレンダー",
       color: "#3B82F6",
-      isPublic: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -678,7 +637,7 @@ const updateMemberRole = async (calendarId: string, targetUserId: string, operat
 
 ### トークン生成
 
-招待トークン・公開トークンは暗号学的に安全な方法で生成する。
+招待トークンは暗号学的に安全な方法で生成する。
 
 ```typescript
 import { nanoid } from "nanoid";
@@ -686,12 +645,11 @@ import { nanoid } from "nanoid";
 // 通常のID（21文字、約126ビット）
 export const generateId = (): string => nanoid();
 
-// セキュアトークン（32文字、約192ビット）- 招待・公開用
+// セキュアトークン（32文字、約192ビット）- 招待用
 export const generateSecureToken = (): string => nanoid(32);
 ```
 
 - 招待トークン: `generateSecureToken()` で生成、DBにそのまま保存
-- 公開トークン: `generateSecureToken()` で生成、DBにそのまま保存
 - トークンは推測困難であることが前提（ブルートフォース対策としてレート制限も併用）
 
 ### レースコンディション対策
@@ -716,25 +674,14 @@ RETURNING *;
 - 招待リンク生成: 1カレンダーあたり10件/日
 - メンバー追加: 1カレンダーあたり50件/日
 
-**公開エンドポイント**（認証不要）:
-- `GET /public/:token`: IPベースで60リクエスト/分
-- `GET /invitations/:token`: IPベースで30リクエスト/分
-
-```typescript
-// 公開API用のIPベースレート制限
-const publicRateLimitMiddleware = createIpRateLimitMiddleware({
-  maxRequests: 60,
-  windowMs: 60 * 1000,
-  keyPrefix: "public_api",
-});
-```
+招待リンク情報取得（`GET /invitations/:token`）:
+- IPベースで30リクエスト/分（未ログインでもアクセス可能なため）
 
 ### 監査ログ（将来実装）
 
 - メンバー追加/削除
 - 権限変更
 - カレンダー設定変更
-- 公開設定変更
 
 ---
 
@@ -768,7 +715,6 @@ const publicRateLimitMiddleware = createIpRateLimitMiddleware({
   - admin権限付与の制限追加
   - トークン生成仕様追加
   - IDOR対策・レースコンディション対策追加
-  - 公開APIレート制限追加
   - マイグレーションスクリプト具体化
   - 招待フロー明確化
 - 2026-01-08: 第2回レビュー結果を反映
@@ -778,7 +724,9 @@ const publicRateLimitMiddleware = createIpRateLimitMiddleware({
   - 認可ミドルウェアにソフトデリートチェック追加
   - オーナー移譲API追加
   - calendarIdをオプショナルに変更（後方互換性）
-  - 公開トークンのライフサイクル管理方針追加
-  - 公開カレンダー用レスポンススキーマ追加（個人情報除外）
   - 招待リンク一覧のトークンマスク表示を明確化
   - マイグレーションでのcreated_by設定の説明追加
+- 2026-01-08: 公開カレンダー機能を削除
+  - calendarsからis_public, public_tokenを削除
+  - 公開カレンダーAPI（/public/:token）を削除
+  - 関連するスキーマ、レスポンス、セキュリティ考慮事項を削除
