@@ -60,14 +60,18 @@ CREATE TABLE calendar_invitations (
   id TEXT PRIMARY KEY,
   calendar_id TEXT NOT NULL REFERENCES calendars(id) ON DELETE CASCADE,
   token TEXT NOT NULL UNIQUE,
-  role TEXT NOT NULL DEFAULT 'viewer',  -- 招待時の権限
+  role TEXT NOT NULL DEFAULT 'viewer',  -- 招待時の権限（'viewer' | 'editor'）
   expires_at TEXT NOT NULL,
   max_uses INTEGER,                      -- NULL = 無制限
   use_count INTEGER NOT NULL DEFAULT 0,
   created_by TEXT NOT NULL REFERENCES users(id),
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  CHECK (max_uses IS NULL OR use_count <= max_uses)  -- 使用回数制約
 );
 ```
+
+**注意**: calendar_membersのroleは `'admin' | 'editor' | 'viewer'` のみ。
+`owner`はcalendars.owner_idで判定するため、calendar_membersには含めない。
 
 ### 既存テーブルの変更
 
@@ -95,9 +99,10 @@ CREATE INDEX idx_calendars_public_token ON calendars(public_token);
 -- schedules のカレンダー検索
 CREATE INDEX idx_schedules_calendar_id ON schedules(calendar_id);
 
--- calendar_invitations のトークン検索
+-- calendar_invitations のトークン検索・クリーンアップ
 CREATE UNIQUE INDEX idx_invitations_token ON calendar_invitations(token);
 CREATE INDEX idx_invitations_calendar_id ON calendar_invitations(calendar_id);
+CREATE INDEX idx_invitations_expires_at ON calendar_invitations(expires_at);
 ```
 
 ### Drizzleスキーマ
@@ -231,13 +236,27 @@ export const calendarAuthMiddleware = (requiredRole: 'viewer' | 'editor' | 'admi
     const userId = c.get("userId");
     const calendarId = c.req.param("id");
 
-    // カレンダーメンバーシップの確認
+    // 1. カレンダーの存在確認（ソフトデリート済みも拒否）
+    const calendar = await calendarRepo.findById(calendarId);
+    if (!calendar || calendar.deletedAt !== null) {
+      return c.json(createNotFoundError("カレンダー"), 404);
+    }
+
+    // 2. オーナー判定（owner_idで判定、calendar_membersには含めない）
+    const isOwner = calendar.ownerId === userId;
+    if (isOwner) {
+      c.set("calendarId", calendarId);
+      c.set("memberRole", "owner");
+      return next();
+    }
+
+    // 3. メンバーシップの確認（owner以外）
     const member = await calendarMemberRepo.findByUserIdAndCalendarId(userId, calendarId);
     if (!member) {
       return c.json(createForbiddenError("このカレンダーへのアクセス権がありません"), 403);
     }
 
-    // ロールの権限チェック
+    // 4. ロールの権限チェック
     if (!hasRequiredRole(member.role, requiredRole)) {
       return c.json(createForbiddenError("この操作を行う権限がありません"), 403);
     }
@@ -264,7 +283,8 @@ GET    /calendars                    - カレンダー一覧（自分がアク�
 POST   /calendars                    - カレンダー作成
 GET    /calendars/:id                - カレンダー詳細
 PUT    /calendars/:id                - カレンダー更新（owner/admin）
-DELETE /calendars/:id                - カレンダー削除（ownerのみ）
+DELETE /calendars/:id                - カレンダー削除（ownerのみ、ソフトデリート）
+PUT    /calendars/:id/transfer       - オーナー移譲（ownerのみ）
 ```
 
 ### メンバー管理
@@ -306,22 +326,35 @@ GET    /invitations/:token           - 招待リンク情報取得（未ログ�
 ```
 PUT    /calendars/:id/public         - 公開設定変更
 GET    /public/:token                - 公開カレンダー閲覧（認証不要）
-GET    /public/:token/schedules      - 公開カレンダーのスケジュール一覧
+GET    /public/:token/schedules      - 公開カレンダーのスケジュール一覧（認証不要）
 ```
+
+#### 公開トークンのライフサイクル
+
+- **公開有効化時**: `public_token`を`generateSecureToken()`で新規生成
+- **公開無効化時**: `public_token`を`NULL`にクリア（URLを無効化）
+- **再有効化時**: 新しいトークンを生成（以前のURLは無効のまま）
+
+これにより、一度共有を停止したカレンダーは以前のURLでアクセスできなくなる。
 
 ### 既存APIの変更
 
 ```
 # スケジュール系
-GET    /schedules?calendarId=xxx     - カレンダーIDでフィルタ
-POST   /schedules                    - calendarIdを必須に
+GET    /schedules?calendarId=xxx     - カレンダーIDでフィルタ（複数指定可）
+POST   /schedules                    - calendarId追加（省略時はデフォルトカレンダー）
 PUT    /schedules/:id                - 権限チェック追加
 DELETE /schedules/:id                - 権限チェック追加
 
 # カテゴリ系
 GET    /categories?calendarId=xxx    - カレンダーIDでフィルタ
-POST   /categories                   - calendarIdを追加
+POST   /categories                   - calendarId追加（省略時はデフォルトカレンダー）
 ```
+
+#### 後方互換性
+
+- `calendarId`はオプショナル。省略時はユーザーのデフォルトカレンダーを使用
+- マイグレーション後、すべてのユーザーにデフォルトカレンダーが存在することが前提
 
 ### リクエスト/レスポンススキーマ
 
@@ -359,6 +392,45 @@ const createInvitationInput = z.object({
   role: z.enum(["editor", "viewer"]),
   expiresInDays: z.number().min(1).max(30).default(7),
   maxUses: z.number().min(1).max(100).nullable(),
+});
+
+// 招待リンク作成レスポンス（完全なトークンを含む）
+const createInvitationResponse = z.object({
+  id: z.string(),
+  token: z.string(),  // 完全なトークン（一度だけ表示）
+  url: z.string(),    // 完全なURL
+  role: z.enum(["editor", "viewer"]),
+  expiresAt: z.string(),
+  maxUses: z.number().nullable(),
+});
+
+// 招待リンク一覧レスポンス（トークンはマスク）
+const invitationListItemResponse = z.object({
+  id: z.string(),
+  tokenPreview: z.string(),  // マスク表示: "abc12...xyz"
+  role: z.enum(["editor", "viewer"]),
+  expiresAt: z.string(),
+  maxUses: z.number().nullable(),
+  useCount: z.number(),
+  createdAt: z.string(),
+});
+
+// オーナー移譲
+const transferOwnershipInput = z.object({
+  newOwnerId: z.string(),  // 新しいオーナーのユーザーID（admin権限必須）
+});
+
+// 公開カレンダー用スケジュールレスポンス（個人情報を除外）
+const publicScheduleResponse = z.object({
+  id: z.string(),
+  title: z.string(),
+  startAt: z.string(),
+  endAt: z.string().nullable(),
+  isAllDay: z.boolean(),
+  categoryId: z.string().nullable(),
+  categoryName: z.string().nullable(),
+  categoryColor: z.string().nullable(),
+  // 以下は含めない: created_by, user情報, メモ, AI結果など
 });
 ```
 
@@ -515,6 +587,11 @@ CREATE UNIQUE INDEX idx_invitations_token ON calendar_invitations(token);
 
 #### Phase 2: データマイグレーション（アプリケーションコード）
 
+**注意**:
+- ownerはcalendars.owner_idで判定するため、calendar_membersには追加しない
+- 既存スケジュールのcreated_byは元のuser_id（カレンダーオーナー）を設定
+  - 共有機能導入前のスケジュールは全てオーナーが作成したものとして扱う
+
 ```typescript
 // packages/backend/src/infra/migrations/createDefaultCalendars.ts
 export const createDefaultCalendarsMigration = async (db: Database) => {
@@ -530,10 +607,10 @@ export const createDefaultCalendarsMigration = async (db: Database) => {
   for (const user of usersWithoutCalendar) {
     const calendarId = generateId();
 
-    // 2. デフォルトカレンダー作成
+    // 2. デフォルトカレンダー作成（owner_idで所有者を記録）
     await db.insert(calendars).values({
       id: calendarId,
-      ownerId: user.id,
+      ownerId: user.id,  // オーナー判定はここで行う
       name: "マイカレンダー",
       color: "#3B82F6",
       isPublic: false,
@@ -541,23 +618,16 @@ export const createDefaultCalendarsMigration = async (db: Database) => {
       updatedAt: now,
     });
 
-    // 3. オーナーをメンバーとして追加
-    await db.insert(calendarMembers).values({
-      id: generateId(),
-      calendarId,
-      userId: user.id,
-      role: "owner",
-      acceptedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // 注: calendar_membersにはownerを追加しない
+    // オーナー判定はcalendars.owner_idで行う
 
-    // 4. 既存スケジュールにcalendar_idを設定
+    // 3. 既存スケジュールにcalendar_id, created_byを設定
+    // 既存スケジュールは全てオーナーが作成したものとして扱う
     await db.update(schedules)
       .set({ calendarId, createdBy: user.id })
       .where(and(eq(schedules.userId, user.id), isNull(schedules.calendarId)));
 
-    // 5. 既存カテゴリにcalendar_idを設定
+    // 4. 既存カテゴリにcalendar_idを設定
     await db.update(categories)
       .set({ calendarId })
       .where(and(eq(categories.userId, user.id), isNull(categories.calendarId)));
@@ -690,7 +760,7 @@ const publicRateLimitMiddleware = createIpRateLimitMiddleware({
 ## 更新履歴
 
 - 2026-01-08: 初版作成
-- 2026-01-08: レビュー結果を反映
+- 2026-01-08: 第1回レビュー結果を反映
   - schedulesに`created_by`フィールド追加
   - calendarsに`deleted_at`（ソフトデリート）追加
   - インデックス定義追加
@@ -701,3 +771,14 @@ const publicRateLimitMiddleware = createIpRateLimitMiddleware({
   - 公開APIレート制限追加
   - マイグレーションスクリプト具体化
   - 招待フロー明確化
+- 2026-01-08: 第2回レビュー結果を反映
+  - ownerロール判定をcalendars.owner_idに統一（calendar_membersには含めない）
+  - calendar_invitationsにCHECK制約追加
+  - expires_atインデックス追加
+  - 認可ミドルウェアにソフトデリートチェック追加
+  - オーナー移譲API追加
+  - calendarIdをオプショナルに変更（後方互換性）
+  - 公開トークンのライフサイクル管理方針追加
+  - 公開カレンダー用レスポンススキーマ追加（個人情報除外）
+  - 招待リンク一覧のトークンマスク表示を明確化
+  - マイグレーションでのcreated_by設定の説明追加
