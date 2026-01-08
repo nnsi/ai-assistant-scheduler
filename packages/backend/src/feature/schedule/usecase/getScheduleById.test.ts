@@ -26,6 +26,7 @@ describe("getScheduleByIdUseCase", () => {
     id: "s1",
     scheduleId: "1",
     keywords: ["キーワード1", "キーワード2"],
+    agentTypes: ["search"],
     aiResult: "AI検索結果",
     shopCandidates: null,
     selectedShop: null,

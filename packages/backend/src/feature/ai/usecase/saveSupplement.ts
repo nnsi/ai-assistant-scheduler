@@ -1,4 +1,4 @@
-import type { Shop } from "@ai-scheduler/shared";
+import type { Shop, AgentType } from "@ai-scheduler/shared";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import { createSupplement } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
@@ -9,12 +9,14 @@ export const createSaveSupplementUseCase = (supplementRepo: SupplementRepo) => {
     scheduleId: string,
     keywords: string[],
     aiResult: string,
-    shopCandidates?: Shop[]
+    shopCandidates?: Shop[],
+    agentTypes?: AgentType[]
   ): Promise<Result<void>> => {
     try {
       const supplement = createSupplement({
         scheduleId,
         keywords,
+        agentTypes,
         aiResult,
         shopCandidates,
       });

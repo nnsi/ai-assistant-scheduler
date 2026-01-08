@@ -3,7 +3,7 @@ import type { Database } from "./client";
 import { scheduleSupplements, type SupplementRow } from "./schema";
 import type { SupplementRepo } from "../../domain/infra/supplementRepo";
 import type { Supplement } from "../../domain/model/supplement";
-import { shopListSchema, shopSchema, type Shop, type ShopList } from "@ai-scheduler/shared";
+import { shopListSchema, shopSchema, agentTypeSchema, type Shop, type ShopList, type AgentType } from "@ai-scheduler/shared";
 import { logger } from "../../shared/logger";
 
 export const createSupplementRepo = (db: Database): SupplementRepo => ({
@@ -79,11 +79,32 @@ const parseSelectedShop = (jsonString: string | null): Shop | null => {
   }
 };
 
+// agentTypesをパースする
+const parseAgentTypes = (jsonString: string | null): AgentType[] | null => {
+  if (!jsonString) return null;
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (!Array.isArray(parsed)) return null;
+    const validTypes: AgentType[] = [];
+    for (const item of parsed) {
+      const result = agentTypeSchema.safeParse(item);
+      if (result.success) {
+        validTypes.push(result.data);
+      }
+    }
+    return validTypes.length > 0 ? validTypes : null;
+  } catch {
+    logger.warn("Failed to parse agent types JSON", { category: "database", jsonString });
+    return null;
+  }
+};
+
 // Row → Entity 変換
 const toSupplement = (row: SupplementRow): Supplement => ({
   id: row.id,
   scheduleId: row.scheduleId,
   keywords: safeParseJsonArray(row.keywords),
+  agentTypes: parseAgentTypes(row.agentTypes),
   aiResult: row.aiResult,
   shopCandidates: parseShopCandidates(row.shopCandidates),
   selectedShop: parseSelectedShop(row.selectedShop),
@@ -97,6 +118,7 @@ const toRow = (supplement: Supplement): SupplementRow => ({
   id: supplement.id,
   scheduleId: supplement.scheduleId,
   keywords: JSON.stringify(supplement.keywords),
+  agentTypes: supplement.agentTypes ? JSON.stringify(supplement.agentTypes) : null,
   aiResult: supplement.aiResult,
   shopCandidates: supplement.shopCandidates ? JSON.stringify(supplement.shopCandidates) : null,
   selectedShop: supplement.selectedShop ? JSON.stringify(supplement.selectedShop) : null,

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { zValidator } from "@hono/zod-validator";
-import { suggestKeywordsInputSchema, searchInputSchema, searchAndSaveInputSchema } from "@ai-scheduler/shared";
+import { suggestKeywordsInputSchema, searchInputSchema, searchAndSaveInputSchema, type AgentType } from "@ai-scheduler/shared";
 import type { StreamEvent } from "../../domain/infra/aiService";
 import {
   createKeywordAgent,
@@ -196,11 +196,12 @@ export const aiRoute = app
         let eventId = 0;
 
         try {
+          const resolvedAgentTypes: AgentType[] = agentTypes?.length ? agentTypes : ["search"];
           const generator = aiService.searchWithKeywordsStream!(
             title,
             startAt,
             keywords,
-            agentTypes ?? ["search"],
+            resolvedAgentTypes,
             userConditions
           );
 
@@ -260,13 +261,14 @@ export const aiRoute = app
         let eventId = 0;
         let fullText = "";
         let shopCandidates: import("@ai-scheduler/shared").Shop[] | undefined;
+        const usedAgentTypes: AgentType[] = agentTypes?.length ? agentTypes : ["search"];
 
         try {
           const generator = aiService.searchWithKeywordsStream!(
             title,
             startAt,
             keywords,
-            agentTypes ?? ["search"],
+            usedAgentTypes,
             userConditions
           );
 
@@ -285,8 +287,8 @@ export const aiRoute = app
             });
           }
 
-          // ストリーミング完了後に保存
-          await saveSupplement(scheduleId, keywords, fullText, shopCandidates);
+          // ストリーミング完了後に保存（agentTypesも含めて）
+          await saveSupplement(scheduleId, keywords, fullText, shopCandidates, usedAgentTypes);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Unknown error";
           await stream.writeSSE({

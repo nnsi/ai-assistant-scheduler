@@ -13,6 +13,7 @@ import {
   invitationListItemResponseSchema,
   createInvitationResponseSchema,
   invitationInfoResponseSchema,
+  agentTypeSchema,
   type Schedule,
   type ScheduleWithSupplement,
   type CreateScheduleInput,
@@ -39,6 +40,7 @@ import {
   type InvitationListItemResponse,
   type InvitationInfoResponse,
   type TransferOwnershipInput,
+  type AgentType,
 } from "@ai-scheduler/shared";
 import { z } from "zod";
 
@@ -110,7 +112,13 @@ const categoryArraySchema = z.array(categorySchema);
 const calendarArraySchema = z.array(calendarResponseSchema);
 const calendarMemberArraySchema = z.array(calendarMemberResponseSchema);
 const invitationArraySchema = z.array(invitationListItemResponseSchema);
-const keywordsResponseSchema = z.object({ keywords: z.array(z.string()) });
+// AgentType is imported from @ai-scheduler/shared
+export type { AgentType };
+
+const keywordsResponseSchema = z.object({
+  keywords: z.array(z.string()),
+  agentTypes: z.array(agentTypeSchema),
+});
 const searchResponseSchema = z.object({
   result: z.string(),
   shopCandidates: shopListSchema.optional(),
@@ -234,17 +242,21 @@ export const searchSchedules = async (
 };
 
 // AI API
+export type SuggestKeywordsResult = {
+  keywords: string[];
+  agentTypes: AgentType[];
+};
+
 export const suggestKeywords = async (
   title: string,
   startAt: string,
   excludeKeywords?: string[]
-): Promise<string[]> => {
+): Promise<SuggestKeywordsResult> => {
   const res = await client.ai["suggest-keywords"].$post({
     json: { title, startAt, excludeKeywords },
   });
 
-  const data = await handleResponse(res, keywordsResponseSchema);
-  return data.keywords;
+  return handleResponse(res, keywordsResponseSchema);
 };
 
 export type SearchResult = {
@@ -255,10 +267,11 @@ export type SearchResult = {
 export const searchWithKeywords = async (
   title: string,
   startAt: string,
-  keywords: string[]
+  keywords: string[],
+  agentTypes?: AgentType[]
 ): Promise<SearchResult> => {
   const res = await client.ai.search.$post({
-    json: { title, startAt, keywords },
+    json: { title, startAt, keywords, agentTypes },
   });
 
   return handleResponse(res, searchResponseSchema);
@@ -268,10 +281,11 @@ export const searchAndSave = async (
   scheduleId: string,
   title: string,
   startAt: string,
-  keywords: string[]
+  keywords: string[],
+  agentTypes?: AgentType[]
 ): Promise<SearchResult> => {
   const res = await client.ai["search-and-save"].$post({
-    json: { scheduleId, title, startAt, keywords },
+    json: { scheduleId, title, startAt, keywords, agentTypes },
   });
 
   return handleResponse(res, searchResponseSchema);
@@ -289,12 +303,13 @@ export const searchWithKeywordsStream = async (
   title: string,
   startAt: string,
   keywords: string[],
+  agentTypes: AgentType[] | undefined,
   onEvent: (event: StreamEvent) => void,
   abortSignal?: AbortSignal
 ): Promise<void> => {
   await streamRequest(
     `${API_BASE_URL}/ai/search/stream`,
-    { title, startAt, keywords },
+    { title, startAt, keywords, agentTypes },
     onEvent,
     abortSignal
   );
@@ -306,12 +321,13 @@ export const searchAndSaveStream = async (
   title: string,
   startAt: string,
   keywords: string[],
+  agentTypes: AgentType[] | undefined,
   onEvent: (event: StreamEvent) => void,
   abortSignal?: AbortSignal
 ): Promise<void> => {
   await streamRequest(
     `${API_BASE_URL}/ai/search-and-save/stream`,
-    { scheduleId, title, startAt, keywords },
+    { scheduleId, title, startAt, keywords, agentTypes },
     onEvent,
     abortSignal
   );

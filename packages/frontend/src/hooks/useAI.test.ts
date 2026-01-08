@@ -17,7 +17,10 @@ describe("useAI", () => {
   describe("suggestKeywords", () => {
     it("キーワード提案を取得できる", async () => {
       const mockKeywords = ["キーワード1", "キーワード2", "キーワード3"];
-      vi.mocked(api.suggestKeywords).mockResolvedValue(mockKeywords);
+      vi.mocked(api.suggestKeywords).mockResolvedValue({
+        keywords: mockKeywords,
+        agentTypes: ["search"],
+      });
 
       const { result } = renderHook(() => useAI());
 
@@ -62,8 +65,8 @@ describe("useAI", () => {
     });
 
     it("ローディング状態が正しく管理される", async () => {
-      let resolvePromise: (value: string[]) => void;
-      const promise = new Promise<string[]>((resolve) => {
+      let resolvePromise: (value: api.SuggestKeywordsResult) => void;
+      const promise = new Promise<api.SuggestKeywordsResult>((resolve) => {
         resolvePromise = resolve;
       });
       vi.mocked(api.suggestKeywords).mockReturnValue(promise);
@@ -81,7 +84,7 @@ describe("useAI", () => {
       });
 
       await act(async () => {
-        resolvePromise!(["keyword"]);
+        resolvePromise!({ keywords: ["keyword"], agentTypes: ["search"] });
       });
 
       expect(result.current.isLoadingKeywords).toBe(false);
@@ -113,7 +116,8 @@ describe("useAI", () => {
       expect(api.searchWithKeywords).toHaveBeenCalledWith(
         "会議タイトル",
         "2025-01-15T10:00:00",
-        ["キーワード1", "キーワード2"]
+        ["キーワード1", "キーワード2"],
+        [] // agentTypes (初期値は空配列)
       );
       expect(result.current.searchResult).toBe(mockSearchResult.result);
       expect(returnedResult).toEqual(mockSearchResult);
@@ -143,7 +147,10 @@ describe("useAI", () => {
 
   describe("reset", () => {
     it("状態をリセットできる", async () => {
-      vi.mocked(api.suggestKeywords).mockResolvedValue(["keyword"]);
+      vi.mocked(api.suggestKeywords).mockResolvedValue({
+        keywords: ["keyword"],
+        agentTypes: ["search"],
+      });
       vi.mocked(api.searchWithKeywords).mockResolvedValue({
         result: "result",
         shopCandidates: undefined,

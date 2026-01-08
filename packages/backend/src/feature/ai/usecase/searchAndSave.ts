@@ -29,12 +29,13 @@ export const createSearchAndSaveUseCase = (
       return searchResult;
     }
 
-    // 2. 検索結果を保存（shopCandidatesも含めて）
+    // 2. 検索結果を保存（shopCandidates, agentTypesも含めて）
     const saveResult = await saveSupplement(
       scheduleId,
       keywords,
       searchResult.value.result,
-      searchResult.value.shopCandidates
+      searchResult.value.shopCandidates,
+      agentTypes
     );
 
     if (!saveResult.ok) {

@@ -90,7 +90,8 @@ export const scheduleSupplements = sqliteTable("schedule_supplements", {
   scheduleId: text("schedule_id")
     .notNull()
     .references(() => schedules.id, { onDelete: "cascade" }),
-  keywords: text("keywords"), // JSON array
+  keywords: text("keywords"), // JSON array - ユーザーが選択したキーワード
+  agentTypes: text("agent_types"), // JSON array - 使用したエージェントタイプ (search/plan/area-info)
   aiResult: text("ai_result"),
   shopCandidates: text("shop_candidates"), // JSON array of shop objects
   selectedShop: text("selected_shop"), // JSON object of selected shop

@@ -34,7 +34,7 @@ export const createSearchWithKeywordsUseCase = (
         title,
         startAt,
         keywords,
-        agentTypes ?? ["search"],
+        agentTypes?.length ? agentTypes : ["search"],
         userConditions
       );
       return ok(aiResult);

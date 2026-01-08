@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from "react";
 import type { ShopList } from "@ai-scheduler/shared";
 import * as api from "@/lib/api";
+import type { AgentType } from "@/lib/api";
 
 export const useAI = () => {
   const [isLoadingKeywords, setIsLoadingKeywords] = useState(false);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [agentTypes, setAgentTypes] = useState<AgentType[]>([]);
   const [searchResult, setSearchResult] = useState<string>("");
   const [shopCandidates, setShopCandidates] = useState<ShopList | undefined>(undefined);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -25,8 +27,9 @@ export const useAI = () => {
     setError(null);
     try {
       const result = await api.suggestKeywords(title, startAt, excludeKeywords);
-      setKeywords(result);
-      return result;
+      setKeywords(result.keywords);
+      setAgentTypes(result.agentTypes);
+      return result.keywords;
     } catch (e) {
       const error = e instanceof Error ? e : new Error(String(e));
       setError(error);
@@ -54,7 +57,7 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchWithKeywords(title, startAt, selectedKeywords);
+      const result = await api.searchWithKeywords(title, startAt, selectedKeywords, agentTypes);
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -76,7 +79,7 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords);
+      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords, agentTypes);
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -155,9 +158,9 @@ export const useAI = () => {
     selectedKeywords: string[]
   ): Promise<api.SearchResult | null> => {
     return executeStream((onEvent, signal) =>
-      api.searchWithKeywordsStream(title, startAt, selectedKeywords, onEvent, signal)
+      api.searchWithKeywordsStream(title, startAt, selectedKeywords, agentTypes, onEvent, signal)
     );
-  }, [executeStream]);
+  }, [executeStream, agentTypes]);
 
   // ストリーミング検索＋保存
   const searchAndSaveStream = useCallback(async (
@@ -167,9 +170,9 @@ export const useAI = () => {
     selectedKeywords: string[]
   ): Promise<api.SearchResult | null> => {
     return executeStream((onEvent, signal) =>
-      api.searchAndSaveStream(scheduleId, title, startAt, selectedKeywords, onEvent, signal)
+      api.searchAndSaveStream(scheduleId, title, startAt, selectedKeywords, agentTypes, onEvent, signal)
     );
-  }, [executeStream]);
+  }, [executeStream, agentTypes]);
 
   // ストリーミングを中断
   const abortStream = useCallback(() => {
@@ -182,6 +185,7 @@ export const useAI = () => {
   const reset = () => {
     abortStream();
     setKeywords([]);
+    setAgentTypes([]);
     setSearchResult("");
     setShopCandidates(undefined);
     setStatusMessage(null);
@@ -194,6 +198,7 @@ export const useAI = () => {
     isLoadingSearch,
     isStreaming,
     keywords,
+    agentTypes,
     searchResult,
     shopCandidates,
     statusMessage,

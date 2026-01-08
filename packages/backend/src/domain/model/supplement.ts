@@ -19,6 +19,7 @@ export const createSupplement = (
     id: generateId(),
     scheduleId: input.scheduleId,
     keywords: input.keywords,
+    agentTypes: input.agentTypes ?? null,
     aiResult: input.aiResult,
     shopCandidates: input.shopCandidates ?? null,
     selectedShop: null,

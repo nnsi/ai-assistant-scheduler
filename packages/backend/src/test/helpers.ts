@@ -86,6 +86,7 @@ export const createTestDb = () => {
       id text PRIMARY KEY NOT NULL,
       schedule_id text NOT NULL,
       keywords text,
+      agent_types text,
       ai_result text,
       shop_candidates text,
       selected_shop text,
@@ -212,6 +213,7 @@ export const createTestSupplement = async (
   data?: {
     id?: string;
     keywords?: string[];
+    agentTypes?: string[];
     aiResult?: string | null;
     shopCandidates?: string | null;
     selectedShop?: string | null;
@@ -223,6 +225,7 @@ export const createTestSupplement = async (
     id: data?.id ?? `supp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     scheduleId,
     keywords: data?.keywords ? JSON.stringify(data.keywords) : null,
+    agentTypes: data?.agentTypes ? JSON.stringify(data.agentTypes) : null,
     aiResult: data?.aiResult ?? null,
     shopCandidates: data?.shopCandidates ?? null,
     selectedShop: data?.selectedShop ?? null,

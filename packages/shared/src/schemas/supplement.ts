@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { shopSchema, shopListSchema } from "./shop";
+import { agentTypeSchema } from "./ai";
 
 // 補足情報保存入力
 export const saveSupplementInputSchema = z.object({
   scheduleId: z.string().min(1, "スケジュールIDは必須です"),
   keywords: z.array(z.string()).min(1, "キーワードを1つ以上選択してください"),
+  agentTypes: z.array(agentTypeSchema).optional(),
   aiResult: z.string(),
   shopCandidates: shopListSchema.optional(),
 });
@@ -30,6 +32,7 @@ export const supplementSchema = z.object({
   id: z.string(),
   scheduleId: z.string(),
   keywords: z.array(z.string()),
+  agentTypes: z.array(agentTypeSchema).nullable(),
   aiResult: z.string().nullable(),
   shopCandidates: shopListSchema.nullable(),
   selectedShop: shopSchema.nullable(),
