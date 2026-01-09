@@ -79,7 +79,6 @@ AIアシスタント付きスケジューラーアプリ。予定の作成時に
    ローカル開発で認証をスキップする場合:
    ```
    ENABLE_DEV_AUTH=true
-   DEV_USER_ID=test-user-id
    ```
 
 4. **データベースをマイグレーション**
@@ -153,4 +152,18 @@ ai-assistant-scheduler/
 
 ### ローカル認証バイパス
 
-開発時に毎回ログインが面倒な場合は `ENABLE_DEV_AUTH=true` を設定。自動的にテストユーザーとしてログインします。
+開発時に毎回ログインが面倒な場合は `.dev.vars` で `ENABLE_DEV_AUTH=true` を設定し、リクエストに `X-Dev-Auth: true` ヘッダーを付けます。
+
+```bash
+# スケジュール一覧を取得
+curl http://localhost:8787/api/schedules \
+  -H "X-Dev-Auth: true"
+
+# スケジュールを作成
+curl http://localhost:8787/api/schedules \
+  -H "X-Dev-Auth: true" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "テスト予定", "startAt": "2026-01-10T10:00:00"}'
+```
+
+テストユーザー（`dev-user-001`）として認証されます。
