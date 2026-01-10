@@ -1,0 +1,27 @@
+import type { {{pascalCase name}}Repo } from "../../../domain/infra/{{camelCase name}}Repo";
+import {
+  create{{pascalCase name}} as create{{pascalCase name}}Entity,
+  toPublic{{pascalCase name}},
+  type Create{{pascalCase name}}Input,
+} from "../../../domain/model/{{camelCase name}}";
+import type { {{pascalCase name}} } from "@ai-scheduler/shared";
+import { type Result, ok, err } from "../../../shared/result";
+import { createDatabaseError } from "../../../shared/errors";
+
+export const createCreate{{pascalCase name}}UseCase = ({{camelCase name}}Repo: {{pascalCase name}}Repo) => {
+  return async (
+    input: Create{{pascalCase name}}Input,
+    userId: string
+  ): Promise<Result<{{pascalCase name}}>> => {
+    try {
+      const entity = create{{pascalCase name}}Entity(input, userId);
+      await {{camelCase name}}Repo.save(entity);
+      return ok(toPublic{{pascalCase name}}(entity));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return err(createDatabaseError(message));
+    }
+  };
+};
+
+export type Create{{pascalCase name}}UseCase = ReturnType<typeof createCreate{{pascalCase name}}UseCase>;

@@ -1,0 +1,17 @@
+import type { {{pascalCase name}}Repo } from "../../../domain/infra/{{camelCase name}}Repo";
+import { type Result, ok, err } from "../../../shared/result";
+import { createNotFoundError } from "../../../shared/errors";
+
+export const createDelete{{pascalCase name}}UseCase = ({{camelCase name}}Repo: {{pascalCase name}}Repo) => {
+  return async (id: string, userId: string): Promise<Result<void>> => {
+    const existing = await {{camelCase name}}Repo.findByIdAndUserId(id, userId);
+    if (!existing) {
+      return err(createNotFoundError("{{pascalCase name}}"));
+    }
+
+    await {{camelCase name}}Repo.delete(id);
+    return ok(undefined);
+  };
+};
+
+export type Delete{{pascalCase name}}UseCase = ReturnType<typeof createDelete{{pascalCase name}}UseCase>;
