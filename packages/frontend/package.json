@@ -19,6 +19,7 @@
   "dependencies": {
     "@ai-scheduler/shared": "workspace:*",
     "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-router": "^1.147.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dompurify": "^3.3.1",

@@ -101,7 +101,7 @@ test.describe("AI Features", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ keywords: mockKeywords }),
+        body: JSON.stringify({ keywords: mockKeywords, agentTypes: ["search"] }),
       });
     });
 
@@ -149,6 +149,9 @@ test.describe("AI Features", () => {
   });
 
   test("should suggest keywords based on schedule title", async ({ page }) => {
+    // カレンダーが表示されるまで待機
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10000 });
+
     // 日付セルをクリック
     const dateCell = page.locator('[data-testid="calendar-day"]').first();
     await dateCell.click();
@@ -172,6 +175,9 @@ test.describe("AI Features", () => {
   });
 
   test("should search with selected keywords", async ({ page }) => {
+    // カレンダーが表示されるまで待機
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10000 });
+
     // 日付セルをクリック
     const dateCell = page.locator('[data-testid="calendar-day"]').first();
     await dateCell.click();
@@ -198,6 +204,9 @@ test.describe("AI Features", () => {
   });
 
   test("should skip AI suggestions and create schedule directly", async ({ page }) => {
+    // カレンダーが表示されるまで待機
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10000 });
+
     // 日付セルをクリック
     const dateCell = page.locator('[data-testid="calendar-day"]').first();
     await dateCell.click();
@@ -222,6 +231,9 @@ test.describe("AI Features", () => {
   });
 
   test("should save schedule with AI results", async ({ page }) => {
+    // カレンダーが表示されるまで待機
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10000 });
+
     // 日付セルをクリック
     const dateCell = page.locator('[data-testid="calendar-day"]').first();
     await dateCell.click();
