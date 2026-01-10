@@ -3,7 +3,7 @@ import type { Database } from "./client";
 import { scheduleSupplements, type SupplementRow } from "./schema";
 import type { SupplementRepo } from "../../domain/infra/supplementRepo";
 import type { Supplement } from "../../domain/model/supplement";
-import { shopListSchema, shopSchema, agentTypeSchema, type Shop, type ShopList, type AgentType } from "@ai-scheduler/shared";
+import { shopListSchema, agentTypeSchema, type ShopList, type AgentType } from "@ai-scheduler/shared";
 import { logger } from "../../shared/logger";
 
 export const createSupplementRepo = (db: Database): SupplementRepo => ({
@@ -62,19 +62,19 @@ const parseShopCandidates = (jsonString: string | null): ShopList | null => {
   }
 };
 
-// selectedShopをパースする
-const parseSelectedShop = (jsonString: string | null): Shop | null => {
+// selectedShopsをパースする（shopCandidatesと同じ形式）
+const parseSelectedShops = (jsonString: string | null): ShopList | null => {
   if (!jsonString) return null;
   try {
     const parsed = JSON.parse(jsonString);
-    const result = shopSchema.safeParse(parsed);
+    const result = shopListSchema.safeParse(parsed);
     if (result.success) {
       return result.data;
     }
-    logger.warn("Failed to validate selected shop", { category: "database", error: result.error.message });
+    logger.warn("Failed to validate selected shops", { category: "database", error: result.error.message });
     return null;
   } catch {
-    logger.warn("Failed to parse selected shop JSON", { category: "database", jsonString });
+    logger.warn("Failed to parse selected shops JSON", { category: "database", jsonString });
     return null;
   }
 };
@@ -107,7 +107,7 @@ const toSupplement = (row: SupplementRow): Supplement => ({
   agentTypes: parseAgentTypes(row.agentTypes),
   aiResult: row.aiResult,
   shopCandidates: parseShopCandidates(row.shopCandidates),
-  selectedShop: parseSelectedShop(row.selectedShop),
+  selectedShops: parseSelectedShops(row.selectedShops),
   userMemo: row.userMemo,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
@@ -121,7 +121,7 @@ const toRow = (supplement: Supplement): SupplementRow => ({
   agentTypes: supplement.agentTypes ? JSON.stringify(supplement.agentTypes) : null,
   aiResult: supplement.aiResult,
   shopCandidates: supplement.shopCandidates ? JSON.stringify(supplement.shopCandidates) : null,
-  selectedShop: supplement.selectedShop ? JSON.stringify(supplement.selectedShop) : null,
+  selectedShops: supplement.selectedShops ? JSON.stringify(supplement.selectedShops) : null,
   userMemo: supplement.userMemo,
   createdAt: supplement.createdAt,
   updatedAt: supplement.updatedAt,

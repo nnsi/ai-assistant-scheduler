@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import type { ShopList } from "@ai-scheduler/shared";
 import * as api from "@/lib/api";
-import type { AgentType } from "@/lib/api";
+import type { AgentType, ScheduleContext } from "@/lib/api";
 
 export const useAI = () => {
   const [isLoadingKeywords, setIsLoadingKeywords] = useState(false);
@@ -21,12 +21,13 @@ export const useAI = () => {
   const suggestKeywords = async (
     title: string,
     startAt: string,
-    excludeKeywords?: string[]
+    excludeKeywords?: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<string[]> => {
     setIsLoadingKeywords(true);
     setError(null);
     try {
-      const result = await api.suggestKeywords(title, startAt, excludeKeywords);
+      const result = await api.suggestKeywords(title, startAt, excludeKeywords, scheduleContext);
       setKeywords(result.keywords);
       setAgentTypes(result.agentTypes);
       return result.keywords;
@@ -42,22 +43,24 @@ export const useAI = () => {
   // キーワードを再生成（現在のキーワードを除外して新しいものを取得）
   const regenerateKeywords = async (
     title: string,
-    startAt: string
+    startAt: string,
+    scheduleContext?: ScheduleContext
   ): Promise<string[]> => {
     // 現在のキーワードを除外リストに追加
     excludedKeywordsRef.current = [...excludedKeywordsRef.current, ...keywords];
-    return suggestKeywords(title, startAt, excludedKeywordsRef.current);
+    return suggestKeywords(title, startAt, excludedKeywordsRef.current, scheduleContext);
   };
 
   const search = async (
     title: string,
     startAt: string,
-    selectedKeywords: string[]
+    selectedKeywords: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<api.SearchResult | null> => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchWithKeywords(title, startAt, selectedKeywords, agentTypes);
+      const result = await api.searchWithKeywords(title, startAt, selectedKeywords, agentTypes, scheduleContext);
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -74,12 +77,13 @@ export const useAI = () => {
     scheduleId: string,
     title: string,
     startAt: string,
-    selectedKeywords: string[]
+    selectedKeywords: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<api.SearchResult | null> => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords, agentTypes);
+      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords, agentTypes, scheduleContext);
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -155,10 +159,11 @@ export const useAI = () => {
   const searchStream = useCallback(async (
     title: string,
     startAt: string,
-    selectedKeywords: string[]
+    selectedKeywords: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<api.SearchResult | null> => {
     return executeStream((onEvent, signal) =>
-      api.searchWithKeywordsStream(title, startAt, selectedKeywords, agentTypes, onEvent, signal)
+      api.searchWithKeywordsStream(title, startAt, selectedKeywords, agentTypes, onEvent, signal, scheduleContext)
     );
   }, [executeStream, agentTypes]);
 
@@ -167,10 +172,11 @@ export const useAI = () => {
     scheduleId: string,
     title: string,
     startAt: string,
-    selectedKeywords: string[]
+    selectedKeywords: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<api.SearchResult | null> => {
     return executeStream((onEvent, signal) =>
-      api.searchAndSaveStream(scheduleId, title, startAt, selectedKeywords, agentTypes, onEvent, signal)
+      api.searchAndSaveStream(scheduleId, title, startAt, selectedKeywords, agentTypes, onEvent, signal, scheduleContext)
     );
   }, [executeStream, agentTypes]);
 

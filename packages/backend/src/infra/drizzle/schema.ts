@@ -94,7 +94,7 @@ export const scheduleSupplements = sqliteTable("schedule_supplements", {
   agentTypes: text("agent_types"), // JSON array - 使用したエージェントタイプ (search/plan/area-info)
   aiResult: text("ai_result"),
   shopCandidates: text("shop_candidates"), // JSON array of shop objects
-  selectedShop: text("selected_shop"), // JSON object of selected shop
+  selectedShops: text("selected_shops"), // JSON array of selected shops
   userMemo: text("user_memo"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),

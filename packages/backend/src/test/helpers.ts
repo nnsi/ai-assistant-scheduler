@@ -91,7 +91,7 @@ const TEST_DDL = `
     agent_types text,
     ai_result text,
     shop_candidates text,
-    selected_shop text,
+    selected_shops text,
     user_memo text,
     created_at text NOT NULL,
     updated_at text NOT NULL,
@@ -225,7 +225,7 @@ export const createTestSupplement = async (
     agentTypes?: string[];
     aiResult?: string | null;
     shopCandidates?: string | null;
-    selectedShop?: string | null;
+    selectedShops?: string | null;
     userMemo?: string | null;
   }
 ) => {
@@ -237,7 +237,7 @@ export const createTestSupplement = async (
     agentTypes: data?.agentTypes ? JSON.stringify(data.agentTypes) : null,
     aiResult: data?.aiResult ?? null,
     shopCandidates: data?.shopCandidates ?? null,
-    selectedShop: data?.selectedShop ?? null,
+    selectedShops: data?.selectedShops ?? null,
     userMemo: data?.userMemo ?? null,
     createdAt: now,
     updatedAt: now,

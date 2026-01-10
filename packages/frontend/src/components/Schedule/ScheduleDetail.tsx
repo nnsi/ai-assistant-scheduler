@@ -66,86 +66,98 @@ export const ScheduleDetail = ({
       </div>
 
       {/* 選択されたお店 */}
-      {schedule.supplement?.selectedShop && (
+      {schedule.supplement?.selectedShops && schedule.supplement.selectedShops.length > 0 && (
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
               <Store className="w-4 h-4 text-emerald-700" />
             </div>
-            <h4 className="text-sm font-medium text-emerald-900">決定したお店</h4>
+            <h4 className="text-sm font-medium text-emerald-900">
+              行きたいお店（{schedule.supplement.selectedShops.length}件）
+            </h4>
           </div>
-          <div className="space-y-2">
-            <p className="font-medium text-base text-stone-900">
-              {schedule.supplement.selectedShop.name}
-            </p>
-            {schedule.supplement.selectedShop.summary && (
-              <p className="text-sm text-stone-600 line-clamp-2">
-                {schedule.supplement.selectedShop.summary}
-              </p>
-            )}
-            <div className="text-sm text-stone-500 space-y-1.5">
-              {schedule.supplement.selectedShop.businessHours && (
-                <div className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
-                  <span className="break-words">{schedule.supplement.selectedShop.businessHours}</span>
-                  {schedule.supplement.selectedShop.closedDays && (
-                    <span className="text-stone-400 hidden sm:inline">
-                      （{schedule.supplement.selectedShop.closedDays}）
-                    </span>
+          <div className="space-y-3">
+            {schedule.supplement.selectedShops.map((shop, index) => (
+              <div
+                key={`${shop.name}-${index}`}
+                className={cn(
+                  "bg-white rounded-lg p-3",
+                  index > 0 && "border-t border-emerald-100"
+                )}
+              >
+                <p className="font-medium text-base text-stone-900">
+                  {shop.name}
+                </p>
+                {shop.summary && (
+                  <p className="text-sm text-stone-600 line-clamp-2 mt-1">
+                    {shop.summary}
+                  </p>
+                )}
+                <div className="text-sm text-stone-500 space-y-1.5 mt-2">
+                  {shop.businessHours && (
+                    <div className="flex items-start gap-2">
+                      <Clock className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
+                      <span className="break-words">{shop.businessHours}</span>
+                      {shop.closedDays && (
+                        <span className="text-stone-400 hidden sm:inline">
+                          （{shop.closedDays}）
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {shop.address && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
+                      <span className="break-words">{shop.address}</span>
+                    </div>
                   )}
                 </div>
-              )}
-              {schedule.supplement.selectedShop.address && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-stone-400" />
-                  <span className="break-words">{schedule.supplement.selectedShop.address}</span>
-                </div>
-              )}
-            </div>
-            {schedule.supplement.selectedShop.urls && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {schedule.supplement.selectedShop.urls.official && (
-                  <a
-                    href={schedule.supplement.selectedShop.urls.official}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-                  >
-                    公式 <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                {schedule.supplement.selectedShop.urls.reservation && (
-                  <a
-                    href={schedule.supplement.selectedShop.urls.reservation}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-                  >
-                    予約 <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                {schedule.supplement.selectedShop.urls.tabelog && (
-                  <a
-                    href={schedule.supplement.selectedShop.urls.tabelog}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-                  >
-                    食べログ <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                {schedule.supplement.selectedShop.urls.googleMap && (
-                  <a
-                    href={schedule.supplement.selectedShop.urls.googleMap}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-                  >
-                    地図 <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                {shop.urls && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {shop.urls.official && (
+                      <a
+                        href={shop.urls.official}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+                      >
+                        公式 <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {shop.urls.reservation && (
+                      <a
+                        href={shop.urls.reservation}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+                      >
+                        予約 <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {shop.urls.tabelog && (
+                      <a
+                        href={shop.urls.tabelog}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+                      >
+                        食べログ <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {shop.urls.googleMap && (
+                      <a
+                        href={shop.urls.googleMap}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+                      >
+                        地図 <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}

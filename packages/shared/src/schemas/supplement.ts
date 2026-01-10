@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { shopSchema, shopListSchema } from "./shop";
+import { shopListSchema } from "./shop";
 import { agentTypeSchema } from "./ai";
 
 // 補足情報保存入力
@@ -20,12 +20,12 @@ export const updateMemoInputSchema = z.object({
 
 export type UpdateMemoInput = z.infer<typeof updateMemoInputSchema>;
 
-// お店選択入力
-export const selectShopInputSchema = z.object({
-  shop: shopSchema,
+// お店選択入力（複数選択対応）
+export const selectShopsInputSchema = z.object({
+  shops: shopListSchema,
 });
 
-export type SelectShopInput = z.infer<typeof selectShopInputSchema>;
+export type SelectShopsInput = z.infer<typeof selectShopsInputSchema>;
 
 // 補足情報エンティティ
 export const supplementSchema = z.object({
@@ -35,7 +35,7 @@ export const supplementSchema = z.object({
   agentTypes: z.array(agentTypeSchema).nullable(),
   aiResult: z.string().nullable(),
   shopCandidates: shopListSchema.nullable(),
-  selectedShop: shopSchema.nullable(),
+  selectedShops: shopListSchema.nullable(),
   userMemo: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),

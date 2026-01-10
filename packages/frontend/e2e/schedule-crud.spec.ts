@@ -81,7 +81,7 @@ test.describe("Schedule CRUD Operations", () => {
               keywords: ["キーワード1", "キーワード2"],
               aiResult: "AIの検索結果",
               shopCandidates: null,
-              selectedShop: null,
+              selectedShops: null,
               userMemo: null,
             },
           }),

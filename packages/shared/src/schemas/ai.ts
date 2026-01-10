@@ -10,6 +10,10 @@ export const suggestKeywordsInputSchema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
   startAt: z.string().datetime({ offset: true, message: "有効な日時形式で入力してください" }),
   excludeKeywords: z.array(z.string()).optional(), // 再生成時に除外するキーワード
+  // 追加コンテキスト（オプション）
+  endAt: z.string().datetime({ offset: true }).optional(),
+  userMemo: z.string().optional(),
+  recurrenceSummary: z.string().optional(), // 例: "毎週月曜日"
 });
 
 export type SuggestKeywordsInput = z.infer<typeof suggestKeywordsInputSchema>;
@@ -28,6 +32,10 @@ export const searchInputSchema = z.object({
   startAt: z.string().datetime({ offset: true }),
   keywords: z.array(z.string()), // こだわり条件があれば0件でもOK
   agentTypes: z.array(agentTypeSchema).optional(), // 省略時は ["search"]
+  // 追加コンテキスト（オプション）
+  endAt: z.string().datetime({ offset: true }).optional(),
+  userMemo: z.string().optional(),
+  recurrenceSummary: z.string().optional(),
 });
 
 export type SearchInput = z.infer<typeof searchInputSchema>;
@@ -47,6 +55,10 @@ export const searchAndSaveInputSchema = z.object({
   startAt: z.string().datetime({ offset: true }),
   keywords: z.array(z.string()),
   agentTypes: z.array(agentTypeSchema).optional(),
+  // 追加コンテキスト（オプション）
+  endAt: z.string().datetime({ offset: true }).optional(),
+  userMemo: z.string().optional(),
+  recurrenceSummary: z.string().optional(),
 });
 
 export type SearchAndSaveInput = z.infer<typeof searchAndSaveInputSchema>;

@@ -1,7 +1,7 @@
 import type { Agent } from "@mastra/core/agent";
 import type { AgentType, Shop } from "@ai-scheduler/shared";
 import { shopListSchema } from "@ai-scheduler/shared";
-import type { AiService, UserConditions, SearchResult, StreamEvent } from "../../domain/infra/aiService";
+import type { AiService, UserConditions, SearchResult, StreamEvent, ScheduleContext } from "../../domain/infra/aiService";
 import { logger } from "../../shared/logger";
 import {
   parseJsonArray,
@@ -93,6 +93,29 @@ const buildExclusionPrompt = (
   return `\n\n【除外】\n${parts.join("\n\n")}`;
 };
 
+// スケジュールの追加コンテキストからプロンプト用の文字列を生成
+const buildScheduleContextPrompt = (context?: ScheduleContext): string => {
+  if (!context) return "";
+
+  const parts: string[] = [];
+
+  if (context.endAt) {
+    parts.push(`終了日時: ${context.endAt}`);
+  }
+
+  if (context.recurrenceSummary) {
+    parts.push(`繰り返し: ${context.recurrenceSummary}`);
+  }
+
+  if (context.userMemo?.trim()) {
+    parts.push(`メモ: ${context.userMemo}`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `\n${parts.join("\n")}`;
+};
+
 // エージェントタイプに応じたセクションタイトル
 const getAgentSectionTitle = (agentType: AgentType): string => {
   switch (agentType) {
@@ -129,13 +152,14 @@ export const createAiService = (
   keywordAgent: Agent,
   agents: AgentMap
 ): AiService => ({
-  suggestKeywords: async (title, startAt, userConditions, excludeKeywords) => {
+  suggestKeywords: async (title, startAt, userConditions, excludeKeywords, scheduleContext) => {
     const exclusionPrompt = buildExclusionPrompt(userConditions, excludeKeywords);
+    const contextPrompt = buildScheduleContextPrompt(scheduleContext);
 
     const result = await keywordAgent.generate([
       {
         role: "user",
-        content: `タイトル: ${title}\n日時: ${startAt}${exclusionPrompt}`,
+        content: `タイトル: ${title}\n日時: ${startAt}${contextPrompt}${exclusionPrompt}`,
       },
     ]);
 
@@ -188,9 +212,11 @@ export const createAiService = (
     startAt,
     keywords,
     agentTypes,
-    userConditions
+    userConditions,
+    scheduleContext
   ): Promise<SearchResult> => {
     const conditionsPrompt = buildConditionsPrompt(userConditions);
+    const contextPrompt = buildScheduleContextPrompt(scheduleContext);
 
     // デフォルトは search
     const typesToUse =
@@ -209,7 +235,7 @@ export const createAiService = (
           content: `以下の予定について、選択されたキーワードに関連する情報を検索してまとめてください。
 
 タイトル: ${title}
-日時: ${startAt}
+日時: ${startAt}${contextPrompt}
 調べたいこと: ${keywords.join(", ")}${conditionsPrompt}`,
         },
       ]);
@@ -253,9 +279,11 @@ export const createAiService = (
     startAt,
     keywords,
     agentTypes,
-    userConditions
+    userConditions,
+    scheduleContext
   ): AsyncGenerator<StreamEvent> {
     const conditionsPrompt = buildConditionsPrompt(userConditions);
+    const contextPrompt = buildScheduleContextPrompt(scheduleContext);
 
     // デフォルトは search
     const typesToUse =
@@ -283,7 +311,7 @@ export const createAiService = (
             content: `以下の予定について、選択されたキーワードに関連する情報を検索してまとめてください。
 
 タイトル: ${title}
-日時: ${startAt}
+日時: ${startAt}${contextPrompt}
 調べたいこと: ${keywords.join(", ")}${conditionsPrompt}`,
           },
         ]);

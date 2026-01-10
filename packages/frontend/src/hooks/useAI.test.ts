@@ -38,7 +38,8 @@ describe("useAI", () => {
       expect(api.suggestKeywords).toHaveBeenCalledWith(
         "会議タイトル",
         "2025-01-15T10:00:00",
-        undefined // excludeKeywords
+        undefined, // excludeKeywords
+        undefined // scheduleContext
       );
       expect(result.current.keywords).toEqual(mockKeywords);
       expect(returnedKeywords).toEqual(mockKeywords);
@@ -117,7 +118,8 @@ describe("useAI", () => {
         "会議タイトル",
         "2025-01-15T10:00:00",
         ["キーワード1", "キーワード2"],
-        [] // agentTypes (初期値は空配列)
+        [], // agentTypes (初期値は空配列)
+        undefined // scheduleContext
       );
       expect(result.current.searchResult).toBe(mockSearchResult.result);
       expect(returnedResult).toEqual(mockSearchResult);

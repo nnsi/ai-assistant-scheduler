@@ -8,8 +8,53 @@ import { useProfile } from "@/hooks/useProfile";
 import { useCategories } from "@/hooks/useCategories";
 import { useCalendarContext } from "@/contexts/CalendarContext";
 import * as api from "@/lib/api";
+import type { ScheduleContext } from "@/lib/api";
 import { logger } from "@/lib/logger";
-import type { Schedule, CreateScheduleInput, Shop, CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
+import type { Schedule, CreateScheduleInput, ShopList, CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
+import { DAY_OF_WEEK_LABELS, FREQUENCY_LABELS } from "@ai-scheduler/shared";
+
+// 繰り返しルールから人間が読める説明を生成
+const buildRecurrenceSummary = (recurrence: CreateRecurrenceRuleInput | null | undefined): string | undefined => {
+  if (!recurrence) return undefined;
+
+  const { frequency, interval, daysOfWeek, dayOfMonth, weekOfMonth, endType, endDate, endCount } = recurrence;
+  const parts: string[] = [];
+
+  // 頻度とインターバル
+  if (interval === 1) {
+    parts.push(FREQUENCY_LABELS[frequency]);
+  } else {
+    // "2週間ごと" のような表現
+    const unit = frequency === "daily" ? "日" : frequency === "weekly" ? "週" : frequency === "monthly" ? "ヶ月" : "年";
+    parts.push(`${interval}${unit}ごと`);
+  }
+
+  // 曜日（weekly の場合）
+  if (frequency === "weekly" && daysOfWeek && daysOfWeek.length > 0) {
+    const dayNames = daysOfWeek.map((d) => DAY_OF_WEEK_LABELS[d]).join("・");
+    parts.push(`（${dayNames}曜日）`);
+  }
+
+  // 日付（monthly の場合）
+  if (frequency === "monthly") {
+    if (weekOfMonth !== undefined && weekOfMonth !== null && daysOfWeek && daysOfWeek.length > 0) {
+      const weekLabel = weekOfMonth === -1 ? "最終" : `第${weekOfMonth}`;
+      const dayName = DAY_OF_WEEK_LABELS[daysOfWeek[0]];
+      parts.push(`（${weekLabel}${dayName}曜日）`);
+    } else if (dayOfMonth) {
+      parts.push(`（${dayOfMonth}日）`);
+    }
+  }
+
+  // 終了条件
+  if (endType === "date" && endDate) {
+    parts.push(`、${endDate}まで`);
+  } else if (endType === "count" && endCount) {
+    parts.push(`、${endCount}回まで`);
+  }
+
+  return parts.join("");
+};
 
 type FormData = CreateScheduleInput & {
   recurrence?: CreateRecurrenceRuleInput | null;
@@ -53,7 +98,7 @@ export const ScheduleFormModal = ({
     abortStream,
     reset,
   } = useAI();
-  const [isSelectingShop, setIsSelectingShop] = useState(false);
+  const [isSelectingShops, setIsSelectingShops] = useState(false);
 
   const { profile } = useProfile();
   const { categories } = useCategories();
@@ -74,10 +119,17 @@ export const ScheduleFormModal = ({
       // スケジュールデータから繰り返しを除外
       const { recurrence, ...scheduleData } = data;
 
+      // AIエージェントに渡す追加コンテキストを構築
+      const scheduleContext: ScheduleContext = {
+        endAt: scheduleData.endAt,
+        userMemo: scheduleData.userMemo,
+        recurrenceSummary: buildRecurrenceSummary(recurrence),
+      };
+
       // スケジュールを即座に保存し、キーワード提案を並行取得
       const [schedule] = await Promise.all([
         api.createSchedule(scheduleData),
-        suggestKeywords(scheduleData.title, scheduleData.startAt),
+        suggestKeywords(scheduleData.title, scheduleData.startAt, undefined, scheduleContext),
       ]);
 
       // 繰り返しルールがあれば作成
@@ -130,18 +182,32 @@ export const ScheduleFormModal = ({
   const handleKeywordSelect = async (keywords: string[]) => {
     if (!formData || !createdSchedule) return;
 
+    // AIエージェントに渡す追加コンテキストを構築
+    const scheduleContext: ScheduleContext = {
+      endAt: formData.endAt,
+      userMemo: formData.userMemo,
+      recurrenceSummary: buildRecurrenceSummary(formData.recurrence),
+    };
+
     // ストリーミング検索を開始して結果画面に遷移
     setStep("results");
     // 検索＋保存を実行（ストリーミングで結果を表示しつつ、完了時に自動保存）
-    await searchAndSaveStream(createdSchedule.id, formData.title, formData.startAt, keywords);
+    await searchAndSaveStream(createdSchedule.id, formData.title, formData.startAt, keywords, scheduleContext);
   };
 
   const handleRegenerate = async () => {
     if (!formData) return;
 
+    // AIエージェントに渡す追加コンテキストを構築
+    const scheduleContext: ScheduleContext = {
+      endAt: formData.endAt,
+      userMemo: formData.userMemo,
+      recurrenceSummary: buildRecurrenceSummary(formData.recurrence),
+    };
+
     setIsRegenerating(true);
     try {
-      await regenerateKeywords(formData.title, formData.startAt);
+      await regenerateKeywords(formData.title, formData.startAt, scheduleContext);
     } catch (error) {
       logger.error("Failed to regenerate keywords", { category: "ai", title: formData.title }, error);
     } finally {
@@ -154,16 +220,16 @@ export const ScheduleFormModal = ({
     handleClose();
   };
 
-  const handleSelectShop = async (shop: Shop) => {
+  const handleSelectShops = async (shops: ShopList) => {
     if (!createdSchedule) return;
 
-    setIsSelectingShop(true);
+    setIsSelectingShops(true);
     try {
-      await api.selectShop(createdSchedule.id, shop);
+      await api.selectShops(createdSchedule.id, shops);
     } catch (error) {
-      logger.error("Failed to select shop", { category: "api", shopName: shop.name }, error);
+      logger.error("Failed to select shops", { category: "api", count: shops.length }, error);
     } finally {
-      setIsSelectingShop(false);
+      setIsSelectingShops(false);
     }
   };
 
@@ -237,10 +303,10 @@ export const ScheduleFormModal = ({
           statusMessage={statusMessage}
           isLoading={isLoadingSearch}
           isStreaming={isStreaming}
-          isSelectingShop={isSelectingShop}
+          isSelectingShops={isSelectingShops}
           onClose={handleCloseResult}
           onBack={handleBack}
-          onSelectShop={handleSelectShop}
+          onSelectShops={handleSelectShops}
         />
       )}
     </Modal>

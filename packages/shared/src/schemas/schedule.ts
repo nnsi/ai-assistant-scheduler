@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { shopSchema, shopListSchema } from "./shop";
+import { shopListSchema } from "./shop";
 import { categorySchema } from "./category";
 import { recurrenceRuleSchema } from "./recurrence";
 
@@ -67,7 +67,7 @@ export const scheduleWithSupplementSchema = scheduleSchema.extend({
       keywords: z.array(z.string()),
       aiResult: z.string().nullable(),
       shopCandidates: shopListSchema.nullable(),
-      selectedShop: shopSchema.nullable(),
+      selectedShops: shopListSchema.nullable(),
       userMemo: z.string().nullable(),
     })
     .nullable(),

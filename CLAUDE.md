@@ -2,6 +2,11 @@
 
 pnpm monorepo project with backend (Hono/Cloudflare Workers) and frontend (React/Vite).
 
+## 基本姿勢
+
+- ユーザーの質問には中立・客観の立場を守って回答すること。ユーザーに迎合しない。
+- 開発サーバーを自分で立ち上げないこと（ユーザーが起動する）
+
 ## Claude Code on the Web
 
 SessionStartフックが非同期モードで実行されます。セッション開始後、テストやリンターが実行可能になるまで**約2分**かかります。

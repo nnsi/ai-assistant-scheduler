@@ -21,7 +21,6 @@ import {
   type SearchScheduleInput,
   type UserProfile,
   type UpdateProfileConditionsRequest,
-  type Shop,
   type ShopList,
   type Category,
   type CreateCategoryInput,
@@ -242,6 +241,14 @@ export const searchSchedules = async (
 };
 
 // AI API
+
+// スケジュールの追加コンテキスト（オプション）
+export type ScheduleContext = {
+  endAt?: string;
+  userMemo?: string;
+  recurrenceSummary?: string;
+};
+
 export type SuggestKeywordsResult = {
   keywords: string[];
   agentTypes: AgentType[];
@@ -250,10 +257,16 @@ export type SuggestKeywordsResult = {
 export const suggestKeywords = async (
   title: string,
   startAt: string,
-  excludeKeywords?: string[]
+  excludeKeywords?: string[],
+  scheduleContext?: ScheduleContext
 ): Promise<SuggestKeywordsResult> => {
   const res = await client.ai["suggest-keywords"].$post({
-    json: { title, startAt, excludeKeywords },
+    json: {
+      title,
+      startAt,
+      excludeKeywords,
+      ...scheduleContext,
+    },
   });
 
   return handleResponse(res, keywordsResponseSchema);
@@ -268,10 +281,11 @@ export const searchWithKeywords = async (
   title: string,
   startAt: string,
   keywords: string[],
-  agentTypes?: AgentType[]
+  agentTypes?: AgentType[],
+  scheduleContext?: ScheduleContext
 ): Promise<SearchResult> => {
   const res = await client.ai.search.$post({
-    json: { title, startAt, keywords, agentTypes },
+    json: { title, startAt, keywords, agentTypes, ...scheduleContext },
   });
 
   return handleResponse(res, searchResponseSchema);
@@ -282,10 +296,11 @@ export const searchAndSave = async (
   title: string,
   startAt: string,
   keywords: string[],
-  agentTypes?: AgentType[]
+  agentTypes?: AgentType[],
+  scheduleContext?: ScheduleContext
 ): Promise<SearchResult> => {
   const res = await client.ai["search-and-save"].$post({
-    json: { scheduleId, title, startAt, keywords, agentTypes },
+    json: { scheduleId, title, startAt, keywords, agentTypes, ...scheduleContext },
   });
 
   return handleResponse(res, searchResponseSchema);
@@ -305,11 +320,12 @@ export const searchWithKeywordsStream = async (
   keywords: string[],
   agentTypes: AgentType[] | undefined,
   onEvent: (event: StreamEvent) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  scheduleContext?: ScheduleContext
 ): Promise<void> => {
   await streamRequest(
     `${API_BASE_URL}/ai/search/stream`,
-    { title, startAt, keywords, agentTypes },
+    { title, startAt, keywords, agentTypes, ...scheduleContext },
     onEvent,
     abortSignal
   );
@@ -323,11 +339,12 @@ export const searchAndSaveStream = async (
   keywords: string[],
   agentTypes: AgentType[] | undefined,
   onEvent: (event: StreamEvent) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  scheduleContext?: ScheduleContext
 ): Promise<void> => {
   await streamRequest(
     `${API_BASE_URL}/ai/search-and-save/stream`,
-    { scheduleId, title, startAt, keywords, agentTypes },
+    { scheduleId, title, startAt, keywords, agentTypes, ...scheduleContext },
     onEvent,
     abortSignal
   );
@@ -422,14 +439,14 @@ const streamRequest = async (
   }
 };
 
-// お店選択API
-export const selectShop = async (
+// お店選択API（複数対応）
+export const selectShops = async (
   scheduleId: string,
-  shop: Shop
+  shops: ShopList
 ): Promise<void> => {
-  const res = await client.supplements[":scheduleId"]["selected-shop"].$put({
+  const res = await client.supplements[":scheduleId"]["selected-shops"].$put({
     param: { scheduleId },
-    json: { shop },
+    json: { shops },
   });
 
   await handleVoidResponse(res);

@@ -10,10 +10,10 @@ type SearchResultsProps = {
   statusMessage?: string | null;
   isLoading?: boolean;
   isStreaming?: boolean;
-  isSelectingShop?: boolean;
+  isSelectingShops?: boolean;
   onClose: () => void;
   onBack: () => void;
-  onSelectShop?: (shop: Shop) => Promise<void>;
+  onSelectShops?: (shops: ShopList) => Promise<void>;
 };
 
 // お店カードコンポーネント
@@ -99,15 +99,13 @@ const ShopCard = ({
           disabled={isSelecting}
           className="shrink-0 w-full sm:w-auto"
         >
-          {isSelecting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : isSelected ? (
+          {isSelected ? (
             <>
               <Check className="w-4 h-4 mr-1" />
               選択中
             </>
           ) : (
-            "このお店に決定"
+            "選択する"
           )}
         </Button>
       </div>
@@ -121,12 +119,12 @@ export const SearchResults = ({
   statusMessage,
   isLoading = false,
   isStreaming = false,
-  isSelectingShop = false,
+  isSelectingShops = false,
   onClose,
   onBack,
-  onSelectShop,
+  onSelectShops,
 }: SearchResultsProps) => {
-  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+  const [selectedShopNames, setSelectedShopNames] = useState<Set<string>>(new Set());
   const streamingContainerRef = useRef<HTMLDivElement>(null);
 
   // ストリーミング中は自動スクロールで最新内容を表示
@@ -136,10 +134,20 @@ export const SearchResults = ({
     }
   }, [isStreaming, result]);
 
-  const handleSelectShop = async (shop: Shop) => {
-    if (onSelectShop) {
-      setSelectedShop(shop);
-      await onSelectShop(shop);
+  const handleToggleShop = (shop: Shop) => {
+    const newSelected = new Set(selectedShopNames);
+    if (newSelected.has(shop.name)) {
+      newSelected.delete(shop.name);
+    } else {
+      newSelected.add(shop.name);
+    }
+    setSelectedShopNames(newSelected);
+  };
+
+  const handleSaveSelection = async () => {
+    if (onSelectShops && shopCandidates) {
+      const selected = shopCandidates.filter(s => selectedShopNames.has(s.name));
+      await onSelectShops(selected);
     }
   };
 
@@ -194,19 +202,38 @@ export const SearchResults = ({
       {!isStreaming && shopCandidates && shopCandidates.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-gray-700">
-            お店を選択してください
+            行きたいお店を選択してください（複数選択可）
           </h4>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {shopCandidates.map((shop, index) => (
               <ShopCard
                 key={`${shop.name}-${index}`}
                 shop={shop}
-                isSelected={selectedShop?.name === shop.name}
-                isSelecting={isSelectingShop && selectedShop?.name === shop.name}
-                onSelect={() => handleSelectShop(shop)}
+                isSelected={selectedShopNames.has(shop.name)}
+                isSelecting={false}
+                onSelect={() => handleToggleShop(shop)}
               />
             ))}
           </div>
+          {selectedShopNames.size > 0 && (
+            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+              <span className="text-sm text-gray-600">
+                {selectedShopNames.size}件選択中
+              </span>
+              <Button
+                variant="ai"
+                size="sm"
+                onClick={handleSaveSelection}
+                disabled={isSelectingShops}
+              >
+                {isSelectingShops ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "選択を保存"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

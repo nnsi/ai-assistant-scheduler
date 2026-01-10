@@ -7,6 +7,13 @@ export type UserConditions = {
   subjective: string;
 };
 
+// スケジュールの追加コンテキスト（オプション）
+export type ScheduleContext = {
+  endAt?: string;           // 終了日時（ISO 8601形式）
+  userMemo?: string;        // ユーザーメモ
+  recurrenceSummary?: string; // 繰り返しの説明（例：「毎週月曜日」）
+};
+
 // キーワード提案の結果
 export type KeywordSuggestion = {
   keywords: string[];
@@ -32,20 +39,23 @@ export type AiService = {
     title: string,
     startAt: string,
     userConditions?: UserConditions,
-    excludeKeywords?: string[]
+    excludeKeywords?: string[],
+    scheduleContext?: ScheduleContext
   ) => Promise<KeywordSuggestion>;
   searchWithKeywords: (
     title: string,
     startAt: string,
     keywords: string[],
     agentTypes: AgentType[],
-    userConditions?: UserConditions
+    userConditions?: UserConditions,
+    scheduleContext?: ScheduleContext
   ) => Promise<SearchResult>;
   searchWithKeywordsStream?: (
     title: string,
     startAt: string,
     keywords: string[],
     agentTypes: AgentType[],
-    userConditions?: UserConditions
+    userConditions?: UserConditions,
+    scheduleContext?: ScheduleContext
   ) => AsyncGenerator<StreamEvent>;
 };

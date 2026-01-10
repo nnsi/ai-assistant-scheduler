@@ -1,4 +1,4 @@
-import type { AiService, UserConditions, KeywordSuggestion } from "../../../domain/infra/aiService";
+import type { AiService, UserConditions, KeywordSuggestion, ScheduleContext } from "../../../domain/infra/aiService";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import { type Result, ok, err } from "../../../shared/result";
 import { createAiError } from "../../../shared/errors";
@@ -11,7 +11,8 @@ export const createSuggestKeywordsUseCase = (
     userId: string,
     title: string,
     startAt: string,
-    excludeKeywords?: string[]
+    excludeKeywords?: string[],
+    scheduleContext?: ScheduleContext
   ): Promise<Result<KeywordSuggestion>> => {
     try {
       // ユーザーのプロファイルを取得
@@ -31,7 +32,8 @@ export const createSuggestKeywordsUseCase = (
         title,
         startAt,
         userConditions,
-        excludeKeywords
+        excludeKeywords,
+        scheduleContext
       );
       return ok(suggestion);
     } catch (error) {

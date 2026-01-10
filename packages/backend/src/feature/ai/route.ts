@@ -91,8 +91,11 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, excludeKeywords } = c.req.valid("json");
-      const result = await c.get("suggestKeywords")(userId, title, startAt, excludeKeywords);
+      const { title, startAt, excludeKeywords, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
+      const scheduleContext = (endAt || userMemo || recurrenceSummary)
+        ? { endAt, userMemo, recurrenceSummary }
+        : undefined;
+      const result = await c.get("suggestKeywords")(userId, title, startAt, excludeKeywords, scheduleContext);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
@@ -114,13 +117,17 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
+      const scheduleContext = (endAt || userMemo || recurrenceSummary)
+        ? { endAt, userMemo, recurrenceSummary }
+        : undefined;
       const result = await c.get("searchWithKeywords")(
         userId,
         title,
         startAt,
         keywords,
-        agentTypes
+        agentTypes,
+        scheduleContext
       );
 
       if (!result.ok) {
@@ -143,14 +150,18 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { scheduleId, title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const { scheduleId, title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
+      const scheduleContext = (endAt || userMemo || recurrenceSummary)
+        ? { endAt, userMemo, recurrenceSummary }
+        : undefined;
       const result = await c.get("searchAndSave")(
         userId,
         scheduleId,
         title,
         startAt,
         keywords,
-        agentTypes
+        agentTypes,
+        scheduleContext
       );
 
       if (!result.ok) {
@@ -173,7 +184,7 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
       const aiService = c.get("aiService");
       const profileRepo = c.get("profileRepo");
 
@@ -192,6 +203,10 @@ export const aiRoute = app
           }
         : undefined;
 
+      const scheduleContext = (endAt || userMemo || recurrenceSummary)
+        ? { endAt, userMemo, recurrenceSummary }
+        : undefined;
+
       return streamSSE(c, async (stream) => {
         let eventId = 0;
 
@@ -202,7 +217,8 @@ export const aiRoute = app
             startAt,
             keywords,
             resolvedAgentTypes,
-            userConditions
+            userConditions,
+            scheduleContext
           );
 
           for await (const event of generator) {
@@ -233,7 +249,7 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { scheduleId, title, startAt, keywords, agentTypes } = c.req.valid("json");
+      const { scheduleId, title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
       const aiService = c.get("aiService");
       const profileRepo = c.get("profileRepo");
 
@@ -250,6 +266,10 @@ export const aiRoute = app
             preferred: profile.preferredConditions,
             subjective: profile.subjectiveConditions,
           }
+        : undefined;
+
+      const scheduleContext = (endAt || userMemo || recurrenceSummary)
+        ? { endAt, userMemo, recurrenceSummary }
         : undefined;
 
       // 保存用の依存関係を準備
@@ -269,7 +289,8 @@ export const aiRoute = app
             startAt,
             keywords,
             usedAgentTypes,
-            userConditions
+            userConditions,
+            scheduleContext
           );
 
           for await (const event of generator) {

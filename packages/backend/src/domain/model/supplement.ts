@@ -2,13 +2,13 @@ import {
   type Supplement,
   type SaveSupplementInput,
   type UpdateMemoInput,
-  type SelectShopInput,
-  type Shop,
+  type SelectShopsInput,
+  type ShopList,
 } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 
 // Re-export types from shared
-export type { Supplement, SaveSupplementInput, UpdateMemoInput, SelectShopInput };
+export type { Supplement, SaveSupplementInput, UpdateMemoInput, SelectShopsInput };
 
 // ファクトリ関数
 export const createSupplement = (
@@ -22,21 +22,21 @@ export const createSupplement = (
     agentTypes: input.agentTypes ?? null,
     aiResult: input.aiResult,
     shopCandidates: input.shopCandidates ?? null,
-    selectedShop: null,
+    selectedShops: null,
     userMemo: null,
     createdAt: now,
     updatedAt: now,
   };
 };
 
-// お店選択関数
-export const selectShop = (
+// お店選択関数（複数対応）
+export const selectShops = (
   supplement: Supplement,
-  shop: Shop
+  shops: ShopList
 ): Supplement => {
   return {
     ...supplement,
-    selectedShop: shop,
+    selectedShops: shops,
     updatedAt: new Date().toISOString(),
   };
 };
@@ -54,7 +54,7 @@ export const createSupplementForMemo = (
     agentTypes: null,
     aiResult: null,
     shopCandidates: null,
-    selectedShop: null,
+    selectedShops: null,
     userMemo,
     createdAt: now,
     updatedAt: now,

@@ -1,5 +1,5 @@
 import type { AgentType } from "@ai-scheduler/shared";
-import type { SearchResult } from "../../../domain/infra/aiService";
+import type { SearchResult, ScheduleContext } from "../../../domain/infra/aiService";
 import type { SearchWithKeywordsUseCase } from "./searchWithKeywords";
 import type { SaveSupplementUseCase } from "./saveSupplement";
 import { type Result, ok, err } from "../../../shared/result";
@@ -14,7 +14,8 @@ export const createSearchAndSaveUseCase = (
     title: string,
     startAt: string,
     keywords: string[],
-    agentTypes?: AgentType[]
+    agentTypes?: AgentType[],
+    scheduleContext?: ScheduleContext
   ): Promise<Result<SearchResult>> => {
     // 1. AI検索を実行
     const searchResult = await searchWithKeywords(
@@ -22,7 +23,8 @@ export const createSearchAndSaveUseCase = (
       title,
       startAt,
       keywords,
-      agentTypes
+      agentTypes,
+      scheduleContext
     );
 
     if (!searchResult.ok) {

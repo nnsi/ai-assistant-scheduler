@@ -1,17 +1,17 @@
-import type { Shop } from "@ai-scheduler/shared";
+import type { ShopList } from "@ai-scheduler/shared";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
-import { selectShop } from "../../../domain/model/supplement";
+import { selectShops } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
 import { createNotFoundError, createForbiddenError } from "../../../shared/errors";
 
-export const createSelectShopUseCase = (
+export const createSelectShopsUseCase = (
   supplementRepo: SupplementRepo,
   scheduleRepo: ScheduleRepo
 ) => {
   return async (
     scheduleId: string,
-    shop: Shop,
+    shops: ShopList,
     userId: string
   ): Promise<Result<void>> => {
     // スケジュールの存在確認と所有者チェック
@@ -29,12 +29,12 @@ export const createSelectShopUseCase = (
       return err(createNotFoundError("補足情報"));
     }
 
-    // お店を選択して更新
-    const updated = selectShop(supplement, shop);
+    // お店を選択して更新（複数対応）
+    const updated = selectShops(supplement, shops);
     await supplementRepo.update(updated);
 
     return ok(undefined);
   };
 };
 
-export type SelectShopUseCase = ReturnType<typeof createSelectShopUseCase>;
+export type SelectShopsUseCase = ReturnType<typeof createSelectShopsUseCase>;
