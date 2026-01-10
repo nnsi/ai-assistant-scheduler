@@ -214,10 +214,10 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
                         {formatDateString(schedule.startAt, "yyyy/MM/dd")}
                         {!schedule.isAllDay && (
                           <span className="ml-1">
-                            {formatDateString(schedule.startAt, "HH:mm")}
+                            {" "}{formatDateString(schedule.startAt, "HH:mm")}
                           </span>
                         )}
-                        {schedule.isAllDay && <span className="ml-1">(終日)</span>}
+                        {schedule.isAllDay && <span className="ml-1">{" "}(終日)</span>}
                       </div>
                     </button>
                   );

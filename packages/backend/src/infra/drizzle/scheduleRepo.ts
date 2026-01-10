@@ -85,10 +85,9 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
       const queryPattern = `%${options.query}%`;
       // JOINでsupplementsのuserMemoも検索
       const rows = await db
-        .select({
+        .selectDistinct({
           schedules,
           categories,
-          userMemo: scheduleSupplements.userMemo,
         })
         .from(schedules)
         .leftJoin(categories, eq(schedules.categoryId, categories.id))

@@ -63,11 +63,11 @@ export const KeywordSuggestions = ({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {keywords.map((keyword) => {
+        {keywords.map((keyword, index) => {
           const isSelected = selectedKeywords.has(keyword);
           return (
             <button
-              key={keyword}
+              key={`${keyword}-${index}`}
               onClick={() => toggleKeyword(keyword)}
               className={cn(
                 "inline-flex items-center px-3 py-1.5 rounded-full text-sm transition-colors",
