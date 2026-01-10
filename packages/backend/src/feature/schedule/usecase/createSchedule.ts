@@ -6,7 +6,7 @@ import {
   type CreateScheduleInput,
 } from "../../../domain/model/schedule";
 import type { Schedule } from "@ai-scheduler/shared";
-import { createSupplement } from "../../../domain/model/supplement";
+import { createSupplement, createSupplementForMemo } from "../../../domain/model/supplement";
 import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError } from "../../../shared/errors";
 
@@ -29,6 +29,14 @@ export const createCreateScheduleUseCase = (
           keywords: input.keywords,
           aiResult: input.aiResult,
         });
+        // メモがあれば設定
+        if (input.userMemo) {
+          supplement.userMemo = input.userMemo;
+        }
+        await supplementRepo.save(supplement);
+      } else if (input.userMemo) {
+        // AI検索なしでメモのみの場合
+        const supplement = createSupplementForMemo(schedule.id, input.userMemo);
         await supplementRepo.save(supplement);
       }
 

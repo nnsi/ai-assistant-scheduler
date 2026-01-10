@@ -18,6 +18,7 @@ export const createScheduleInputSchema = z
       .max(10, "キーワードは10個以内です")
       .optional(),
     aiResult: z.string().max(10000, "AI結果は10000文字以内です").optional(),
+    userMemo: z.string().max(10000, "メモは10000文字以内です").optional(),
   })
   .superRefine((data, ctx) => {
     if (data.endAt && data.startAt > data.endAt) {

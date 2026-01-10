@@ -14,6 +14,7 @@ type ScheduleFormData = {
   categoryId?: string;
   calendarId?: string;
   recurrence?: CreateRecurrenceRuleInput | null;
+  userMemo?: string;
 };
 
 type ScheduleFormProps = {
@@ -27,6 +28,7 @@ type ScheduleFormProps = {
     categoryId?: string | null;
     calendarId?: string | null;
     recurrence?: CreateRecurrenceRuleInput | null;
+    userMemo?: string | null;
   };
   categories?: Category[];
   calendars?: CalendarResponse[];
@@ -87,6 +89,7 @@ export const ScheduleForm = ({
   const [recurrence, setRecurrence] = useState<CreateRecurrenceRuleInput | null>(
     initialValues?.recurrence ?? null
   );
+  const [userMemo, setUserMemo] = useState(initialValues?.userMemo || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleRecurrenceChange = useCallback((value: CreateRecurrenceRuleInput | null) => {
@@ -105,7 +108,7 @@ export const ScheduleForm = ({
       endAt = `${endDate}T${endTimeValue}:00${getTimezoneOffset()}`;
     }
 
-    const data: ScheduleFormData = { title, startAt, endAt, isAllDay, categoryId, calendarId, recurrence };
+    const data: ScheduleFormData = { title, startAt, endAt, isAllDay, categoryId, calendarId, recurrence, userMemo: userMemo || undefined };
 
     const schema = mode === "edit" ? updateScheduleInputSchema : createScheduleInputSchema;
     const result = schema.safeParse({ title, startAt, endAt, isAllDay, categoryId, calendarId });
@@ -363,6 +366,26 @@ export const ScheduleForm = ({
             </button>
           </>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="schedule-memo" className="block text-sm font-medium text-stone-700 mb-2">
+          メモ
+        </label>
+        <textarea
+          id="schedule-memo"
+          value={userMemo}
+          onChange={(e) => setUserMemo(e.target.value)}
+          placeholder="予定に関するメモを入力..."
+          rows={3}
+          className={cn(
+            "w-full px-4 py-3 rounded-xl border bg-white",
+            "text-stone-800 placeholder:text-stone-400",
+            "transition-all duration-200 resize-none",
+            "focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent",
+            "border-stone-200"
+          )}
+        />
       </div>
 
       {showRecurrence && (
