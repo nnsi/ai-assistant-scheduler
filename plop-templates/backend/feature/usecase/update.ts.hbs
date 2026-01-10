@@ -1,0 +1,33 @@
+import type { {{pascalCase name}}Repo } from "../../../domain/infra/{{camelCase name}}Repo";
+import {
+  update{{pascalCase name}} as update{{pascalCase name}}Entity,
+  toPublic{{pascalCase name}},
+  type Update{{pascalCase name}}Input,
+} from "../../../domain/model/{{camelCase name}}";
+import type { {{pascalCase name}} } from "@ai-scheduler/shared";
+import { type Result, ok, err } from "../../../shared/result";
+import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
+
+export const createUpdate{{pascalCase name}}UseCase = ({{camelCase name}}Repo: {{pascalCase name}}Repo) => {
+  return async (
+    id: string,
+    userId: string,
+    input: Update{{pascalCase name}}Input
+  ): Promise<Result<{{pascalCase name}}>> => {
+    const existing = await {{camelCase name}}Repo.findByIdAndUserId(id, userId);
+    if (!existing) {
+      return err(createNotFoundError("{{pascalCase name}}"));
+    }
+
+    try {
+      const updated = update{{pascalCase name}}Entity(existing, input);
+      await {{camelCase name}}Repo.update(updated);
+      return ok(toPublic{{pascalCase name}}(updated));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return err(createDatabaseError(message));
+    }
+  };
+};
+
+export type Update{{pascalCase name}}UseCase = ReturnType<typeof createUpdate{{pascalCase name}}UseCase>;

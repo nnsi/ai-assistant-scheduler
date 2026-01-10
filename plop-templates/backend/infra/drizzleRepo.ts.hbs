@@ -1,0 +1,66 @@
+import { eq, and } from "drizzle-orm";
+import type { Database } from "./client";
+import { {{camelCase name}}s, type {{pascalCase name}}Row } from "./schema";
+import type { {{pascalCase name}}Repo } from "../../domain/infra/{{camelCase name}}Repo";
+import type { {{pascalCase name}}Entity } from "../../domain/model/{{camelCase name}}";
+
+export const create{{pascalCase name}}Repo = (db: Database): {{pascalCase name}}Repo => ({
+  findAllByUserId: async (userId) => {
+    const rows = await db
+      .select()
+      .from({{camelCase name}}s)
+      .where(eq({{camelCase name}}s.userId, userId));
+    return rows.map(toEntity);
+  },
+
+  findById: async (id) => {
+    const rows = await db
+      .select()
+      .from({{camelCase name}}s)
+      .where(eq({{camelCase name}}s.id, id));
+    return rows[0] ? toEntity(rows[0]) : null;
+  },
+
+  findByIdAndUserId: async (id, userId) => {
+    const rows = await db
+      .select()
+      .from({{camelCase name}}s)
+      .where(and(eq({{camelCase name}}s.id, id), eq({{camelCase name}}s.userId, userId)));
+    return rows[0] ? toEntity(rows[0]) : null;
+  },
+
+  save: async (entity) => {
+    await db.insert({{camelCase name}}s).values(toRow(entity));
+  },
+
+  update: async (entity) => {
+    await db
+      .update({{camelCase name}}s)
+      .set(toRow(entity))
+      .where(eq({{camelCase name}}s.id, entity.id));
+  },
+
+  delete: async (id) => {
+    await db.delete({{camelCase name}}s).where(eq({{camelCase name}}s.id, id));
+  },
+});
+
+// Row → Entity conversion
+// TODO: Fill in field mappings based on your schema
+const toEntity = (row: {{pascalCase name}}Row): {{pascalCase name}}Entity => ({
+  id: row.id,
+  userId: row.userId,
+  // Add other fields here
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
+// Entity → Row conversion
+// TODO: Fill in field mappings based on your schema
+const toRow = (entity: {{pascalCase name}}Entity): {{pascalCase name}}Row => ({
+  id: entity.id,
+  userId: entity.userId,
+  // Add other fields here
+  createdAt: entity.createdAt,
+  updatedAt: entity.updatedAt,
+});
