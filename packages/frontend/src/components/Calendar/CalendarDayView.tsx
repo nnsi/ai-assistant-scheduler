@@ -38,10 +38,21 @@ export const CalendarDayView = ({
   const timedSchedules = daySchedules.filter((s) => !s.isAllDay);
 
   const getSchedulePosition = (schedule: Schedule) => {
-    const date = parseISO(schedule.startAt);
-    const hour = getHours(date);
-    const minutes = getMinutes(date);
-    return { hour, topOffset: (minutes / 60) * 100 };
+    const startDate = parseISO(schedule.startAt);
+    const hour = getHours(startDate);
+    const minutes = getMinutes(startDate);
+    const topOffset = (minutes / 60) * 100;
+
+    // 終了時間からブロックの高さを計算
+    let heightMinutes = 60; // デフォルト1時間
+    if (schedule.endAt) {
+      const endDate = parseISO(schedule.endAt);
+      const startTotal = getHours(startDate) * 60 + getMinutes(startDate);
+      const endTotal = getHours(endDate) * 60 + getMinutes(endDate);
+      heightMinutes = Math.max(30, endTotal - startTotal); // 最低30分
+    }
+
+    return { hour, topOffset, heightMinutes };
   };
 
   return (
@@ -120,8 +131,9 @@ export const CalendarDayView = ({
 
             {/* スケジュール表示 */}
             {timedSchedules.map((schedule) => {
-              const { hour, topOffset } = getSchedulePosition(schedule);
+              const { hour, topOffset, heightMinutes } = getSchedulePosition(schedule);
               const categoryColor = schedule.category?.color;
+              const heightPx = (heightMinutes / 60) * 64; // 1時間 = 64px
               return (
                 <button
                   key={schedule.id}
@@ -130,24 +142,24 @@ export const CalendarDayView = ({
                     onScheduleClick(schedule);
                   }}
                   className={cn(
-                    "absolute left-2 right-2 rounded-xl px-4 py-2 text-left",
+                    "absolute left-2 right-2 rounded-xl px-4 py-2 text-left overflow-hidden",
                     "font-medium transition-all duration-200",
                     "shadow-sm hover:shadow-md hover:scale-[1.01]",
                     !categoryColor && "bg-accent text-white"
                   )}
                   style={{
                     top: `calc(${hour * 64}px + ${topOffset * 0.64}px)`,
-                    minHeight: "32px",
+                    height: `${Math.max(32, heightPx)}px`,
                     ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                   }}
                 >
                   <div className="flex items-center gap-2">
                     <span className="opacity-80 text-sm">
                       {formatDateString(schedule.startAt, "HH:mm")}
+                      {schedule.endAt && ` - ${formatDateString(schedule.endAt, "HH:mm")}`}
                     </span>
-                    <span className="text-sm">-</span>
-                    <span>{schedule.title}</span>
                   </div>
+                  <div className="truncate">{schedule.title}</div>
                 </button>
               );
             })}

@@ -48,10 +48,21 @@ export const CalendarWeekView = ({
   };
 
   const getSchedulePosition = (schedule: Schedule) => {
-    const date = parseISO(schedule.startAt);
-    const hour = getHours(date);
-    const minutes = getMinutes(date);
-    return { hour, topOffset: (minutes / 60) * 100 };
+    const startDate = parseISO(schedule.startAt);
+    const hour = getHours(startDate);
+    const minutes = getMinutes(startDate);
+    const topOffset = (minutes / 60) * 100;
+
+    // 終了時間からブロックの高さを計算
+    let heightMinutes = 60; // デフォルト1時間
+    if (schedule.endAt) {
+      const endDate = parseISO(schedule.endAt);
+      const startTotal = getHours(startDate) * 60 + getMinutes(startDate);
+      const endTotal = getHours(endDate) * 60 + getMinutes(endDate);
+      heightMinutes = Math.max(30, endTotal - startTotal); // 最低30分
+    }
+
+    return { hour, topOffset, heightMinutes };
   };
 
   return (
@@ -148,7 +159,7 @@ export const CalendarWeekView = ({
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="h-10 sm:h-12 border-b border-stone-100 text-right pr-1 sm:pr-3 text-[10px] sm:text-xs text-stone-400 font-medium"
+                className="h-12 border-b border-stone-100 text-right pr-1 sm:pr-3 text-[10px] sm:text-xs text-stone-400 font-medium"
               >
                 {hour.toString().padStart(2, "0")}:00
               </div>
@@ -166,15 +177,16 @@ export const CalendarWeekView = ({
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="h-10 sm:h-12 border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
+                    className="h-12 border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
                     onClick={() => onTimeSlotClick(date, hour)}
                   />
                 ))}
 
                 {/* スケジュール表示 */}
                 {daySchedules.map((schedule) => {
-                  const { hour, topOffset } = getSchedulePosition(schedule);
+                  const { hour, topOffset, heightMinutes } = getSchedulePosition(schedule);
                   const categoryColor = schedule.category?.color;
+                  const heightPx = (heightMinutes / 60) * 48; // 1時間 = 48px (h-12)
                   return (
                     <button
                       key={schedule.id}
@@ -183,21 +195,22 @@ export const CalendarWeekView = ({
                         onScheduleClick(schedule);
                       }}
                       className={cn(
-                        "absolute left-px right-px sm:left-0.5 sm:right-0.5 rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 truncate text-left",
+                        "absolute left-px right-px sm:left-0.5 sm:right-0.5 rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 text-left overflow-hidden",
                         "text-[10px] sm:text-xs font-medium transition-all duration-200",
                         "shadow-sm hover:shadow-md hover:scale-[1.02]",
                         !categoryColor && "bg-accent text-white"
                       )}
                       style={{
-                        top: `calc(${hour * 40}px + ${topOffset * 0.4}px)`,
-                        minHeight: "18px",
+                        top: `calc(${hour * 48}px + ${topOffset * 0.48}px)`,
+                        height: `${Math.max(18, heightPx)}px`,
                         ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                       }}
                     >
                       <span className="opacity-80 hidden sm:inline">
                         {formatDateString(schedule.startAt, "HH:mm")}
+                        {schedule.endAt && `-${formatDateString(schedule.endAt, "HH:mm")}`}
                       </span>
-                      <span className="sm:ml-1">{schedule.title}</span>
+                      <span className="sm:ml-1 truncate block">{schedule.title}</span>
                     </button>
                   );
                 })}

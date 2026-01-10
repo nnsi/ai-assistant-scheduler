@@ -226,4 +226,99 @@ test.describe("Schedule CRUD Operations", () => {
       }
     }
   });
+
+  test("should create schedule with end time", async ({ page }) => {
+    // 日付セルをクリック
+    const dateCell = page.locator('[data-testid="calendar-day"]').first();
+    await dateCell.click();
+
+    // モーダルが開くこと
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    // タイトルを入力
+    await page.getByLabel("タイトル").fill("終了時間テスト");
+
+    // 「+終了時間を追加」ボタンをクリック
+    await page.getByRole("button", { name: "+ 終了時間を追加" }).click();
+
+    // 終了時間フィールドが表示されること
+    await expect(page.getByLabel("終了日")).toBeVisible();
+    await expect(page.getByLabel("終了時間")).toBeVisible();
+
+    // ラベルが「開始日」「開始時間」に変更されていること
+    await expect(page.getByText("開始日")).toBeVisible();
+    await expect(page.getByText("開始時間")).toBeVisible();
+
+    // 終了時間を設定
+    await page.getByLabel("終了時間").fill("14:00");
+
+    // 「終了時間を削除」ボタンが表示されること
+    await expect(page.getByRole("button", { name: "終了時間を削除" })).toBeVisible();
+  });
+
+  test("should toggle end time field visibility", async ({ page }) => {
+    // 日付セルをクリック
+    const dateCell = page.locator('[data-testid="calendar-day"]').first();
+    await dateCell.click();
+
+    // モーダルが開くこと
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    // 初期状態では終了時間フィールドは非表示
+    await expect(page.getByLabel("終了時間")).not.toBeVisible();
+
+    // 「+終了時間を追加」ボタンをクリック
+    await page.getByRole("button", { name: "+ 終了時間を追加" }).click();
+
+    // 終了時間フィールドが表示される
+    await expect(page.getByLabel("終了時間")).toBeVisible();
+
+    // 「終了時間を削除」ボタンをクリック
+    await page.getByRole("button", { name: "終了時間を削除" }).click();
+
+    // 終了時間フィールドが非表示に戻る
+    await expect(page.getByLabel("終了時間")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "+ 終了時間を追加" })).toBeVisible();
+  });
+
+  test("should display end time in day view", async ({ page }) => {
+    // 日表示に切り替え
+    await page.getByRole("button", { name: "日表示" }).click();
+
+    // mockScheduleの日付（15日）まで移動
+    const targetDay = 15;
+    const today = new Date();
+    const currentDay = today.getDate();
+    const daysToMove = targetDay - currentDay;
+
+    for (let i = 0; i < Math.abs(daysToMove); i++) {
+      if (daysToMove > 0) {
+        await page.getByRole("button", { name: "次へ" }).click();
+      } else {
+        await page.getByRole("button", { name: "前へ" }).click();
+      }
+    }
+
+    // スケジュールが「10:00 - 11:00」形式で表示されること（mockScheduleのendAtは11:00）
+    await expect(page.getByRole("button", { name: /10:00 - 11:00.*テスト予定/ })).toBeVisible();
+  });
+
+  test("should load end time in edit form", async ({ page }) => {
+    // スケジュールをクリック
+    await page.getByText("テスト予定").click();
+
+    // 詳細モーダルが開くこと
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    // 編集ボタンをクリック
+    await modal.getByRole("button", { name: "編集" }).last().click();
+
+    // 編集モーダルが開くこと
+    await expect(page.getByRole("dialog", { name: "予定を編集" })).toBeVisible();
+
+    // 終了時間が読み込まれていること（mockScheduleのendAtは11:00）
+    await expect(page.getByLabel("終了時間")).toHaveValue("11:00");
+  });
 });
