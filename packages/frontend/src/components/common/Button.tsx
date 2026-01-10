@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 import { Loader2 } from "lucide-react";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "danger" | "ghost";
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "ai";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 };
@@ -18,9 +18,9 @@ export const Button = ({
 }: ButtonProps) => {
   const variants = {
     primary: cn(
-      "bg-accent text-white",
-      "hover:bg-accent-dark",
-      "focus:ring-accent/30",
+      "bg-blue-600 text-white",
+      "hover:bg-blue-700",
+      "focus:ring-blue-300",
       "shadow-sm hover:shadow-md"
     ),
     secondary: cn(
@@ -38,6 +38,12 @@ export const Button = ({
       "bg-transparent text-stone-600",
       "hover:bg-stone-100 hover:text-stone-900",
       "focus:ring-stone-300"
+    ),
+    ai: cn(
+      "bg-violet-500 text-white",
+      "hover:bg-violet-600",
+      "focus:ring-violet-300",
+      "shadow-sm hover:shadow-md"
     ),
   };
 

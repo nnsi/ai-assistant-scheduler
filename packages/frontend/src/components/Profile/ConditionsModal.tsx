@@ -34,7 +34,7 @@ const ConditionField = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={2}
-      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
     />
   </div>
 );
@@ -90,7 +90,7 @@ export const ConditionsModal = ({ isOpen, onClose }: ConditionsModalProps) => {
     <Modal isOpen={isOpen} onClose={handleClose} title="こだわり条件設定" size="md">
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
       ) : error ? (
         <div className="text-center py-8">

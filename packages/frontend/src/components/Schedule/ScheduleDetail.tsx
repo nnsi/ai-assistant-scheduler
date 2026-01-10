@@ -218,7 +218,7 @@ export const ScheduleDetail = ({
           <Trash2 className="w-4 h-4" />
           <span className="ml-1 hidden sm:inline">削除</span>
         </Button>
-        <Button variant="secondary" size="sm" onClick={onEdit}>
+        <Button variant="primary" size="sm" onClick={onEdit}>
           <Edit className="w-4 h-4" />
           <span className="ml-1 hidden sm:inline">編集</span>
         </Button>

@@ -32,7 +32,7 @@ const ShopCard = ({
     <div
       className={`border rounded-lg p-3 sm:p-4 transition-all ${
         isSelected
-          ? "border-primary-500 bg-primary-50"
+          ? "border-violet-500 bg-violet-50"
           : "border-gray-200 hover:border-gray-300"
       }`}
     >
@@ -64,7 +64,7 @@ const ShopCard = ({
                   href={shop.urls.official}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-primary-600 hover:underline flex items-center gap-0.5"
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
                 >
                   公式 <ExternalLink className="w-3 h-3" />
                 </a>
@@ -94,7 +94,7 @@ const ShopCard = ({
         </div>
         <Button
           size="sm"
-          variant={isSelected ? "primary" : "secondary"}
+          variant={isSelected ? "ai" : "secondary"}
           onClick={onSelect}
           disabled={isSelecting}
           className="shrink-0 w-full sm:w-auto"
@@ -147,7 +147,7 @@ export const SearchResults = ({
   if (isLoading && !result) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600 mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500 mb-4" />
         <p className="text-sm text-gray-600">情報を検索中...</p>
       </div>
     );
@@ -159,7 +159,7 @@ export const SearchResults = ({
         <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
           検索結果
           {isStreaming && (
-            <span className="inline-flex items-center gap-1 text-xs text-primary-600">
+            <span className="inline-flex items-center gap-1 text-xs text-violet-600">
               <Loader2 className="w-3 h-3 animate-spin" />
               取得中...
             </span>
@@ -184,7 +184,7 @@ export const SearchResults = ({
 
       {/* ステータスメッセージ表示（JSONパース中など） */}
       {isStreaming && statusMessage && (
-        <div className="flex items-center gap-2 text-sm text-primary-600 bg-primary-50 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-violet-600 bg-violet-50 rounded-lg px-4 py-3">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>{statusMessage}</span>
         </div>

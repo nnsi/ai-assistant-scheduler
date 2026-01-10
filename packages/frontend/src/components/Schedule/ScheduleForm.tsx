@@ -283,19 +283,35 @@ export const ScheduleForm = ({
           キャンセル
         </Button>
         {onSimpleSave && (
+          <>
+            <Button
+              type="submit"
+              variant="ai"
+              isLoading={isLoading}
+              disabled={isSimpleSaving}
+            >
+              {submitLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSimpleSave}
+              isLoading={isSimpleSaving}
+              disabled={isLoading}
+            >
+              保存する
+            </Button>
+          </>
+        )}
+        {!onSimpleSave && (
           <Button
-            type="button"
-            variant="secondary"
-            onClick={handleSimpleSave}
-            isLoading={isSimpleSaving}
-            disabled={isLoading}
+            type="submit"
+            variant={mode === "create" ? "ai" : "primary"}
+            isLoading={isLoading}
           >
-            保存のみ
+            {submitLabel}
           </Button>
         )}
-        <Button type="submit" isLoading={isLoading} disabled={isSimpleSaving}>
-          {submitLabel}
-        </Button>
       </div>
     </form>
   );

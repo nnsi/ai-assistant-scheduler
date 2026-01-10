@@ -45,7 +45,7 @@ export const KeywordSuggestions = ({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600 mb-4" />
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500 mb-4" />
         <p className="text-sm text-gray-600">キーワードを提案中...</p>
       </div>
     );
@@ -72,7 +72,7 @@ export const KeywordSuggestions = ({
               className={cn(
                 "inline-flex items-center px-3 py-1.5 rounded-full text-sm transition-colors",
                 isSelected
-                  ? "bg-primary-600 text-white"
+                  ? "bg-violet-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               )}
             >
@@ -91,7 +91,7 @@ export const KeywordSuggestions = ({
             "inline-flex items-center gap-1.5 text-sm transition-colors",
             isRegenerating || isSearching
               ? "text-gray-400 cursor-not-allowed"
-              : "text-gray-500 hover:text-primary-600"
+              : "text-gray-500 hover:text-violet-600"
           )}
         >
           <RefreshCw className={cn("w-4 h-4", isRegenerating && "animate-spin")} />
@@ -100,7 +100,7 @@ export const KeywordSuggestions = ({
       )}
 
       {hasConditions && selectedKeywords.size === 0 && (
-        <p className="text-xs text-primary-600">
+        <p className="text-xs text-violet-600">
           こだわり条件が設定されているため、キーワード未選択でも検索できます
         </p>
       )}
@@ -114,6 +114,7 @@ export const KeywordSuggestions = ({
           スキップ
         </Button>
         <Button
+          variant="ai"
           onClick={handleSelect}
           disabled={(selectedKeywords.size === 0 && !hasConditions) || isRegenerating}
           isLoading={isSearching}

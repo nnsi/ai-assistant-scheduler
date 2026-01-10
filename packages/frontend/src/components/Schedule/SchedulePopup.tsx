@@ -68,7 +68,7 @@ export const SchedulePopup = ({
     <Modal isOpen={isOpen} onClose={onClose} title="予定詳細" size="lg">
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       ) : fullSchedule ? (
         <ScheduleDetail
