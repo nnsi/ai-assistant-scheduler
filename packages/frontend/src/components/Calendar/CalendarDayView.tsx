@@ -19,6 +19,85 @@ type CalendarDayViewProps = {
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+// 指定した日付にスケジュールが表示されるべきか判定
+const isScheduleOnDate = (schedule: Schedule, date: Date): boolean => {
+  const dateKey = formatDate(date, "yyyy-MM-dd");
+  const startDateKey = schedule.startAt.split("T")[0];
+  const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
+  return dateKey >= startDateKey && dateKey <= endDateKey;
+};
+
+// 予定の重なりを計算して列配置を決定
+type ScheduleWithLayout = {
+  schedule: Schedule;
+  startMinutes: number;
+  endMinutes: number;
+  column: number;
+  totalColumns: number;
+};
+
+const calculateOverlapLayout = (
+  schedules: Schedule[],
+  getPosition: (s: Schedule) => { hour: number; topOffset: number; heightMinutes: number }
+): ScheduleWithLayout[] => {
+  if (schedules.length === 0) return [];
+
+  // 各予定の開始・終了分を計算
+  const schedulesWithTime = schedules.map((schedule) => {
+    const { hour, topOffset, heightMinutes } = getPosition(schedule);
+    const startMinutes = hour * 60 + (topOffset / 100) * 60;
+    const endMinutes = startMinutes + heightMinutes;
+    return { schedule, startMinutes, endMinutes };
+  });
+
+  // 開始時間でソート
+  schedulesWithTime.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  // 列配置を計算
+  const result: ScheduleWithLayout[] = [];
+  const columns: { endMinutes: number }[] = [];
+
+  for (const item of schedulesWithTime) {
+    // 使用可能な列を探す（終了時間が現在の開始時間より前の列）
+    let assignedColumn = -1;
+    for (let i = 0; i < columns.length; i++) {
+      if (columns[i].endMinutes <= item.startMinutes) {
+        assignedColumn = i;
+        columns[i].endMinutes = item.endMinutes;
+        break;
+      }
+    }
+
+    // 使用可能な列がなければ新しい列を追加
+    if (assignedColumn === -1) {
+      assignedColumn = columns.length;
+      columns.push({ endMinutes: item.endMinutes });
+    }
+
+    result.push({
+      ...item,
+      column: assignedColumn,
+      totalColumns: 0, // 後で更新
+    });
+  }
+
+  // 重なっているグループごとにtotalColumnsを計算
+  for (let i = 0; i < result.length; i++) {
+    const current = result[i];
+    let maxColumn = current.column;
+    for (let j = 0; j < result.length; j++) {
+      if (i === j) continue;
+      const other = result[j];
+      if (current.startMinutes < other.endMinutes && current.endMinutes > other.startMinutes) {
+        maxColumn = Math.max(maxColumn, other.column);
+      }
+    }
+    current.totalColumns = maxColumn + 1;
+  }
+
+  return result;
+};
+
 export const CalendarDayView = ({
   currentDate,
   schedules,
@@ -28,31 +107,72 @@ export const CalendarDayView = ({
   const today = new Date();
   const isToday = isSameDay(currentDate, today);
 
-  // その日のスケジュールのみ抽出
+  // その日に表示すべきスケジュールを抽出
   const daySchedules = useMemo(() => {
-    const dateKey = formatDate(currentDate, "yyyy-MM-dd");
-    return schedules.filter((s) => s.startAt.startsWith(dateKey));
+    return schedules.filter((s) => isScheduleOnDate(s, currentDate));
   }, [currentDate, schedules]);
 
   const allDaySchedules = daySchedules.filter((s) => s.isAllDay);
   const timedSchedules = daySchedules.filter((s) => !s.isAllDay);
 
+  // 表示日に応じた位置と高さを計算
   const getSchedulePosition = (schedule: Schedule) => {
     const startDate = parseISO(schedule.startAt);
-    const hour = getHours(startDate);
-    const minutes = getMinutes(startDate);
-    const topOffset = (minutes / 60) * 100;
+    const endDate = schedule.endAt ? parseISO(schedule.endAt) : null;
+    const displayDateKey = formatDate(currentDate, "yyyy-MM-dd");
+    const startDateKey = schedule.startAt.split("T")[0];
+    const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
 
-    // 終了時間からブロックの高さを計算
-    let heightMinutes = 60; // デフォルト1時間
-    if (schedule.endAt) {
-      const endDate = parseISO(schedule.endAt);
-      const startTotal = getHours(startDate) * 60 + getMinutes(startDate);
-      const endTotal = getHours(endDate) * 60 + getMinutes(endDate);
-      heightMinutes = Math.max(30, endTotal - startTotal); // 最低30分
+    let startMinutes: number;
+    let endMinutes: number;
+
+    if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
+      // 同日の予定
+      startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
+      endMinutes = endDate
+        ? getHours(endDate) * 60 + getMinutes(endDate)
+        : startMinutes + 60;
+    } else if (displayDateKey === startDateKey) {
+      // 開始日（終了日は別の日）
+      startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
+      endMinutes = 24 * 60; // その日の終わりまで
+    } else if (displayDateKey === endDateKey && endDate) {
+      // 終了日
+      startMinutes = 0; // その日の始まりから
+      endMinutes = getHours(endDate) * 60 + getMinutes(endDate);
+    } else {
+      // 中間日（終日表示）
+      startMinutes = 0;
+      endMinutes = 24 * 60;
     }
 
+    const hour = Math.floor(startMinutes / 60);
+    const minutes = startMinutes % 60;
+    const topOffset = (minutes / 60) * 100;
+    const heightMinutes = Math.max(30, endMinutes - startMinutes);
+
     return { hour, topOffset, heightMinutes };
+  };
+
+  // 表示日に応じた時間表示を計算
+  const getTimeDisplay = (schedule: Schedule): string => {
+    const displayDateKey = formatDate(currentDate, "yyyy-MM-dd");
+    const startDateKey = schedule.startAt.split("T")[0];
+    const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
+    const isStartDay = displayDateKey === startDateKey;
+    const isEndDay = displayDateKey === endDateKey;
+
+    if (isStartDay && isEndDay) {
+      let display = formatDateString(schedule.startAt, "HH:mm");
+      if (schedule.endAt) display += ` - ${formatDateString(schedule.endAt, "HH:mm")}`;
+      return display;
+    } else if (isStartDay) {
+      return `${formatDateString(schedule.startAt, "HH:mm")} →`;
+    } else if (isEndDay && schedule.endAt) {
+      return `→ ${formatDateString(schedule.endAt, "HH:mm")}`;
+    } else {
+      return "終日";
+    }
   };
 
   return (
@@ -130,42 +250,49 @@ export const CalendarDayView = ({
             ))}
 
             {/* スケジュール表示 */}
-            {timedSchedules.map((schedule) => {
-              const { hour, topOffset, heightMinutes } = getSchedulePosition(schedule);
-              const categoryColor = schedule.category?.color;
-              // パーセンテージベースで位置と高さを計算（親要素の実際の高さに依存）
-              const topPercent = ((hour * 60 + (topOffset / 100) * 60) / (24 * 60)) * 100;
-              const heightPercent = (heightMinutes / (24 * 60)) * 100;
-              return (
-                <button
-                  key={schedule.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onScheduleClick(schedule);
-                  }}
-                  className={cn(
-                    "absolute left-2 right-2 rounded-xl px-4 py-2 text-left overflow-hidden",
-                    "font-medium transition-all duration-200",
-                    "shadow-sm hover:shadow-md hover:scale-[1.01]",
-                    !categoryColor && "bg-accent text-white"
-                  )}
-                  style={{
-                    top: `${topPercent}%`,
-                    height: `${Math.max(2.5, heightPercent)}%`,
-                    minHeight: "32px",
-                    ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-80 text-sm">
-                      {formatDateString(schedule.startAt, "HH:mm")}
-                      {schedule.endAt && ` - ${formatDateString(schedule.endAt, "HH:mm")}`}
-                    </span>
-                  </div>
-                  <div className="truncate">{schedule.title}</div>
-                </button>
-              );
-            })}
+            {calculateOverlapLayout(timedSchedules, getSchedulePosition).map(
+              ({ schedule, startMinutes, endMinutes, column, totalColumns }) => {
+                const categoryColor = schedule.category?.color;
+                // パーセンテージベースで位置と高さを計算
+                const topPercent = (startMinutes / (24 * 60)) * 100;
+                const heightPercent = ((endMinutes - startMinutes) / (24 * 60)) * 100;
+
+                // 横位置と幅を計算（重なり対応）
+                const widthPercent = 100 / totalColumns;
+                const leftPercent = column * widthPercent;
+
+                return (
+                  <button
+                    key={schedule.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onScheduleClick(schedule);
+                    }}
+                    className={cn(
+                      "absolute rounded-xl px-4 py-2 text-left overflow-hidden",
+                      "font-medium transition-all duration-200",
+                      "shadow-sm hover:shadow-md hover:z-10",
+                      !categoryColor && "bg-accent text-white"
+                    )}
+                    style={{
+                      top: `${topPercent}%`,
+                      height: `${Math.max(2.5, heightPercent)}%`,
+                      minHeight: "32px",
+                      left: `calc(${leftPercent}% + 8px)`,
+                      width: `calc(${widthPercent}% - 16px)`,
+                      ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="opacity-80 text-sm">
+                        {getTimeDisplay(schedule)}
+                      </span>
+                    </div>
+                    <div className="truncate">{schedule.title}</div>
+                  </button>
+                );
+              }
+            )}
           </div>
         </div>
       </div>

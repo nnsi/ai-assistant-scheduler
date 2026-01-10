@@ -21,6 +21,88 @@ type CalendarWeekViewProps = {
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+// 指定した日付にスケジュールが表示されるべきか判定
+const isScheduleOnDate = (schedule: Schedule, date: Date): boolean => {
+  const dateKey = formatDate(date, "yyyy-MM-dd");
+  const startDateKey = schedule.startAt.split("T")[0];
+  const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
+  return dateKey >= startDateKey && dateKey <= endDateKey;
+};
+
+// 予定の重なりを計算して列配置を決定
+type ScheduleWithLayout = {
+  schedule: Schedule;
+  startMinutes: number;
+  endMinutes: number;
+  column: number;
+  totalColumns: number;
+};
+
+const calculateOverlapLayout = (
+  schedules: Schedule[],
+  displayDate: Date,
+  getPosition: (s: Schedule, d: Date) => { hour: number; topOffset: number; heightMinutes: number }
+): ScheduleWithLayout[] => {
+  if (schedules.length === 0) return [];
+
+  // 各予定の開始・終了分を計算
+  const schedulesWithTime = schedules.map((schedule) => {
+    const { hour, topOffset, heightMinutes } = getPosition(schedule, displayDate);
+    const startMinutes = hour * 60 + (topOffset / 100) * 60;
+    const endMinutes = startMinutes + heightMinutes;
+    return { schedule, startMinutes, endMinutes };
+  });
+
+  // 開始時間でソート
+  schedulesWithTime.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  // 列配置を計算
+  const result: ScheduleWithLayout[] = [];
+  const columns: { endMinutes: number }[] = [];
+
+  for (const item of schedulesWithTime) {
+    // 使用可能な列を探す（終了時間が現在の開始時間より前の列）
+    let assignedColumn = -1;
+    for (let i = 0; i < columns.length; i++) {
+      if (columns[i].endMinutes <= item.startMinutes) {
+        assignedColumn = i;
+        columns[i].endMinutes = item.endMinutes;
+        break;
+      }
+    }
+
+    // 使用可能な列がなければ新しい列を追加
+    if (assignedColumn === -1) {
+      assignedColumn = columns.length;
+      columns.push({ endMinutes: item.endMinutes });
+    }
+
+    result.push({
+      ...item,
+      column: assignedColumn,
+      totalColumns: 0, // 後で更新
+    });
+  }
+
+  // 重なっているグループごとにtotalColumnsを計算
+  for (let i = 0; i < result.length; i++) {
+    const current = result[i];
+    // この予定と重なっている予定を探す
+    let maxColumn = current.column;
+    for (let j = 0; j < result.length; j++) {
+      if (i === j) continue;
+      const other = result[j];
+      // 時間が重なっているか確認
+      if (current.startMinutes < other.endMinutes && current.endMinutes > other.startMinutes) {
+        maxColumn = Math.max(maxColumn, other.column);
+      }
+    }
+    current.totalColumns = maxColumn + 1;
+  }
+
+  return result;
+};
+
 export const CalendarWeekView = ({
   currentDate,
   schedules,
@@ -31,36 +113,46 @@ export const CalendarWeekView = ({
   const weekDayLabels = getWeekDayLabels();
   const today = new Date();
 
-  // 日付ごとのスケジュールをマッピング
-  const schedulesByDate = useMemo(() => {
-    const map = new Map<string, Schedule[]>();
-    schedules.forEach((schedule) => {
-      const dateKey = schedule.startAt.split("T")[0];
-      const existing = map.get(dateKey) || [];
-      map.set(dateKey, [...existing, schedule]);
-    });
-    return map;
-  }, [schedules]);
-
+  // 指定した日付に表示すべきスケジュールを取得
   const getSchedulesForDate = (date: Date): Schedule[] => {
-    const dateKey = formatDate(date, "yyyy-MM-dd");
-    return schedulesByDate.get(dateKey) || [];
+    return schedules.filter((schedule) => isScheduleOnDate(schedule, date));
   };
 
-  const getSchedulePosition = (schedule: Schedule) => {
+  // 表示日に応じた位置と高さを計算
+  const getSchedulePosition = (schedule: Schedule, displayDate: Date) => {
     const startDate = parseISO(schedule.startAt);
-    const hour = getHours(startDate);
-    const minutes = getMinutes(startDate);
-    const topOffset = (minutes / 60) * 100;
+    const endDate = schedule.endAt ? parseISO(schedule.endAt) : null;
+    const displayDateKey = formatDate(displayDate, "yyyy-MM-dd");
+    const startDateKey = schedule.startAt.split("T")[0];
+    const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
 
-    // 終了時間からブロックの高さを計算
-    let heightMinutes = 60; // デフォルト1時間
-    if (schedule.endAt) {
-      const endDate = parseISO(schedule.endAt);
-      const startTotal = getHours(startDate) * 60 + getMinutes(startDate);
-      const endTotal = getHours(endDate) * 60 + getMinutes(endDate);
-      heightMinutes = Math.max(30, endTotal - startTotal); // 最低30分
+    let startMinutes: number;
+    let endMinutes: number;
+
+    if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
+      // 同日の予定
+      startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
+      endMinutes = endDate
+        ? getHours(endDate) * 60 + getMinutes(endDate)
+        : startMinutes + 60;
+    } else if (displayDateKey === startDateKey) {
+      // 開始日（終了日は別の日）
+      startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
+      endMinutes = 24 * 60; // その日の終わりまで
+    } else if (displayDateKey === endDateKey && endDate) {
+      // 終了日
+      startMinutes = 0; // その日の始まりから
+      endMinutes = getHours(endDate) * 60 + getMinutes(endDate);
+    } else {
+      // 中間日（終日表示）
+      startMinutes = 0;
+      endMinutes = 24 * 60;
     }
+
+    const hour = Math.floor(startMinutes / 60);
+    const minutes = startMinutes % 60;
+    const topOffset = (minutes / 60) * 100;
+    const heightMinutes = Math.max(30, endMinutes - startMinutes);
 
     return { hour, topOffset, heightMinutes };
   };
@@ -171,6 +263,7 @@ export const CalendarWeekView = ({
             const daySchedules = getSchedulesForDate(date).filter(
               (s) => !s.isAllDay
             );
+            const layoutSchedules = calculateOverlapLayout(daySchedules, date, getSchedulePosition);
 
             return (
               <div key={date.toISOString()} className="relative border-l border-stone-100">
@@ -183,12 +276,35 @@ export const CalendarWeekView = ({
                 ))}
 
                 {/* スケジュール表示 */}
-                {daySchedules.map((schedule) => {
-                  const { hour, topOffset, heightMinutes } = getSchedulePosition(schedule);
+                {layoutSchedules.map(({ schedule, startMinutes, endMinutes, column, totalColumns }) => {
                   const categoryColor = schedule.category?.color;
-                  // パーセンテージベースで位置と高さを計算（親要素の実際の高さに依存）
-                  const topPercent = ((hour * 60 + (topOffset / 100) * 60) / (24 * 60)) * 100;
-                  const heightPercent = (heightMinutes / (24 * 60)) * 100;
+                  // パーセンテージベースで位置と高さを計算
+                  const topPercent = (startMinutes / (24 * 60)) * 100;
+                  const heightPercent = ((endMinutes - startMinutes) / (24 * 60)) * 100;
+
+                  // 横位置と幅を計算（重なり対応）
+                  const widthPercent = 100 / totalColumns;
+                  const leftPercent = column * widthPercent;
+
+                  // 表示日に応じた時間表示を計算
+                  const displayDateKey = formatDate(date, "yyyy-MM-dd");
+                  const startDateKey = schedule.startAt.split("T")[0];
+                  const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
+                  const isStartDay = displayDateKey === startDateKey;
+                  const isEndDay = displayDateKey === endDateKey;
+
+                  let timeDisplay = "";
+                  if (isStartDay && isEndDay) {
+                    timeDisplay = formatDateString(schedule.startAt, "HH:mm");
+                    if (schedule.endAt) timeDisplay += `-${formatDateString(schedule.endAt, "HH:mm")}`;
+                  } else if (isStartDay) {
+                    timeDisplay = `${formatDateString(schedule.startAt, "HH:mm")}→`;
+                  } else if (isEndDay && schedule.endAt) {
+                    timeDisplay = `→${formatDateString(schedule.endAt, "HH:mm")}`;
+                  } else {
+                    timeDisplay = "終日";
+                  }
+
                   return (
                     <button
                       key={schedule.id}
@@ -197,22 +313,21 @@ export const CalendarWeekView = ({
                         onScheduleClick(schedule);
                       }}
                       className={cn(
-                        "absolute left-px right-px sm:left-0.5 sm:right-0.5 rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 text-left overflow-hidden",
+                        "absolute rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 text-left overflow-hidden",
                         "text-[10px] sm:text-xs font-medium transition-all duration-200",
-                        "shadow-sm hover:shadow-md hover:scale-[1.02]",
+                        "shadow-sm hover:shadow-md hover:z-10",
                         !categoryColor && "bg-accent text-white"
                       )}
                       style={{
                         top: `${topPercent}%`,
                         height: `${Math.max(1.5, heightPercent)}%`,
                         minHeight: "18px",
+                        left: `${leftPercent}%`,
+                        width: `${widthPercent}%`,
                         ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                       }}
                     >
-                      <span className="opacity-80 hidden sm:inline">
-                        {formatDateString(schedule.startAt, "HH:mm")}
-                        {schedule.endAt && `-${formatDateString(schedule.endAt, "HH:mm")}`}
-                      </span>
+                      <span className="opacity-80 hidden sm:inline">{timeDisplay}</span>
                       <span className="sm:ml-1 truncate block">{schedule.title}</span>
                     </button>
                   );
