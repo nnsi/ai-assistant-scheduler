@@ -41,7 +41,13 @@ export const ScheduleDetail = ({
         <div className="flex flex-wrap items-center gap-3 text-sm text-stone-600">
           <div className="flex items-center gap-2 bg-stone-100 rounded-lg px-3 py-1.5">
             <Calendar className="w-4 h-4 text-stone-500" />
-            <span>{formatDateString(schedule.startAt, "yyyy年M月d日")}</span>
+            <span>
+              {formatDateString(schedule.startAt, "yyyy年M月d日")}
+              {schedule.endAt &&
+                formatDateString(schedule.startAt, "yyyy-MM-dd") !==
+                  formatDateString(schedule.endAt, "yyyy-MM-dd") &&
+                ` - ${formatDateString(schedule.endAt, "M月d日")}`}
+            </span>
           </div>
           {schedule.isAllDay ? (
             <span className="px-3 py-1.5 bg-accent/10 text-accent-dark rounded-lg text-sm font-medium">
