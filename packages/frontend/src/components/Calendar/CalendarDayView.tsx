@@ -133,7 +133,9 @@ export const CalendarDayView = ({
             {timedSchedules.map((schedule) => {
               const { hour, topOffset, heightMinutes } = getSchedulePosition(schedule);
               const categoryColor = schedule.category?.color;
-              const heightPx = (heightMinutes / 60) * 64; // 1時間 = 64px
+              // パーセンテージベースで位置と高さを計算（親要素の実際の高さに依存）
+              const topPercent = ((hour * 60 + (topOffset / 100) * 60) / (24 * 60)) * 100;
+              const heightPercent = (heightMinutes / (24 * 60)) * 100;
               return (
                 <button
                   key={schedule.id}
@@ -148,8 +150,9 @@ export const CalendarDayView = ({
                     !categoryColor && "bg-accent text-white"
                   )}
                   style={{
-                    top: `calc(${hour * 64}px + ${topOffset * 0.64}px)`,
-                    height: `${Math.max(32, heightPx)}px`,
+                    top: `${topPercent}%`,
+                    height: `${Math.max(2.5, heightPercent)}%`,
+                    minHeight: "32px",
                     ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
                   }}
                 >
