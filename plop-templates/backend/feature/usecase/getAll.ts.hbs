@@ -1,0 +1,13 @@
+import type { {{pascalCase name}}Repo } from "../../../domain/infra/{{camelCase name}}Repo";
+import { toPublic{{pascalCase name}} } from "../../../domain/model/{{camelCase name}}";
+import type { {{pascalCase name}} } from "@ai-scheduler/shared";
+import { type Result, ok } from "../../../shared/result";
+
+export const createGet{{pascalCase name}}sUseCase = ({{camelCase name}}Repo: {{pascalCase name}}Repo) => {
+  return async (userId: string): Promise<Result<{{pascalCase name}}[]>> => {
+    const entities = await {{camelCase name}}Repo.findAllByUserId(userId);
+    return ok(entities.map(toPublic{{pascalCase name}}));
+  };
+};
+
+export type Get{{pascalCase name}}sUseCase = ReturnType<typeof createGet{{pascalCase name}}sUseCase>;

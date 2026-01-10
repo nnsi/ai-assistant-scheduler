@@ -1,0 +1,13 @@
+import type { {{pascalCase name}}Entity } from "../model/{{camelCase name}}";
+
+/**
+ * {{pascalCase name}} Repository Interface
+ */
+export type {{pascalCase name}}Repo = {
+  findAllByUserId: (userId: string) => Promise<{{pascalCase name}}Entity[]>;
+  findById: (id: string) => Promise<{{pascalCase name}}Entity | null>;
+  findByIdAndUserId: (id: string, userId: string) => Promise<{{pascalCase name}}Entity | null>;
+  save: (entity: {{pascalCase name}}Entity) => Promise<void>;
+  update: (entity: {{pascalCase name}}Entity) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+};

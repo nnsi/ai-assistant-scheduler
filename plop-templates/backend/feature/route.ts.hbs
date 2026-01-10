@@ -1,0 +1,116 @@
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import {
+  create{{pascalCase name}}InputSchema,
+  update{{pascalCase name}}InputSchema,
+} from "@ai-scheduler/shared";
+import { createDb } from "../../infra/drizzle/client";
+import { create{{pascalCase name}}Repo } from "../../infra/drizzle/{{camelCase name}}Repo";
+import { createCreate{{pascalCase name}}UseCase } from "./usecase/create{{pascalCase name}}";
+import { createGet{{pascalCase name}}sUseCase } from "./usecase/get{{pascalCase name}}s";
+import { createUpdate{{pascalCase name}}UseCase } from "./usecase/update{{pascalCase name}}";
+import { createDelete{{pascalCase name}}UseCase } from "./usecase/delete{{pascalCase name}}";
+import { createValidationError } from "../../shared/errors";
+import { getStatusCode } from "../../shared/http";
+import { authMiddleware } from "../../middleware/auth";
+
+type Bindings = {
+  DB: D1Database;
+  JWT_SECRET: string;
+};
+
+type Variables = {
+  userId: string;
+  userEmail: string;
+  create{{pascalCase name}}: ReturnType<typeof createCreate{{pascalCase name}}UseCase>;
+  get{{pascalCase name}}s: ReturnType<typeof createGet{{pascalCase name}}sUseCase>;
+  update{{pascalCase name}}: ReturnType<typeof createUpdate{{pascalCase name}}UseCase>;
+  delete{{pascalCase name}}: ReturnType<typeof createDelete{{pascalCase name}}UseCase>;
+};
+
+const app = new Hono<{
+  Bindings: Bindings;
+  Variables: Variables;
+}>();
+
+// Apply auth middleware
+app.use("*", authMiddleware);
+
+// DI middleware
+app.use("*", async (c, next) => {
+  const db = createDb(c.env.DB);
+  const {{camelCase name}}Repo = create{{pascalCase name}}Repo(db);
+
+  c.set("create{{pascalCase name}}", createCreate{{pascalCase name}}UseCase({{camelCase name}}Repo));
+  c.set("get{{pascalCase name}}s", createGet{{pascalCase name}}sUseCase({{camelCase name}}Repo));
+  c.set("update{{pascalCase name}}", createUpdate{{pascalCase name}}UseCase({{camelCase name}}Repo));
+  c.set("delete{{pascalCase name}}", createDelete{{pascalCase name}}UseCase({{camelCase name}}Repo));
+
+  await next();
+});
+
+export const {{camelCase name}}Route = app
+  // GET /{{name}}s
+  .get("/", async (c) => {
+    const userId = c.get("userId");
+    const result = await c.get("get{{pascalCase name}}s")(userId);
+
+    if (!result.ok) {
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
+
+    return c.json(result.value, 200);
+  })
+  // POST /{{name}}s
+  .post(
+    "/",
+    zValidator("json", create{{pascalCase name}}InputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const input = c.req.valid("json");
+      const userId = c.get("userId");
+      const result = await c.get("create{{pascalCase name}}")(input, userId);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 201);
+    }
+  )
+  // PUT /{{name}}s/:id
+  .put(
+    "/:id",
+    zValidator("json", update{{pascalCase name}}InputSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(createValidationError(result.error), 400);
+      }
+    }),
+    async (c) => {
+      const id = c.req.param("id");
+      const userId = c.get("userId");
+      const input = c.req.valid("json");
+      const result = await c.get("update{{pascalCase name}}")(id, userId, input);
+
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
+    }
+  )
+  // DELETE /{{name}}s/:id
+  .delete("/:id", async (c) => {
+    const id = c.req.param("id");
+    const userId = c.get("userId");
+    const result = await c.get("delete{{pascalCase name}}")(id, userId);
+
+    if (!result.ok) {
+      return c.json(result.error, getStatusCode(result.error.code));
+    }
+
+    return c.body(null, 204);
+  });
