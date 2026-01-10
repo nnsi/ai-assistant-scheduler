@@ -41,6 +41,26 @@ export const selectShop = (
   };
 };
 
+// メモ専用のsupplement作成関数（AI検索なしの予定用）
+export const createSupplementForMemo = (
+  scheduleId: string,
+  userMemo: string
+): Supplement => {
+  const now = new Date().toISOString();
+  return {
+    id: generateId(),
+    scheduleId,
+    keywords: [],
+    agentTypes: null,
+    aiResult: null,
+    shopCandidates: null,
+    selectedShop: null,
+    userMemo,
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
 // メモ更新関数
 export const updateSupplementMemo = (
   supplement: Supplement,

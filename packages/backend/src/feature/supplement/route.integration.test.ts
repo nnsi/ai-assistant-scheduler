@@ -88,8 +88,8 @@ describe("Supplement API Integration Tests", () => {
       expect(data.userMemo).toBe("");
     });
 
-    it("should return 404 when supplement does not exist", async () => {
-      // スケジュールはあるがサプリメントがない場合
+    it("should create supplement when it does not exist", async () => {
+      // スケジュールはあるがサプリメントがない場合、新規作成する
       await createTestSchedule(db, testUserId, { id: "memo-4" });
 
       const res = await app.request(
@@ -97,13 +97,14 @@ describe("Supplement API Integration Tests", () => {
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "メモ" }),
+          body: JSON.stringify({ userMemo: "新規メモ" }),
         }
       );
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
 
-      const data = (await res.json()) as { code: string };
-      expect(data.code).toBe("NOT_FOUND");
+      const data = (await res.json()) as { userMemo: string; scheduleId: string };
+      expect(data.userMemo).toBe("新規メモ");
+      expect(data.scheduleId).toBe("memo-4");
     });
 
     it("should return 403 when schedule does not exist or user has no access", async () => {
