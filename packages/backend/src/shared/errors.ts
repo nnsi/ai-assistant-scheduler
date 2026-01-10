@@ -7,6 +7,32 @@ export type { ErrorCode, ApiError };
 // アプリケーションエラー型
 export type AppError = ApiError;
 
+// カスタムエラークラス（グローバルエラーハンドラで使用）
+export class AppException extends Error {
+  readonly code: ErrorCode;
+  readonly details?: unknown;
+
+  constructor(error: AppError) {
+    super(error.message);
+    this.name = "AppException";
+    this.code = error.code;
+    this.details = error.details;
+  }
+
+  toApiError(): AppError {
+    return {
+      code: this.code,
+      message: this.message,
+      details: this.details,
+    };
+  }
+}
+
+// AppErrorからAppExceptionを作成して投げるヘルパー
+export const throwAppError = (error: AppError): never => {
+  throw new AppException(error);
+};
+
 // エラーファクトリ
 export const createValidationError = (error: ZodError): AppError => ({
   code: "VALIDATION_ERROR",

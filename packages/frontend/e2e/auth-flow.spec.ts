@@ -65,6 +65,9 @@ test.describe("Authentication Flow", () => {
   test("should show login page for unauthenticated users", async ({ page }) => {
     await page.goto("/");
 
+    // TanStack Routerにより未認証ユーザーは/loginにリダイレクトされる
+    await expect(page).toHaveURL(/\/login/);
+
     // ログインボタンが表示されていること
     const loginButton = page.getByRole("button", { name: /Googleでログイン/i });
     await expect(loginButton).toBeVisible();

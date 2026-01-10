@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { apiRoutes } from "./route";
+import { AppException, createInternalError } from "./shared/errors";
+import { getStatusCode } from "./shared/http";
 
 type Bindings = {
   DB: D1Database;
@@ -13,6 +15,22 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// グローバルエラーハンドラ
+app.onError((err, c) => {
+  // AppExceptionの場合は適切なステータスコードでレスポンス
+  if (err instanceof AppException) {
+    const apiError = err.toApiError();
+    return c.json(apiError, getStatusCode(apiError.code));
+  }
+
+  // その他のエラーは500 Internal Server Error
+  console.error("Unhandled error:", err);
+  const internalError = createInternalError(
+    err instanceof Error ? err.message : "Unknown error"
+  );
+  return c.json(internalError, 500);
+});
 
 // 開発環境で許可するlocalhostポート
 const ALLOWED_DEV_PORTS = [5173, 3000, 6006];

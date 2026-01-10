@@ -169,7 +169,7 @@ test.describe("Schedule CRUD Operations", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ keywords: ["キーワード1", "キーワード2", "キーワード3"] }),
+        body: JSON.stringify({ keywords: ["キーワード1", "キーワード2", "キーワード3"], agentTypes: ["search"] }),
       });
     });
 
