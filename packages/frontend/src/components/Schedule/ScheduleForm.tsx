@@ -82,14 +82,16 @@ export const ScheduleForm = ({
       : "13:00"
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
-  const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
-  const initialCategoryIdRef = useRef(initialValues?.categoryId);
+  // nullとundefinedを統一してundefinedに変換（nullish coalescingはnullを通すため明示的に変換）
+  const normalizedCategoryId = initialValues?.categoryId === null ? undefined : initialValues?.categoryId;
+  const [categoryId, setCategoryId] = useState<string | undefined>(normalizedCategoryId);
+  const initialCategoryIdRef = useRef(normalizedCategoryId);
 
   // initialValuesのcategoryIdが変わった場合にstateを同期（key propで再マウントされない場合のフォールバック）
   useEffect(() => {
-    const newCategoryId = initialValues?.categoryId ?? undefined;
-    if (initialCategoryIdRef.current !== initialValues?.categoryId) {
-      initialCategoryIdRef.current = initialValues?.categoryId;
+    const newCategoryId = initialValues?.categoryId === null ? undefined : initialValues?.categoryId;
+    if (initialCategoryIdRef.current !== newCategoryId) {
+      initialCategoryIdRef.current = newCategoryId;
       setCategoryId(newCategoryId);
     }
   }, [initialValues?.categoryId]);
