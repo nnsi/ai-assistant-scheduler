@@ -25,33 +25,53 @@ const CalendarContext = createContext<CalendarContextValue | null>(null);
 
 const STORAGE_KEY_SELECTED = "calendar_selected_ids";
 const STORAGE_KEY_DEFAULT = "calendar_default_id";
+const STORAGE_KEY_KNOWN = "calendar_known_ids";
+
+// ローカルストレージから選択済みIDを同期的に取得
+const getStoredSelectedIds = (): string[] => {
+  const stored = localStorage.getItem(STORAGE_KEY_SELECTED);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+// ローカルストレージから既知のカレンダーIDを同期的に取得
+const getStoredKnownIds = (): string[] => {
+  const stored = localStorage.getItem(STORAGE_KEY_KNOWN);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+// ローカルストレージからデフォルトIDを同期的に取得
+const getStoredDefaultId = (): string | null => {
+  return localStorage.getItem(STORAGE_KEY_DEFAULT);
+};
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const { data: calendars = [], isLoading } = useCalendars();
-  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]);
+  // ローカルストレージから同期的に初期値を読み込む（タイミング問題を回避）
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(
+    getStoredSelectedIds
+  );
   const [defaultCalendarId, setDefaultCalendarIdState] = useState<string | null>(
-    null
+    getStoredDefaultId
   );
   // 既知のカレンダーIDを追跡（新規追加の検出用）
-  const knownCalendarIdsRef = useRef<Set<string>>(new Set());
-
-  // ローカルストレージから初期値を読み込み
-  useEffect(() => {
-    const storedSelected = localStorage.getItem(STORAGE_KEY_SELECTED);
-    const storedDefault = localStorage.getItem(STORAGE_KEY_DEFAULT);
-
-    if (storedSelected) {
-      try {
-        setSelectedCalendarIds(JSON.parse(storedSelected));
-      } catch {
-        // パースエラーは無視
-      }
-    }
-
-    if (storedDefault) {
-      setDefaultCalendarIdState(storedDefault);
-    }
-  }, []);
+  // ローカルストレージから復元して、リロード時に全て「新規」と判断されないようにする
+  const knownCalendarIdsRef = useRef<Set<string>>(
+    new Set(getStoredKnownIds())
+  );
 
   // カレンダー一覧が読み込まれたら、選択状態を検証・初期化
   useEffect(() => {
@@ -69,7 +89,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       (id) => !knownCalendarIdsRef.current.has(id)
     );
 
-    // 選択がない場合は全て選択
+    // 選択がない場合は全て選択（初回起動時や全削除後）
     if (validSelectedIds.length === 0) {
       setSelectedCalendarIds(validIds);
       localStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(validIds));
@@ -84,8 +104,9 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(validSelectedIds));
     }
 
-    // 既知のカレンダーIDを更新
+    // 既知のカレンダーIDを更新してローカルストレージに保存
     knownCalendarIdsRef.current = new Set(validIds);
+    localStorage.setItem(STORAGE_KEY_KNOWN, JSON.stringify(validIds));
 
     // デフォルトカレンダーが未設定または無効の場合、最初のオーナーカレンダーをデフォルトに
     if (!defaultCalendarId || !validIds.includes(defaultCalendarId)) {
@@ -100,6 +121,10 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const toggleCalendar = (id: string) => {
     setSelectedCalendarIds((prev) => {
+      // 最後の1つは外せない
+      if (prev.includes(id) && prev.length === 1) {
+        return prev;
+      }
       const newIds = prev.includes(id)
         ? prev.filter((cid) => cid !== id)
         : [...prev, id];

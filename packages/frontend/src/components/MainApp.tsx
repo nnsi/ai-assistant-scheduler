@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/Calendar/Calendar";
 import { CalendarHeader, type CalendarViewMode } from "@/components/Calendar/CalendarHeader";
 import { CalendarWeekView } from "@/components/Calendar/CalendarWeekView";
@@ -23,6 +23,7 @@ import {
 import { useSchedules } from "@/hooks/useSchedules";
 import { useModalManager } from "@/hooks/useModalManager";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCalendarContext } from "@/contexts/CalendarContext";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "@/lib/date";
 import { CalendarDays, X } from "lucide-react";
 import type { Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
@@ -61,6 +62,15 @@ export function MainApp() {
   const month = currentDate.getMonth() + 1;
 
   const { schedules, update, remove, refetch } = useSchedules(year, month);
+  const { selectedCalendarIds } = useCalendarContext();
+
+  // 選択されたカレンダーの予定のみ表示
+  const filteredSchedules = useMemo(() => {
+    if (selectedCalendarIds.length === 0) return schedules;
+    return schedules.filter(
+      (s) => s.calendarId && selectedCalendarIds.includes(s.calendarId)
+    );
+  }, [schedules, selectedCalendarIds]);
 
   const handlePrevious = () => {
     switch (viewMode) {
@@ -208,7 +218,7 @@ export function MainApp() {
         {viewMode === "month" && (
           <Calendar
             currentMonth={currentDate}
-            schedules={schedules}
+            schedules={filteredSchedules}
             onDateClick={handleDateClick}
             onScheduleClick={handleScheduleClick}
           />
@@ -216,7 +226,7 @@ export function MainApp() {
         {viewMode === "week" && (
           <CalendarWeekView
             currentDate={currentDate}
-            schedules={schedules}
+            schedules={filteredSchedules}
             onTimeSlotClick={handleTimeSlotClick}
             onScheduleClick={handleScheduleClick}
           />
@@ -224,7 +234,7 @@ export function MainApp() {
         {viewMode === "day" && (
           <CalendarDayView
             currentDate={currentDate}
-            schedules={schedules}
+            schedules={filteredSchedules}
             onTimeSlotClick={handleTimeSlotClick}
             onScheduleClick={handleScheduleClick}
           />
