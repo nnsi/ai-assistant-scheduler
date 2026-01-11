@@ -112,6 +112,11 @@ export function MainApp() {
     modal.openScheduleForm(date, null);
   };
 
+  const handleMoreClick = (date: Date) => {
+    setCurrentDate(date);
+    setViewMode("day");
+  };
+
   const handleTimeSlotClick = (date: Date, hour: number) => {
     modal.openScheduleForm(date, `${hour.toString().padStart(2, "0")}:00`);
   };
@@ -221,6 +226,7 @@ export function MainApp() {
             schedules={filteredSchedules}
             onDateClick={handleDateClick}
             onScheduleClick={handleScheduleClick}
+            onMoreClick={handleMoreClick}
           />
         )}
         {viewMode === "week" && (

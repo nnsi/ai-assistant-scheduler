@@ -8,6 +8,7 @@ type CalendarDayProps = {
   isCurrentMonth: boolean;
   onClick: () => void;
   onScheduleClick: (schedule: Schedule) => void;
+  onMoreClick?: () => void;
 };
 
 export const CalendarDay = ({
@@ -17,6 +18,7 @@ export const CalendarDay = ({
   isCurrentMonth,
   onClick,
   onScheduleClick,
+  onMoreClick,
 }: CalendarDayProps) => {
   const dayOfWeek = date.getDay();
   const isSunday = dayOfWeek === 0;
@@ -84,9 +86,16 @@ export const CalendarDay = ({
           );
         })}
         {schedules.length > 3 && (
-          <div className="text-[10px] sm:text-xs text-stone-500 px-0.5 font-medium">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoreClick?.();
+            }}
+            className="text-[10px] sm:text-xs text-stone-500 px-0.5 font-medium hover:text-accent hover:underline"
+          >
             +{schedules.length - 3}件
-          </div>
+          </button>
         )}
       </div>
     </div>

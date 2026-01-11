@@ -14,6 +14,7 @@ type CalendarProps = {
   schedules: Schedule[];
   onDateClick: (date: Date) => void;
   onScheduleClick: (schedule: Schedule) => void;
+  onMoreClick?: (date: Date) => void;
 };
 
 export const Calendar = ({
@@ -21,6 +22,7 @@ export const Calendar = ({
   schedules,
   onDateClick,
   onScheduleClick,
+  onMoreClick,
 }: CalendarProps) => {
   const days = useMemo(() => getCalendarDays(currentMonth), [currentMonth]);
   const weekDays = getWeekDayLabels();
@@ -73,6 +75,7 @@ export const Calendar = ({
             isCurrentMonth={isSameMonth(date, currentMonth)}
             onClick={() => onDateClick(date)}
             onScheduleClick={onScheduleClick}
+            onMoreClick={onMoreClick ? () => onMoreClick(date) : undefined}
           />
         ))}
       </div>
