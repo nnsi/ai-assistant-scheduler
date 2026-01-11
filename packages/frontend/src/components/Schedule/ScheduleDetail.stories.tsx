@@ -1,7 +1,54 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ReactNode } from "react";
 import { ScheduleDetail } from "./ScheduleDetail";
 import { fn } from "@storybook/test";
-import type { ScheduleWithSupplement } from "@ai-scheduler/shared";
+import type { CalendarResponse, ScheduleWithSupplement } from "@ai-scheduler/shared";
+import { CalendarProvider } from "@/contexts/CalendarContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Mock CalendarProvider for Storybook
+const mockCalendars: CalendarResponse[] = [
+  {
+    id: "cal-1",
+    name: "マイカレンダー",
+    color: "#3b82f6",
+    role: "owner",
+    memberCount: 1,
+    owner: { id: "user-1", name: "テストユーザー", picture: null },
+    createdAt: "2026-01-01T00:00:00+09:00",
+    updatedAt: "2026-01-01T00:00:00+09:00",
+  },
+  {
+    id: "cal-2",
+    name: "家族",
+    color: "#10b981",
+    role: "editor",
+    memberCount: 3,
+    owner: { id: "user-2", name: "家族", picture: null },
+    createdAt: "2026-01-01T00:00:00+09:00",
+    updatedAt: "2026-01-01T00:00:00+09:00",
+  },
+];
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
+// fetchCalendars をモックするために HTTP をモック
+const MockProviders = ({ children }: { children: ReactNode }) => {
+  // Storybook用にAPIをモック
+  globalThis.fetch = async (url: RequestInfo | URL) => {
+    if (url.toString().includes("/api/calendars")) {
+      return new Response(JSON.stringify(mockCalendars), { status: 200 });
+    }
+    return new Response("Not found", { status: 404 });
+  };
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CalendarProvider>{children}</CalendarProvider>
+    </QueryClientProvider>
+  );
+};
 
 const meta = {
   title: "Schedule/ScheduleDetail",
@@ -15,6 +62,15 @@ const meta = {
     onDelete: fn(),
     onMemoSave: fn(),
   },
+  decorators: [
+    (Story) => (
+      <MockProviders>
+        <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
+          <Story />
+        </div>
+      </MockProviders>
+    ),
+  ],
 } satisfies Meta<typeof ScheduleDetail>;
 
 export default meta;
@@ -25,9 +81,20 @@ const baseSchedule: ScheduleWithSupplement = {
   title: "横浜　散策　みなとみらい",
   startAt: "2026-01-10T12:00:00+09:00",
   endAt: null,
+  isAllDay: false,
   createdAt: "2026-01-01T00:00:00+09:00",
   updatedAt: "2026-01-01T00:00:00+09:00",
   supplement: null,
+};
+
+const scheduleWithCalendar: ScheduleWithSupplement = {
+  ...baseSchedule,
+  calendarId: "cal-1",
+};
+
+const scheduleWithSharedCalendar: ScheduleWithSupplement = {
+  ...baseSchedule,
+  calendarId: "cal-2",
 };
 
 const scheduleWithAiResult: ScheduleWithSupplement = {
@@ -93,52 +160,36 @@ export const Default: Story = {
   args: {
     schedule: baseSchedule,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
+};
+
+export const WithCalendar: Story = {
+  args: {
+    schedule: scheduleWithCalendar,
+  },
+};
+
+export const WithSharedCalendar: Story = {
+  args: {
+    schedule: scheduleWithSharedCalendar,
+  },
 };
 
 export const WithAiResult: Story = {
   args: {
     schedule: scheduleWithAiResult,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export const WithMemo: Story = {
   args: {
     schedule: scheduleWithMemo,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export const WithAiResultAndMemo: Story = {
   args: {
     schedule: scheduleWithBoth,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export const Deleting: Story = {
@@ -146,13 +197,6 @@ export const Deleting: Story = {
     schedule: baseSchedule,
     isDeleting: true,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export const SavingMemo: Story = {
@@ -160,11 +204,4 @@ export const SavingMemo: Story = {
     schedule: scheduleWithMemo,
     isSavingMemo: true,
   },
-  decorators: [
-    (Story) => (
-      <div className="max-w-lg mx-auto bg-white p-4 rounded-lg shadow">
-        <Story />
-      </div>
-    ),
-  ],
 };

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Calendar, Clock, Trash2, Edit, MapPin, ExternalLink, Store } from "lucide-react";
+import { Calendar, Clock, Trash2, Edit, MapPin, ExternalLink, Store, Sparkles } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { formatDateString } from "@/lib/date";
 import { cn } from "@/lib/cn";
+import { useCalendarContext } from "@/contexts/CalendarContext";
 import type { ScheduleWithSupplement } from "@ai-scheduler/shared";
 
 type ScheduleDetailProps = {
@@ -11,6 +12,7 @@ type ScheduleDetailProps = {
   onEdit: () => void;
   onDelete: () => void;
   onMemoSave: (memo: string) => void;
+  onResearch?: () => void;
   isDeleting?: boolean;
   isSavingMemo?: boolean;
 };
@@ -20,11 +22,14 @@ export const ScheduleDetail = ({
   onEdit,
   onDelete,
   onMemoSave,
+  onResearch,
   isDeleting = false,
   isSavingMemo = false,
 }: ScheduleDetailProps) => {
   const [memo, setMemo] = useState(schedule.supplement?.userMemo || "");
   const [isEditingMemo, setIsEditingMemo] = useState(false);
+  const { getCalendarById } = useCalendarContext();
+  const calendar = schedule.calendarId ? getCalendarById(schedule.calendarId) : undefined;
 
   const handleSaveMemo = () => {
     onMemoSave(memo);
@@ -60,6 +65,15 @@ export const ScheduleDetail = ({
                 {formatDateString(schedule.startAt, "HH:mm")}
                 {schedule.endAt && ` - ${formatDateString(schedule.endAt, "HH:mm")}`}
               </span>
+            </div>
+          )}
+          {calendar && (
+            <div className="flex items-center gap-2 bg-stone-100 rounded-lg px-3 py-1.5">
+              <span
+                className="w-3 h-3 rounded-full shrink-0"
+                style={{ backgroundColor: calendar.color }}
+              />
+              <span>{calendar.name}</span>
             </div>
           )}
         </div>
@@ -239,10 +253,18 @@ export const ScheduleDetail = ({
           <Trash2 className="w-4 h-4" />
           <span className="ml-1 hidden sm:inline">削除</span>
         </Button>
-        <Button variant="primary" size="sm" onClick={onEdit}>
-          <Edit className="w-4 h-4" />
-          <span className="ml-1 hidden sm:inline">編集</span>
-        </Button>
+        <div className="flex gap-2">
+          {onResearch && (
+            <Button variant="ai" size="sm" onClick={onResearch}>
+              <Sparkles className="w-4 h-4" />
+              <span className="ml-1 hidden sm:inline">AI再検索</span>
+            </Button>
+          )}
+          <Button variant="primary" size="sm" onClick={onEdit}>
+            <Edit className="w-4 h-4" />
+            <span className="ml-1 hidden sm:inline">編集</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

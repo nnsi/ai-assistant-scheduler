@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/common/Modal";
 import { ScheduleDetail } from "./ScheduleDetail";
+import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
+import { SearchResults } from "@/components/AI/SearchResults";
 import { Loader2 } from "lucide-react";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
-import type { Schedule, ScheduleWithSupplement } from "@ai-scheduler/shared";
+import { useAI } from "@/hooks/useAI";
+import type { Schedule, ScheduleWithSupplement, ShopList } from "@ai-scheduler/shared";
+
+type Step = "detail" | "keywords" | "results";
 
 type SchedulePopupProps = {
   schedule: Schedule | null;
@@ -24,6 +29,9 @@ export const SchedulePopup = ({
 }: SchedulePopupProps) => {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [step, setStep] = useState<Step>("detail");
+  const [isSelectingShops, setIsSelectingShops] = useState(false);
+  const ai = useAI();
 
   const scheduleId = schedule?.id;
   const queryKey = ["schedule", scheduleId];
@@ -34,10 +42,19 @@ export const SchedulePopup = ({
     enabled: !!scheduleId && isOpen,
   });
 
+  // モーダルを閉じたらステップをリセット
+  useEffect(() => {
+    if (!isOpen) {
+      setStep("detail");
+      ai.reset();
+    }
+    // ai.resetは安定した参照なのでdepsから除外しても安全
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   const memoMutation = useMutation({
     mutationFn: (memo: string) => api.updateMemo(scheduleId!, memo),
     onSuccess: async () => {
-      // 補足情報を再取得
       const updated = await api.fetchScheduleById(scheduleId!);
       queryClient.setQueryData<ScheduleWithSupplement>(queryKey, updated);
     },
@@ -64,21 +81,122 @@ export const SchedulePopup = ({
     await memoMutation.mutateAsync(memo);
   };
 
+  // AI再検索を開始
+  const handleResearchStart = async () => {
+    if (!fullSchedule) return;
+    await ai.suggestKeywords(fullSchedule.title, fullSchedule.startAt);
+    setStep("keywords");
+  };
+
+  // キーワード選択時に検索を実行
+  const handleKeywordSelect = async (selectedKeywords: string[]) => {
+    if (!fullSchedule || !scheduleId) return;
+    setStep("results");
+    await ai.searchAndSaveStream(
+      scheduleId,
+      fullSchedule.title,
+      fullSchedule.startAt,
+      selectedKeywords
+    );
+  };
+
+  // キーワード再生成
+  const handleRegenerateKeywords = async () => {
+    if (!fullSchedule) return;
+    await ai.regenerateKeywords(fullSchedule.title, fullSchedule.startAt);
+  };
+
+  // 店舗選択完了時（既存店舗に追加）
+  const handleSelectShops = async (newShops: ShopList) => {
+    if (!scheduleId || !fullSchedule) return;
+    setIsSelectingShops(true);
+    try {
+      const existingShops = fullSchedule.supplement?.selectedShops ?? [];
+      const mergedShops = [...existingShops, ...newShops];
+      await api.selectShops(scheduleId, mergedShops);
+      // キャッシュを更新
+      await queryClient.invalidateQueries({ queryKey });
+      setStep("detail");
+    } catch (error) {
+      logger.error("Failed to select shops", { category: "api", scheduleId }, error);
+    } finally {
+      setIsSelectingShops(false);
+    }
+  };
+
+  // 戻るボタン
+  const handleBack = () => {
+    if (step === "results") {
+      setStep("keywords");
+    } else if (step === "keywords") {
+      setStep("detail");
+      ai.reset();
+    }
+  };
+
+  // モーダルを閉じる（検索中なら中断）
+  const handleClose = () => {
+    if (ai.isStreaming) {
+      ai.abortStream();
+    }
+    onClose();
+  };
+
+  const getModalTitle = () => {
+    switch (step) {
+      case "keywords":
+        return "AI再検索 - キーワード選択";
+      case "results":
+        return "AI再検索 - 検索結果";
+      default:
+        return "予定詳細";
+    }
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="予定詳細" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title={getModalTitle()} size="lg">
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       ) : fullSchedule ? (
-        <ScheduleDetail
-          schedule={fullSchedule}
-          onEdit={() => onEdit(fullSchedule)}
-          onDelete={handleDelete}
-          onMemoSave={handleMemoSave}
-          isDeleting={isDeleting}
-          isSavingMemo={memoMutation.isPending}
-        />
+        <>
+          {step === "detail" && (
+            <ScheduleDetail
+              schedule={fullSchedule}
+              onEdit={() => onEdit(fullSchedule)}
+              onDelete={handleDelete}
+              onMemoSave={handleMemoSave}
+              onResearch={handleResearchStart}
+              isDeleting={isDeleting}
+              isSavingMemo={memoMutation.isPending}
+            />
+          )}
+          {step === "keywords" && (
+            <KeywordSuggestions
+              keywords={ai.keywords}
+              isLoading={ai.isLoadingKeywords}
+              isSearching={ai.isLoadingSearch}
+              isRegenerating={ai.isLoadingKeywords}
+              onSelect={handleKeywordSelect}
+              onSkip={handleBack}
+              onRegenerate={handleRegenerateKeywords}
+            />
+          )}
+          {step === "results" && (
+            <SearchResults
+              result={ai.searchResult}
+              shopCandidates={ai.shopCandidates}
+              statusMessage={ai.statusMessage}
+              isLoading={ai.isLoadingSearch}
+              isStreaming={ai.isStreaming}
+              isSelectingShops={isSelectingShops}
+              onClose={handleClose}
+              onBack={handleBack}
+              onSelectShops={handleSelectShops}
+            />
+          )}
+        </>
       ) : null}
     </Modal>
   );
