@@ -9,6 +9,7 @@ import {
 import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
 import { createGoogleAuthService } from "../../infra/auth/google";
 import { createJwtService, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../infra/auth/jwt";
 import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
@@ -22,6 +23,7 @@ import { getStatusCode } from "../../shared/http";
 import { validateRedirectUri } from "../../shared/redirectUri";
 import { authRateLimitMiddleware } from "../../middleware/rateLimit";
 import { createRefreshToken } from "../../domain/model/refreshToken";
+import { createCalendar } from "../../domain/model/calendar";
 import type { UserEntity } from "../../domain/model/user";
 
 // 開発環境テストユーザー設定
@@ -69,6 +71,7 @@ app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const userRepo = createUserRepo(db);
   const refreshTokenRepo = createRefreshTokenRepo(db);
+  const calendarRepo = createCalendarRepo(db);
   const googleAuthService = createGoogleAuthService(
     c.env.GOOGLE_CLIENT_ID,
     c.env.GOOGLE_CLIENT_SECRET
@@ -77,7 +80,7 @@ app.use("*", async (c, next) => {
 
   c.set(
     "googleAuth",
-    createOAuthAuthUseCase(userRepo, refreshTokenRepo, googleAuthService, jwtService)
+    createOAuthAuthUseCase(userRepo, refreshTokenRepo, calendarRepo, googleAuthService, jwtService)
   );
   c.set("getCurrentUser", createGetCurrentUserUseCase(userRepo));
   c.set("refreshToken", createRefreshTokenUseCase(userRepo, refreshTokenRepo, jwtService));
@@ -313,6 +316,7 @@ export const authRoute = app
     const db = createDb(c.env.DB);
     const userRepo = createUserRepo(db);
     const refreshTokenRepo = createRefreshTokenRepo(db);
+    const calendarRepo = createCalendarRepo(db);
     const jwtService = c.get("jwtService");
 
     // テストユーザーを検索または作成
@@ -327,6 +331,13 @@ export const authRoute = app
       };
       await userRepo.save(newUser);
       user = newUser;
+
+      // デフォルトカレンダーを作成
+      const defaultCalendar = createCalendar(
+        { name: "マイカレンダー", color: "#3B82F6" },
+        user.id
+      );
+      await calendarRepo.create(defaultCalendar);
     }
 
     // リフレッシュトークンをDBに保存

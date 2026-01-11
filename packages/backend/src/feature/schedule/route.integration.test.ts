@@ -5,6 +5,7 @@ import {
   createTestSchedule,
   createTestSupplement,
   createTestUser,
+  createTestCalendar,
   resetDatabase,
   type TestDb,
 } from "../../test/helpers";
@@ -13,6 +14,7 @@ describe("Schedule API Integration Tests", () => {
   let db: TestDb;
   let app: ReturnType<typeof createTestApp>;
   const testUserId = "test-user-id";
+  const testCalendarId = "test-calendar-id";
 
   beforeAll(async () => {
     db = createTestDb();
@@ -23,6 +25,8 @@ describe("Schedule API Integration Tests", () => {
     await resetDatabase(db);
     // テストユーザーを作成
     await createTestUser(db, { id: testUserId });
+    // テストカレンダーを作成
+    await createTestCalendar(db, testUserId, { id: testCalendarId });
   });
 
   describe("GET /api/schedules", () => {
@@ -35,8 +39,8 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should return all schedules", async () => {
-      await createTestSchedule(db, testUserId, { id: "1", title: "予定1" });
-      await createTestSchedule(db, testUserId, { id: "2", title: "予定2" });
+      await createTestSchedule(db, testUserId, { id: "1", title: "予定1", calendarId: testCalendarId });
+      await createTestSchedule(db, testUserId, { id: "2", title: "予定2", calendarId: testCalendarId });
 
       const res = await app.request("/api/schedules");
       expect(res.status).toBe(200);
@@ -52,11 +56,13 @@ describe("Schedule API Integration Tests", () => {
         id: "1",
         title: "1月の予定",
         startAt: "2025-01-15T12:00:00+09:00",
+        calendarId: testCalendarId,
       });
       await createTestSchedule(db, testUserId, {
         id: "2",
         title: "2月の予定",
         startAt: "2025-02-15T12:00:00+09:00",
+        calendarId: testCalendarId,
       });
 
       const res = await app.request("/api/schedules?year=2025&month=1");

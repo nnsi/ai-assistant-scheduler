@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createOAuthAuthUseCase } from "./oauthAuth";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { OAuthProvider } from "../../../infra/auth/oauth";
 import type { JwtService } from "../../../infra/auth/jwt";
 import type { UserEntity } from "../../../domain/model/user";
@@ -33,6 +34,15 @@ describe("oauthAuthUseCase", () => {
     revokeAllByUserId: vi.fn(),
   });
 
+  const createMockCalendarRepo = (): CalendarRepo => ({
+    create: vi.fn(),
+    findById: vi.fn(),
+    findByUserId: vi.fn(),
+    findDefaultByUserId: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  });
+
   const createMockOAuthProvider = (): OAuthProvider => ({
     type: "google",
     exchangeCodeForToken: vi.fn(),
@@ -55,6 +65,7 @@ describe("oauthAuthUseCase", () => {
   it("should create new user and return tokens when user does not exist", async () => {
     const userRepo = createMockUserRepo();
     const refreshTokenRepo = createMockRefreshTokenRepo();
+    const calendarRepo = createMockCalendarRepo();
     const oauthProvider = createMockOAuthProvider();
     const jwtService = createMockJwtService();
 
@@ -80,6 +91,7 @@ describe("oauthAuthUseCase", () => {
     const oauthAuth = createOAuthAuthUseCase(
       userRepo,
       refreshTokenRepo,
+      calendarRepo,
       oauthProvider,
       jwtService
     );
@@ -94,12 +106,14 @@ describe("oauthAuthUseCase", () => {
     }
     expect(userRepo.save).toHaveBeenCalled();
     expect(userRepo.update).not.toHaveBeenCalled();
+    expect(calendarRepo.create).toHaveBeenCalled(); // デフォルトカレンダーが作成される
     expect(refreshTokenRepo.save).toHaveBeenCalled();
   });
 
   it("should update existing user and return tokens", async () => {
     const userRepo = createMockUserRepo();
     const refreshTokenRepo = createMockRefreshTokenRepo();
+    const calendarRepo = createMockCalendarRepo();
     const oauthProvider = createMockOAuthProvider();
     const jwtService = createMockJwtService();
 
@@ -125,6 +139,7 @@ describe("oauthAuthUseCase", () => {
     const oauthAuth = createOAuthAuthUseCase(
       userRepo,
       refreshTokenRepo,
+      calendarRepo,
       oauthProvider,
       jwtService
     );
@@ -138,12 +153,14 @@ describe("oauthAuthUseCase", () => {
     }
     expect(userRepo.save).not.toHaveBeenCalled();
     expect(userRepo.update).toHaveBeenCalled();
+    expect(calendarRepo.create).not.toHaveBeenCalled(); // 既存ユーザーはカレンダー作成しない
     expect(refreshTokenRepo.save).toHaveBeenCalled();
   });
 
   it("should return error when token exchange fails", async () => {
     const userRepo = createMockUserRepo();
     const refreshTokenRepo = createMockRefreshTokenRepo();
+    const calendarRepo = createMockCalendarRepo();
     const oauthProvider = createMockOAuthProvider();
     const jwtService = createMockJwtService();
 
@@ -155,6 +172,7 @@ describe("oauthAuthUseCase", () => {
     const oauthAuth = createOAuthAuthUseCase(
       userRepo,
       refreshTokenRepo,
+      calendarRepo,
       oauthProvider,
       jwtService
     );
@@ -169,6 +187,7 @@ describe("oauthAuthUseCase", () => {
   it("should return error when getUserInfo fails", async () => {
     const userRepo = createMockUserRepo();
     const refreshTokenRepo = createMockRefreshTokenRepo();
+    const calendarRepo = createMockCalendarRepo();
     const oauthProvider = createMockOAuthProvider();
     const jwtService = createMockJwtService();
 
@@ -184,6 +203,7 @@ describe("oauthAuthUseCase", () => {
     const oauthAuth = createOAuthAuthUseCase(
       userRepo,
       refreshTokenRepo,
+      calendarRepo,
       oauthProvider,
       jwtService
     );

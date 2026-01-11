@@ -2,6 +2,7 @@ import type { Result } from "../../../shared/result";
 import type { AppError } from "../../../shared/errors";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { OAuthProvider } from "../../../infra/auth/oauth";
 import {
   type JwtService,
@@ -13,6 +14,7 @@ import {
   type UserEntity,
 } from "../../../domain/model/user";
 import { createRefreshToken } from "../../../domain/model/refreshToken";
+import { createCalendar } from "../../../domain/model/calendar";
 import type { AuthResponse } from "@ai-scheduler/shared";
 
 export type OAuthAuthUseCase = (
@@ -24,6 +26,7 @@ export const createOAuthAuthUseCase =
   (
     userRepo: UserRepo,
     refreshTokenRepo: RefreshTokenRepo,
+    calendarRepo: CalendarRepo,
     oauthProvider: OAuthProvider,
     jwtService: JwtService
   ): OAuthAuthUseCase =>
@@ -60,6 +63,13 @@ export const createOAuthAuthUseCase =
       // 新規ユーザー: 作成
       user = createUser(oauthUser, oauthProvider.type);
       await userRepo.save(user);
+
+      // デフォルトカレンダーを作成
+      const defaultCalendar = createCalendar(
+        { name: "マイカレンダー", color: "#3B82F6" },
+        user.id
+      );
+      await calendarRepo.create(defaultCalendar);
     }
 
     // 4. リフレッシュトークンをDBに保存

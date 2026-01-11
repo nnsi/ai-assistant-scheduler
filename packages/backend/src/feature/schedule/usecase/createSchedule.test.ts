@@ -7,6 +7,8 @@ describe("createScheduleUseCase", () => {
   const createMockScheduleRepo = (): ScheduleRepo => ({
     findAllByUserId: vi.fn(),
     findByMonthAndUserId: vi.fn(),
+    findByCalendarIdsOrUserId: vi.fn(),
+    findByMonthAndCalendarIdsOrUserId: vi.fn(),
     findById: vi.fn(),
     findByIdAndUserId: vi.fn(),
     search: vi.fn(),

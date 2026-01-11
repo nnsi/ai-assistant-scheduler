@@ -1,4 +1,4 @@
-import { eq, and, gte, lt, lte, like, or } from "drizzle-orm";
+import { eq, and, gte, lt, lte, like, or, inArray, isNull } from "drizzle-orm";
 import type { Database } from "./client";
 import { schedules, categories, scheduleSupplements, recurrenceRules, type ScheduleRow, type CategoryRow, type RecurrenceRuleRow } from "./schema";
 import type { ScheduleRepo } from "../../domain/infra/scheduleRepo";
@@ -35,6 +35,48 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
       .where(
         and(
           eq(schedules.userId, userId),
+          gte(schedules.startAt, startDate),
+          lt(schedules.startAt, endDate)
+        )
+      )
+      .orderBy(schedules.startAt);
+
+    return rows.map(toScheduleWithCategoryAndRecurrence);
+  },
+
+  findByCalendarIdsOrUserId: async (calendarIds: string[], userId: string) => {
+    // カレンダーIDに紐づくスケジュール、またはcalendarIdがnullでuserIdが一致するスケジュール（レガシーデータ）
+    const rows = await db
+      .select()
+      .from(schedules)
+      .leftJoin(categories, eq(schedules.categoryId, categories.id))
+      .leftJoin(recurrenceRules, eq(schedules.id, recurrenceRules.scheduleId))
+      .where(
+        or(
+          calendarIds.length > 0 ? inArray(schedules.calendarId, calendarIds) : undefined,
+          and(isNull(schedules.calendarId), eq(schedules.userId, userId))
+        )
+      )
+      .orderBy(schedules.startAt);
+    return rows.map(toScheduleWithCategoryAndRecurrence);
+  },
+
+  findByMonthAndCalendarIdsOrUserId: async (year: number, month: number, calendarIds: string[], userId: string) => {
+    const startDate = new Date(year, month - 1, 1).toISOString();
+    const endDate = new Date(year, month, 1).toISOString();
+
+    // カレンダーIDに紐づくスケジュール、またはcalendarIdがnullでuserIdが一致するスケジュール（レガシーデータ）
+    const rows = await db
+      .select()
+      .from(schedules)
+      .leftJoin(categories, eq(schedules.categoryId, categories.id))
+      .leftJoin(recurrenceRules, eq(schedules.id, recurrenceRules.scheduleId))
+      .where(
+        and(
+          or(
+            calendarIds.length > 0 ? inArray(schedules.calendarId, calendarIds) : undefined,
+            and(isNull(schedules.calendarId), eq(schedules.userId, userId))
+          ),
           gte(schedules.startAt, startDate),
           lt(schedules.startAt, endDate)
         )

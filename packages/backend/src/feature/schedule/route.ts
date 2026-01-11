@@ -9,6 +9,7 @@ import {
 import { createDb } from "../../infra/drizzle/client";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
 import { createCreateScheduleUseCase } from "./usecase/createSchedule";
 import { createGetSchedulesUseCase } from "./usecase/getSchedules";
 import { createGetScheduleByIdUseCase } from "./usecase/getScheduleById";
@@ -48,9 +49,10 @@ app.use("*", async (c, next) => {
   const db = createDb(c.env.DB);
   const scheduleRepo = createScheduleRepo(db);
   const supplementRepo = createSupplementRepo(db);
+  const calendarRepo = createCalendarRepo(db);
 
   c.set("createSchedule", createCreateScheduleUseCase(scheduleRepo, supplementRepo));
-  c.set("getSchedules", createGetSchedulesUseCase(scheduleRepo));
+  c.set("getSchedules", createGetSchedulesUseCase(scheduleRepo, calendarRepo));
   c.set(
     "getScheduleById",
     createGetScheduleByIdUseCase(scheduleRepo, supplementRepo)

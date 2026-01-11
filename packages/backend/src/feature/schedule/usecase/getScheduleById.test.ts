@@ -39,6 +39,8 @@ describe("getScheduleByIdUseCase", () => {
     scheduleRepo: {
       findAllByUserId: vi.fn(),
       findByMonthAndUserId: vi.fn(),
+      findByCalendarIdsOrUserId: vi.fn(),
+      findByMonthAndCalendarIdsOrUserId: vi.fn(),
       findById: vi.fn().mockResolvedValue(mockSchedule),
       findByIdAndUserId: vi.fn().mockResolvedValue(mockSchedule),
       search: vi.fn(),

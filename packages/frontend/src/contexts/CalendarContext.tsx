@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import type { CalendarResponse } from "@ai-scheduler/shared";
@@ -31,6 +32,8 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [defaultCalendarId, setDefaultCalendarIdState] = useState<string | null>(
     null
   );
+  // 既知のカレンダーIDを追跡（新規追加の検出用）
+  const knownCalendarIdsRef = useRef<Set<string>>(new Set());
 
   // ローカルストレージから初期値を読み込み
   useEffect(() => {
@@ -60,14 +63,29 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
       validIds.includes(id)
     );
 
+    // 新しく追加されたカレンダーを検出（招待受け入れ等）
+    // knownCalendarIdsRefを使って、まだ見たことのないカレンダーのみを検出
+    const newCalendarIds = validIds.filter(
+      (id) => !knownCalendarIdsRef.current.has(id)
+    );
+
     // 選択がない場合は全て選択
     if (validSelectedIds.length === 0) {
       setSelectedCalendarIds(validIds);
       localStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(validIds));
+    } else if (newCalendarIds.length > 0) {
+      // 新しいカレンダーが追加された場合、自動的に選択状態に追加
+      const newSelectedIds = [...validSelectedIds, ...newCalendarIds];
+      setSelectedCalendarIds(newSelectedIds);
+      localStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(newSelectedIds));
     } else if (validSelectedIds.length !== selectedCalendarIds.length) {
+      // 削除されたカレンダーがある場合のみ更新
       setSelectedCalendarIds(validSelectedIds);
       localStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(validSelectedIds));
     }
+
+    // 既知のカレンダーIDを更新
+    knownCalendarIdsRef.current = new Set(validIds);
 
     // デフォルトカレンダーが未設定または無効の場合、最初のオーナーカレンダーをデフォルトに
     if (!defaultCalendarId || !validIds.includes(defaultCalendarId)) {

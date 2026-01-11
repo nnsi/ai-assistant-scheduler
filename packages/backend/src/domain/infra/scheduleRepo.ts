@@ -16,6 +16,13 @@ export type ScheduleRepo = {
     month: number,
     userId: string
   ) => Promise<ScheduleEntity[]>;
+  findByCalendarIdsOrUserId: (calendarIds: string[], userId: string) => Promise<ScheduleEntity[]>;
+  findByMonthAndCalendarIdsOrUserId: (
+    year: number,
+    month: number,
+    calendarIds: string[],
+    userId: string
+  ) => Promise<ScheduleEntity[]>;
   findById: (id: string) => Promise<ScheduleEntity | null>;
   findByIdAndUserId: (id: string, userId: string) => Promise<ScheduleEntity | null>;
   search: (userId: string, options: SearchOptions) => Promise<ScheduleEntity[]>;

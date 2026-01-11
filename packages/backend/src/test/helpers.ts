@@ -189,6 +189,30 @@ export const createTestUser = async (
   return user;
 };
 
+// テスト用のカレンダーを作成
+export const createTestCalendar = async (
+  db: TestDb,
+  ownerId: string,
+  data?: {
+    id?: string;
+    name?: string;
+    color?: string;
+  }
+) => {
+  const now = new Date().toISOString();
+  const calendar = {
+    id: data?.id ?? `cal-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ownerId,
+    name: data?.name ?? "テストカレンダー",
+    color: data?.color ?? "#3B82F6",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await db.insert(schema.calendars).values(calendar);
+  return calendar;
+};
+
 // テスト用のスケジュールを作成
 export const createTestSchedule = async (
   db: TestDb,
@@ -198,12 +222,14 @@ export const createTestSchedule = async (
     title?: string;
     startAt?: string;
     endAt?: string | null;
+    calendarId?: string;
   }
 ) => {
   const now = new Date().toISOString();
   const schedule = {
     id: data?.id ?? `test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     userId,
+    calendarId: data?.calendarId ?? null,
     title: data?.title ?? "テスト予定",
     startAt: data?.startAt ?? "2025-01-15T12:00:00+09:00",
     endAt: data?.endAt ?? null,

@@ -8,6 +8,7 @@ import {
 } from "@ai-scheduler/shared";
 import { createScheduleRepo } from "../infra/drizzle/scheduleRepo";
 import { createSupplementRepo } from "../infra/drizzle/supplementRepo";
+import { createCalendarRepo } from "../infra/drizzle/calendarRepo";
 import { createCreateScheduleUseCase } from "../feature/schedule/usecase/createSchedule";
 import { createGetSchedulesUseCase } from "../feature/schedule/usecase/getSchedules";
 import { createGetScheduleByIdUseCase } from "../feature/schedule/usecase/getScheduleById";
@@ -26,10 +27,11 @@ export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") =
   // better-sqlite3のDrizzleインスタンスをD1互換のインターフェースとして使用
   const scheduleRepo = createScheduleRepo(db as any);
   const supplementRepo = createSupplementRepo(db as any);
+  const calendarRepo = createCalendarRepo(db as any);
 
   // ユースケース
   const createSchedule = createCreateScheduleUseCase(scheduleRepo, supplementRepo);
-  const getSchedules = createGetSchedulesUseCase(scheduleRepo);
+  const getSchedules = createGetSchedulesUseCase(scheduleRepo, calendarRepo);
   const getScheduleById = createGetScheduleByIdUseCase(scheduleRepo, supplementRepo);
   const updateSchedule = createUpdateScheduleUseCase(scheduleRepo);
   const deleteSchedule = createDeleteScheduleUseCase(scheduleRepo);

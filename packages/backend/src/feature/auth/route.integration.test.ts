@@ -14,6 +14,7 @@ import {
 } from "../../test/helpers";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
 import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
 import { createJwtService } from "../../infra/auth/jwt";
 import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
 import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
@@ -49,11 +50,13 @@ const createTestAuthApp = (
   const app = new Hono();
   const userRepo = createUserRepo(db as any);
   const refreshTokenRepo = createRefreshTokenRepo(db as any);
+  const calendarRepo = createCalendarRepo(db as any);
   const jwtService = createJwtService("test-jwt-secret");
 
   const googleAuth = createOAuthAuthUseCase(
     userRepo,
     refreshTokenRepo,
+    calendarRepo,
     oauthProvider,
     jwtService
   );
