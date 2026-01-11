@@ -82,16 +82,18 @@ export const ScheduleForm = ({
       : "13:00"
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
-  // nullとundefinedを統一してundefinedに変換（nullish coalescingはnullを通すため明示的に変換）
-  const normalizedCategoryId = initialValues?.categoryId === null ? undefined : initialValues?.categoryId;
-  const [categoryId, setCategoryId] = useState<string | undefined>(normalizedCategoryId);
-  const initialCategoryIdRef = useRef(normalizedCategoryId);
+  // デバッグ: initialValues?.categoryId の値を確認
+  console.log("[ScheduleForm] initialValues?.categoryId:", initialValues?.categoryId, "type:", typeof initialValues?.categoryId);
+  // バグ: nullish coalescingはnullを通すため、categoryIdがnullの場合はundefinedではなくnullになる
+  const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
+  console.log("[ScheduleForm] categoryId state:", categoryId, "type:", typeof categoryId);
+  const initialCategoryIdRef = useRef(initialValues?.categoryId);
 
   // initialValuesのcategoryIdが変わった場合にstateを同期（key propで再マウントされない場合のフォールバック）
   useEffect(() => {
-    const newCategoryId = initialValues?.categoryId === null ? undefined : initialValues?.categoryId;
-    if (initialCategoryIdRef.current !== newCategoryId) {
-      initialCategoryIdRef.current = newCategoryId;
+    const newCategoryId = initialValues?.categoryId ?? undefined;
+    if (initialCategoryIdRef.current !== initialValues?.categoryId) {
+      initialCategoryIdRef.current = initialValues?.categoryId;
       setCategoryId(newCategoryId);
     }
   }, [initialValues?.categoryId]);

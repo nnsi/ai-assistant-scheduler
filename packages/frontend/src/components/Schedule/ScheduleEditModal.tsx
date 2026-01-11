@@ -71,6 +71,9 @@ export const ScheduleEditModal = ({
 
   if (!schedule) return null;
 
+  // デバッグ: schedule.categoryId の値を確認
+  console.log("[ScheduleEditModal] schedule:", schedule.id, "categoryId:", schedule.categoryId, "type:", typeof schedule.categoryId);
+
   // 既存の繰り返しルールをCreateRecurrenceRuleInput形式に変換
   const initialRecurrence: CreateRecurrenceRuleInput | null = recurrence
     ? {
