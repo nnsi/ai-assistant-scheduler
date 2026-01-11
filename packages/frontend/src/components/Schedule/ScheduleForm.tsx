@@ -85,8 +85,7 @@ export const ScheduleForm = ({
   const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
   const initialCategoryIdRef = useRef(initialValues?.categoryId);
 
-  // initialValues.categoryIdが変更された場合、stateを同期
-  // （コンポーネントがkeyで再マウントされない場合のフォールバック）
+  // initialValuesのcategoryIdが変わった場合にstateを同期（key propで再マウントされない場合のフォールバック）
   useEffect(() => {
     const newCategoryId = initialValues?.categoryId ?? undefined;
     if (initialCategoryIdRef.current !== initialValues?.categoryId) {

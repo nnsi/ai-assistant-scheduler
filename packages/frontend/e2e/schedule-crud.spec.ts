@@ -656,4 +656,127 @@ test.describe("Schedule Edit with Category", () => {
     const workCategoryButton = editModal.getByRole("button", { name: "仕事" });
     await expect(workCategoryButton).toHaveAttribute("aria-pressed", "false");
   });
+
+  test("should correctly update category selection when switching between schedules", async ({ page }) => {
+    // 2つのスケジュール（カテゴリなし→カテゴリあり）を切り替えて編集する
+    // このテストは、ScheduleFormがリマウントされない場合に発生するバグを検出する
+
+    const mockScheduleWithoutCategory = {
+      id: "schedule-without-category",
+      title: "カテゴリなし予定",
+      startAt: `${scheduleDateStr}T10:00:00+09:00`,
+      endAt: null,
+      isAllDay: false,
+      categoryId: null,
+      category: null,
+      createdAt: `${scheduleDateStr}T00:00:00+09:00`,
+      updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
+    };
+
+    // 両方のスケジュールを返すようにモックを設定
+    await page.route("**/api/schedules?*", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithoutCategory, mockScheduleWithCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/schedules", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithoutCategory, mockScheduleWithCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // スケジュール詳細のモックを動的に設定
+    await page.route("**/api/schedules/*", async (route, request) => {
+      const url = request.url();
+      const method = request.method();
+
+      if (method === "GET") {
+        // URLからスケジュールIDを取得
+        const scheduleId = url.split("/schedules/")[1]?.split("?")[0];
+
+        const schedule = scheduleId === "schedule-without-category"
+          ? mockScheduleWithoutCategory
+          : mockScheduleWithCategory;
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...schedule,
+            supplement: {
+              id: "supplement-1",
+              keywords: [],
+              aiResult: null,
+              shopCandidates: null,
+              selectedShops: null,
+              userMemo: null,
+            },
+          }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // ページをリロードしてモックを適用
+    await page.reload();
+
+    // 両方のスケジュールが表示されるのを待つ
+    await expect(page.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
+
+    // Step 1: カテゴリなし予定の編集モーダルを開く
+    await page.getByText("カテゴリなし予定").click();
+    const detailModal = page.getByRole("dialog");
+    await expect(detailModal).toBeVisible();
+    await expect(detailModal.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+    await detailModal.getByRole("button", { name: "編集" }).last().click();
+
+    // 編集モーダルで「なし」が選択されていることを確認
+    const editModal = page.getByRole("dialog", { name: "予定を編集" });
+    await expect(editModal).toBeVisible();
+    await expect(editModal.getByRole("button", { name: "なし" })).toHaveAttribute("aria-pressed", "true");
+
+    // キャンセルして閉じる（編集モーダルだけ閉じて、詳細モーダルは開いたまま）
+    await editModal.getByRole("button", { name: "キャンセル" }).click();
+    await expect(editModal).not.toBeVisible();
+
+    // 詳細モーダルを閉じる
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+
+    // Step 2: カテゴリ付き予定の編集モーダルを開く
+    await page.getByText("カテゴリ付き予定").click();
+    const detailModal2 = page.getByRole("dialog");
+    await expect(detailModal2).toBeVisible();
+    await expect(detailModal2.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
+    await detailModal2.getByRole("button", { name: "編集" }).last().click();
+
+    // 編集モーダルで「仕事」カテゴリが選択されていることを確認
+    // バグがある場合、ここで「なし」が選択されたままになる
+    const editModal2 = page.getByRole("dialog", { name: "予定を編集" });
+    await expect(editModal2).toBeVisible();
+
+    // カテゴリボタンが表示されるのを待つ
+    await expect(editModal2.getByRole("button", { name: "仕事" })).toBeVisible({ timeout: 5000 });
+
+    // 「仕事」カテゴリが選択されていること（バグがあるとこれが失敗する）
+    await expect(editModal2.getByRole("button", { name: "仕事" })).toHaveAttribute("aria-pressed", "true");
+
+    // 「なし」は選択されていないこと
+    await expect(editModal2.getByRole("button", { name: "なし" })).toHaveAttribute("aria-pressed", "false");
+  });
 });
