@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { ChevronDown, ChevronUp, Repeat } from "lucide-react";
 import {
   DAYS_OF_WEEK,
@@ -41,46 +41,102 @@ export const RecurrenceSettings = ({
   const [endDate, setEndDate] = useState(value?.endDate ?? "");
   const [endCount, setEndCount] = useState(value?.endCount ?? 10);
 
-  // 値の更新を親に通知
-  useEffect(() => {
-    if (!isEnabled) {
-      onChange(null);
-      return;
-    }
+  // 現在のstateとoverrideから新しいruleを構築
+  const buildRule = useCallback((overrides: Partial<{
+    isEnabled: boolean;
+    frequency: Frequency;
+    interval: number;
+    daysOfWeek: DayOfWeek[];
+    dayOfMonth: number;
+    endType: EndType;
+    endDate: string;
+    endCount: number;
+  }> = {}): CreateRecurrenceRuleInput | null => {
+    const enabled = overrides.isEnabled ?? isEnabled;
+    if (!enabled) return null;
+
+    const freq = overrides.frequency ?? frequency;
+    const intv = overrides.interval ?? interval;
+    const endT = overrides.endType ?? endType;
 
     const rule: CreateRecurrenceRuleInput = {
-      frequency,
-      interval,
-      endType,
+      frequency: freq,
+      interval: intv,
+      endType: endT,
     };
 
-    if (frequency === "weekly") {
-      rule.daysOfWeek = daysOfWeek;
+    if (freq === "weekly") {
+      rule.daysOfWeek = overrides.daysOfWeek ?? daysOfWeek;
     }
 
-    if (frequency === "monthly") {
-      rule.dayOfMonth = dayOfMonth;
+    if (freq === "monthly") {
+      rule.dayOfMonth = overrides.dayOfMonth ?? dayOfMonth;
     }
 
-    if (endType === "date" && endDate) {
-      rule.endDate = endDate;
+    if (endT === "date") {
+      const ed = overrides.endDate ?? endDate;
+      if (ed) rule.endDate = ed;
     }
 
-    if (endType === "count") {
-      rule.endCount = endCount;
+    if (endT === "count") {
+      rule.endCount = overrides.endCount ?? endCount;
     }
 
-    onChange(rule);
-  }, [isEnabled, frequency, interval, daysOfWeek, dayOfMonth, endType, endDate, endCount, onChange]);
+    return rule;
+  }, [isEnabled, frequency, interval, daysOfWeek, dayOfMonth, endType, endDate, endCount]);
+
+  const handleEnabledChange = useCallback((checked: boolean) => {
+    setIsEnabled(checked);
+    onChange(buildRule({ isEnabled: checked }));
+  }, [onChange, buildRule]);
+
+  const handleFrequencyChange = useCallback((f: Frequency) => {
+    setFrequency(f);
+    onChange(buildRule({ frequency: f }));
+  }, [onChange, buildRule]);
+
+  const handleIntervalChange = useCallback((v: number) => {
+    setInterval(v);
+    onChange(buildRule({ interval: v }));
+  }, [onChange, buildRule]);
+
+  const handleDaysOfWeekChange = useCallback((days: DayOfWeek[]) => {
+    setDaysOfWeek(days);
+    onChange(buildRule({ daysOfWeek: days }));
+  }, [onChange, buildRule]);
+
+  const handleDayOfMonthChange = useCallback((day: number) => {
+    setDayOfMonth(day);
+    onChange(buildRule({ dayOfMonth: day }));
+  }, [onChange, buildRule]);
+
+  const handleEndTypeChange = useCallback((type: EndType) => {
+    setEndType(type);
+    onChange(buildRule({ endType: type }));
+  }, [onChange, buildRule]);
+
+  const handleEndDateChange = useCallback((date: string) => {
+    setEndDate(date);
+    onChange(buildRule({ endDate: date }));
+  }, [onChange, buildRule]);
+
+  const handleEndCountChange = useCallback((count: number) => {
+    setEndCount(count);
+    onChange(buildRule({ endCount: count }));
+  }, [onChange, buildRule]);
 
   const toggleDay = (day: DayOfWeek) => {
+    let newDays: DayOfWeek[];
     if (daysOfWeek.includes(day)) {
       if (daysOfWeek.length > 1) {
-        setDaysOfWeek(daysOfWeek.filter((d) => d !== day));
+        newDays = daysOfWeek.filter((d) => d !== day);
+      } else {
+        return; // 最低1つは必要
       }
     } else {
-      setDaysOfWeek([...daysOfWeek, day]);
+      newDays = [...daysOfWeek, day];
     }
+    handleDaysOfWeekChange(newDays);
   };
 
   const getIntervalLabel = () => {
@@ -151,7 +207,7 @@ export const RecurrenceSettings = ({
                 type="checkbox"
                 checked={isEnabled}
                 onChange={(e) => {
-                  setIsEnabled(e.target.checked);
+                  handleEnabledChange(e.target.checked);
                   if (e.target.checked) {
                     setIsExpanded(true);
                   }
@@ -198,7 +254,7 @@ export const RecurrenceSettings = ({
                 <button
                   key={f}
                   type="button"
-                  onClick={() => setFrequency(f)}
+                  onClick={() => handleFrequencyChange(f)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm transition-all",
                     frequency === f
@@ -223,7 +279,7 @@ export const RecurrenceSettings = ({
                 min={1}
                 max={99}
                 value={interval}
-                onChange={(e) => setInterval(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+                onChange={(e) => handleIntervalChange(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
                 className={cn(
                   "w-20 px-3 py-2 rounded-lg border border-stone-200 bg-white",
                   "text-stone-800 text-center",
@@ -272,7 +328,7 @@ export const RecurrenceSettings = ({
                   min={1}
                   max={31}
                   value={dayOfMonth}
-                  onChange={(e) => setDayOfMonth(Math.max(1, Math.min(31, parseInt(e.target.value) || 1)))}
+                  onChange={(e) => handleDayOfMonthChange(Math.max(1, Math.min(31, parseInt(e.target.value) || 1)))}
                   className={cn(
                     "w-20 px-3 py-2 rounded-lg border border-stone-200 bg-white",
                     "text-stone-800 text-center",
@@ -305,7 +361,7 @@ export const RecurrenceSettings = ({
                     name="endType"
                     value={type}
                     checked={endType === type}
-                    onChange={() => setEndType(type)}
+                    onChange={() => handleEndTypeChange(type)}
                     className="text-accent focus:ring-accent/30"
                   />
                   <span className="text-stone-700">{END_TYPE_LABELS[type]}</span>
@@ -314,7 +370,7 @@ export const RecurrenceSettings = ({
                     <input
                       type="date"
                       value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      onChange={(e) => handleEndDateChange(e.target.value)}
                       min={formatDate(new Date(), "yyyy-MM-dd")}
                       className={cn(
                         "ml-auto px-3 py-1.5 rounded-lg border border-stone-200 bg-white",
@@ -331,7 +387,7 @@ export const RecurrenceSettings = ({
                         min={1}
                         max={999}
                         value={endCount}
-                        onChange={(e) => setEndCount(Math.max(1, Math.min(999, parseInt(e.target.value) || 1)))}
+                        onChange={(e) => handleEndCountChange(Math.max(1, Math.min(999, parseInt(e.target.value) || 1)))}
                         className={cn(
                           "w-16 px-2 py-1.5 rounded-lg border border-stone-200 bg-white",
                           "text-stone-800 text-sm text-center",
