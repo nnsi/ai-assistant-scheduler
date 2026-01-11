@@ -230,6 +230,7 @@ export const ScheduleForm = ({
             <button
               type="button"
               onClick={() => setCategoryId(undefined)}
+              aria-pressed={categoryId === undefined}
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm transition-all",
                 categoryId === undefined
@@ -244,6 +245,7 @@ export const ScheduleForm = ({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategoryId(cat.id)}
+                aria-pressed={categoryId === cat.id}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
                   categoryId === cat.id

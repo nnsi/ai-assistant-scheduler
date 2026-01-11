@@ -322,3 +322,338 @@ test.describe("Schedule CRUD Operations", () => {
     await expect(page.getByLabel("終了時間")).toHaveValue("11:00");
   });
 });
+
+/**
+ * カテゴリ付きスケジュール編集のE2Eテスト
+ * 編集モーダルを開いた時にカテゴリが正しく選択されていることを検証
+ */
+test.describe("Schedule Edit with Category", () => {
+  const today = new Date();
+  const scheduleDate = new Date(today.getFullYear(), today.getMonth(), 15);
+  const scheduleDateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, "0")}-15`;
+
+  // カテゴリ付きスケジュールのモック
+  const mockScheduleWithCategory = {
+    id: "schedule-with-category",
+    title: "カテゴリ付き予定",
+    startAt: `${scheduleDateStr}T14:00:00+09:00`,
+    endAt: `${scheduleDateStr}T15:00:00+09:00`,
+    isAllDay: false,
+    categoryId: "category-1", // 「仕事」カテゴリ
+    category: {
+      id: "category-1",
+      name: "仕事",
+      color: "#3B82F6",
+      createdAt: `${scheduleDateStr}T00:00:00+09:00`,
+      updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
+    },
+    createdAt: `${scheduleDateStr}T00:00:00+09:00`,
+    updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
+  };
+
+  const mockCategories = [
+    {
+      id: "category-1",
+      name: "仕事",
+      color: "#3B82F6",
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+    },
+    {
+      id: "category-2",
+      name: "プライベート",
+      color: "#10B981",
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    // 認証状態を設定
+    await page.addInitScript(
+      ({ tokenKey, token }) => {
+        localStorage.setItem(tokenKey, token);
+        localStorage.setItem("auth_refresh_token", "test-refresh-token");
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify({
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+          })
+        );
+      },
+      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
+    );
+
+    // 認証APIモック
+    await page.route("**/api/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
+      });
+    });
+
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "test-user-id",
+            email: "test@example.com",
+            name: "Test User",
+            picture: null,
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z",
+          },
+        }),
+      });
+    });
+
+    // スケジュール詳細取得のモック（カテゴリ付き）
+    await page.route("**/api/schedules/*", async (route, request) => {
+      const method = request.method();
+      if (method === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...mockScheduleWithCategory,
+            supplement: {
+              id: "supplement-1",
+              keywords: [],
+              aiResult: null,
+              shopCandidates: null,
+              selectedShops: null,
+              userMemo: null,
+            },
+          }),
+        });
+      } else if (method === "PUT") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockScheduleWithCategory),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // スケジュール一覧のモック
+    await page.route("**/api/schedules?*", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/schedules", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // カテゴリAPIモック
+    await page.route("**/api/categories", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockCategories),
+      });
+    });
+
+    // カレンダーAPIモック
+    await page.route("**/api/calendars", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "default-calendar-id",
+            name: "マイカレンダー",
+            color: "#3B82F6",
+            role: "owner",
+            memberCount: 1,
+            owner: { id: "test-user-id", name: "Test User", picture: null },
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z",
+          },
+        ]),
+      });
+    });
+
+    // 繰り返しルールAPIモック
+    await page.route("**/api/recurrence/*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(null),
+      });
+    });
+
+    await page.route("**/api/profile/conditions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          profile: {
+            dietaryRestrictions: [],
+            foodAllergies: [],
+            cuisinePreferences: [],
+            budgetRange: null,
+            transportModes: [],
+          },
+        }),
+      });
+    });
+
+    await page.goto("/");
+  });
+
+  test("should have category selected when editing a schedule with category", async ({ page }) => {
+    // スケジュールが表示されるのを待つ
+    await expect(page.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
+
+    // スケジュールをクリックして詳細を開く
+    await page.getByText("カテゴリ付き予定").click();
+
+    // 詳細モーダルが開くこと
+    const detailModal = page.getByRole("dialog");
+    await expect(detailModal).toBeVisible();
+
+    // ローディングが完了するのを待つ
+    await expect(detailModal.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
+
+    // 編集ボタンをクリック
+    await detailModal.getByRole("button", { name: "編集" }).last().click();
+
+    // 編集モーダルが開くこと
+    const editModal = page.getByRole("dialog", { name: "予定を編集" });
+    await expect(editModal).toBeVisible();
+
+    // カテゴリボタンが表示されるのを待つ
+    await expect(editModal.getByRole("button", { name: "仕事" })).toBeVisible({ timeout: 5000 });
+
+    // 「仕事」カテゴリが選択状態（aria-pressed="true"）であること
+    const workCategoryButton = editModal.getByRole("button", { name: "仕事" });
+    await expect(workCategoryButton).toHaveAttribute("aria-pressed", "true");
+
+    // 「プライベート」カテゴリは非選択状態であること
+    const privateCategoryButton = editModal.getByRole("button", { name: "プライベート" });
+    await expect(privateCategoryButton).toHaveAttribute("aria-pressed", "false");
+
+    // 「なし」ボタンは非選択状態であること
+    const noCategoryButton = editModal.getByRole("button", { name: "なし" });
+    await expect(noCategoryButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("should have no category selected when editing a schedule without category", async ({ page }) => {
+    // カテゴリなしスケジュールのモックを上書き
+    const mockScheduleWithoutCategory = {
+      id: "schedule-without-category",
+      title: "カテゴリなし予定",
+      startAt: `${scheduleDateStr}T14:00:00+09:00`,
+      endAt: null,
+      isAllDay: false,
+      categoryId: null,
+      category: null,
+      createdAt: `${scheduleDateStr}T00:00:00+09:00`,
+      updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
+    };
+
+    // モックを上書き
+    await page.route("**/api/schedules/*", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...mockScheduleWithoutCategory,
+            supplement: {
+              id: "supplement-1",
+              keywords: [],
+              aiResult: null,
+              shopCandidates: null,
+              selectedShops: null,
+              userMemo: null,
+            },
+          }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/schedules?*", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithoutCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.route("**/api/schedules", async (route, request) => {
+      if (request.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([mockScheduleWithoutCategory]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // ページをリロードしてモックを適用
+    await page.reload();
+
+    // スケジュールが表示されるのを待つ
+    await expect(page.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+
+    // スケジュールをクリックして詳細を開く
+    await page.getByText("カテゴリなし予定").click();
+
+    // 詳細モーダルが開くこと
+    const detailModal = page.getByRole("dialog");
+    await expect(detailModal).toBeVisible();
+
+    // ローディングが完了するのを待つ
+    await expect(detailModal.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+
+    // 編集ボタンをクリック
+    await detailModal.getByRole("button", { name: "編集" }).last().click();
+
+    // 編集モーダルが開くこと
+    const editModal = page.getByRole("dialog", { name: "予定を編集" });
+    await expect(editModal).toBeVisible();
+
+    // カテゴリボタンが表示されるのを待つ
+    await expect(editModal.getByRole("button", { name: "なし" })).toBeVisible({ timeout: 5000 });
+
+    // 「なし」ボタンが選択状態であること
+    const noCategoryButton = editModal.getByRole("button", { name: "なし" });
+    await expect(noCategoryButton).toHaveAttribute("aria-pressed", "true");
+
+    // 他のカテゴリは非選択状態であること
+    const workCategoryButton = editModal.getByRole("button", { name: "仕事" });
+    await expect(workCategoryButton).toHaveAttribute("aria-pressed", "false");
+  });
+});
