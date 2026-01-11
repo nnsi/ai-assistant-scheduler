@@ -31,7 +31,7 @@ export default defineConfig({
   workers: 1,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://127.0.0.1:5174",
     trace: "on-first-retry",
     timezoneId: "Asia/Tokyo",
   },
@@ -54,9 +54,22 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      // E2E用Node.jsサーバー（オンメモリSQLite）
+      command: "pnpm run e2e:server",
+      cwd: "../backend",
+      url: "http://127.0.0.1:8788/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+    {
+      command: "pnpm exec vite --port 5174 --host 127.0.0.1",
+      url: "http://127.0.0.1:5174",
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_API_URL: "http://127.0.0.1:8788/api",
+      },
+    },
+  ],
 });

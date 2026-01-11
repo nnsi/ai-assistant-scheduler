@@ -1,100 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
+import { loginWithDevAuth, cleanupTestData } from "./test-constants";
 
+/**
+ * スケジュール管理の基本操作E2Eテスト
+ * 実APIを使用
+ */
 test.describe("Schedule Management", () => {
   test.beforeEach(async ({ page }) => {
-    // 認証状態を設定
-    await page.addInitScript(
-      ({ tokenKey, token }) => {
-        localStorage.setItem(tokenKey, token);
-        localStorage.setItem("auth_refresh_token", "test-refresh-token");
-        localStorage.setItem(
-          "auth_user",
-          JSON.stringify({
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-          })
-        );
-      },
-      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
-    );
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
+    // dev-loginでログイン
+    await loginWithDevAuth(page);
+  });
 
-    // APIモックを設定
-    await page.route("**/api/auth/refresh", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
-      });
-    });
-
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          user: {
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-            picture: null,
-            createdAt: "2025-01-01T00:00:00Z",
-            updatedAt: "2025-01-01T00:00:00Z",
-          },
-        }),
-      });
-    });
-
-    await page.route("**/api/schedules*", async (route, request) => {
-      const method = request.method();
-      if (method === "GET") {
-        // スケジュール一覧は配列を直接返す
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([]),
-        });
-      } else if (method === "POST") {
-        // スケジュール作成は作成されたスケジュールを直接返す
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            id: "new-schedule-1",
-            title: "新しい予定",
-            startAt: "2025-01-15T10:00:00+09:00",
-            endAt: "2025-01-15T11:00:00+09:00",
-            isAllDay: false,
-            createdAt: "2025-01-01T00:00:00Z",
-            updatedAt: "2025-01-01T00:00:00Z",
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/ai/suggest-keywords", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ keywords: ["キーワード1", "キーワード2", "キーワード3"] }),
-      });
-    });
-
-    await page.route("**/api/profile/conditions", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
-      });
-    });
-
-    // カレンダーとカテゴリのモックを設定
-    await setupCalendarMocks(page);
-
-    await page.goto("/");
+  test.afterEach(async ({ page }) => {
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
   });
 
   test("should display calendar with current month", async ({ page }) => {
@@ -152,7 +73,7 @@ test.describe("Schedule Management", () => {
     // フォームに入力
     await page.getByLabel("タイトル").fill("E2Eテストの予定");
 
-    // AIで補完ボタンが表示されていること（APIモックが必要なため、この段階ではフォーム入力まで確認）
+    // AIで補完ボタンが表示されていること
     const submitButton = page.getByRole("button", { name: "AIで補完" });
     await expect(submitButton).toBeVisible();
   });

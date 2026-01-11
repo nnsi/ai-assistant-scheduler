@@ -16,7 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply ai-scheduler-db --local",
-    "db:migrate:prod": "wrangler d1 migrations apply ai-scheduler-db"
+    "db:migrate:prod": "wrangler d1 migrations apply ai-scheduler-db",
+    "e2e:server": "tsx src/test/e2e-server.ts"
   },
   "dependencies": {
     "@ai-scheduler/shared": "workspace:*",
@@ -30,10 +31,12 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.11.1",
     "@cloudflare/workers-types": "^4.20241230.0",
+    "@hono/node-server": "^1.13.8",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.5.0",
     "drizzle-kit": "^0.30.1",
     "drizzle-orm": "^0.38.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "wrangler": "^3.99.0"

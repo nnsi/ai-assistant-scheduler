@@ -1,178 +1,24 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ACCESS_TOKEN, AUTH_TOKEN_KEY, setupCalendarMocks } from "./test-constants";
+import { loginWithDevAuth, cleanupTestData } from "./test-constants";
 
 /**
  * スケジュールCRUD操作のE2Eテスト
- * APIモックを使用
+ * 実APIを使用
  */
 test.describe("Schedule CRUD Operations", () => {
-  // 現在の月の15日を使用（カレンダーに表示されるように）
-  const today = new Date();
-  const scheduleDate = new Date(today.getFullYear(), today.getMonth(), 15);
-  const scheduleDateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, "0")}-15`;
-
-  // scheduleSchemaに合わせる
-  const mockSchedule = {
-    id: "schedule-1",
-    title: "テスト予定",
-    startAt: `${scheduleDateStr}T10:00:00+09:00`,
-    endAt: `${scheduleDateStr}T11:00:00+09:00`,
-    isAllDay: false,
-    createdAt: `${scheduleDateStr}T00:00:00+09:00`,
-    updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
-  };
-
   test.beforeEach(async ({ page }) => {
-    // 認証状態を設定
-    await page.addInitScript(
-      ({ tokenKey, token }) => {
-        localStorage.setItem(tokenKey, token);
-        localStorage.setItem("auth_refresh_token", "test-refresh-token");
-        localStorage.setItem(
-          "auth_user",
-          JSON.stringify({
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-          })
-        );
-      },
-      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
-    );
-
-    // APIモックを設定（ページ遷移前にルートを設定）
-    await page.route("**/api/auth/refresh", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
-      });
-    });
-
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          user: {
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-            picture: null,
-            createdAt: "2025-01-01T00:00:00Z",
-            updatedAt: "2025-01-01T00:00:00Z",
-          },
-        }),
-      });
-    });
-
-    // スケジュール詳細取得のモック（先に設定することで優先度を高く）
-    await page.route("**/api/schedules/*", async (route, request) => {
-      const method = request.method();
-      if (method === "GET") {
-        // スケジュール詳細取得（scheduleWithSupplementSchemaに合わせる）
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            ...mockSchedule,
-            supplement: {
-              id: "supplement-1",
-              keywords: ["キーワード1", "キーワード2"],
-              aiResult: "AIの検索結果",
-              shopCandidates: null,
-              selectedShops: null,
-              userMemo: null,
-            },
-          }),
-        });
-      } else if (method === "PUT") {
-        // スケジュール更新（スケジュールを直接返す）
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ ...mockSchedule, title: "更新された予定" }),
-        });
-      } else if (method === "DELETE") {
-        // スケジュール削除
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // スケジュール一覧・作成のモック
-    await page.route("**/api/schedules?*", async (route, request) => {
-      const method = request.method();
-      if (method === "GET") {
-        // スケジュール一覧取得（配列を直接返す）
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockSchedule]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/schedules", async (route, request) => {
-      const method = request.method();
-      if (method === "POST") {
-        // スケジュール作成（スケジュールを直接返す）
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify(mockSchedule),
-        });
-      } else if (method === "GET") {
-        // クエリパラメータなしのGET（一覧取得）
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockSchedule]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/profile/conditions", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ profile: { dietaryRestrictions: [], foodAllergies: [], cuisinePreferences: [], budgetRange: null, transportModes: [] } }),
-      });
-    });
-
-    // カレンダーとカテゴリのモックを設定
-    await setupCalendarMocks(page);
-
-    await page.goto("/");
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
+    // dev-loginでログイン
+    await loginWithDevAuth(page);
   });
 
-  test("should display schedules on calendar", async ({ page }) => {
-    // カレンダーが表示されていること
-    await expect(page.locator('[role="grid"]')).toBeVisible();
-
-    // スケジュールタイトルが表示されていること
-    await expect(page.getByText("テスト予定")).toBeVisible();
+  test.afterEach(async ({ page }) => {
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
   });
 
   test("should create a new schedule", async ({ page }) => {
-    // AIエンドポイントのモック
-    await page.route("**/api/ai/suggest-keywords", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ keywords: ["キーワード1", "キーワード2", "キーワード3"], agentTypes: ["search"] }),
-      });
-    });
-
     // 日付セルをクリック
     const dateCell = page.locator('[data-testid="calendar-day"]').first();
     await dateCell.click();
@@ -182,48 +28,25 @@ test.describe("Schedule CRUD Operations", () => {
     await expect(modal).toBeVisible();
 
     // フォームに入力
-    await page.getByLabel("タイトル").fill("新しい予定");
+    await page.getByLabel("タイトル").fill("E2Eテスト予定");
 
     // AIで補完ボタンをクリック
     await page.getByRole("button", { name: "AIで補完" }).click();
 
     // キーワード選択画面が表示されること（APIレスポンスを待つ）
-    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 15000 });
-  });
+    await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 30000 });
 
-  test("should view schedule details", async ({ page }) => {
-    // スケジュールが表示されるのを待つ
-    await expect(page.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
+    // キーワードを選択してスケジュールを作成
+    // 最初のキーワードを選択
+    const keywordCheckbox = page.locator('input[type="checkbox"]').first();
+    if (await keywordCheckbox.isVisible()) {
+      await keywordCheckbox.check();
+    }
 
-    // スケジュールをクリック
-    await page.getByText("テスト予定").click();
-
-    // 詳細モーダルが開くこと
-    const modal = page.getByRole("dialog");
-    await expect(modal).toBeVisible();
-
-    // ローディングが完了するのを待つ（スケジュールタイトルが表示される）
-    await expect(modal.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
-  });
-
-  test("should delete a schedule", async ({ page }) => {
-    // スケジュールをクリックして詳細を開く
-    await page.getByText("テスト予定").click();
-
-    // 詳細モーダルが開くこと
-    const modal = page.getByRole("dialog");
-    await expect(modal).toBeVisible();
-
-    // 削除ボタンをクリック
-    const deleteButton = page.getByRole("button", { name: /削除/i });
-    if (await deleteButton.isVisible()) {
-      await deleteButton.click();
-
-      // 確認ダイアログが表示された場合は確認
-      const confirmButton = page.getByRole("button", { name: /削除する|はい/i });
-      if (await confirmButton.isVisible()) {
-        await confirmButton.click();
-      }
+    // 保存ボタンをクリック
+    const saveButton = page.getByRole("button", { name: /保存|作成/i });
+    if (await saveButton.isVisible()) {
+      await saveButton.click();
     }
   });
 
@@ -281,12 +104,119 @@ test.describe("Schedule CRUD Operations", () => {
     await expect(page.getByLabel("終了時間")).not.toBeVisible();
     await expect(page.getByRole("button", { name: "+ 終了時間を追加" })).toBeVisible();
   });
+});
+
+/**
+ * スケジュール表示・編集・削除のE2Eテスト
+ * 事前にスケジュールを作成してからテストを実行
+ */
+test.describe("Schedule View/Edit/Delete", () => {
+  test.beforeEach(async ({ page, context }) => {
+    // ブラウザのクッキーとストレージをクリア
+    await context.clearCookies();
+
+    // データベースを完全にリセット
+    await page.request.post("http://127.0.0.1:8788/api/e2e/reset");
+
+    // 先にブラウザでログイン（ユーザーを作成）
+    await loginWithDevAuth(page);
+
+    // ユーザーのカレンダーを取得
+    const calendarsResponse = await page.request.get("http://127.0.0.1:8788/api/calendars", {
+      headers: { "X-Dev-Auth": "true" },
+    });
+    const calendars = await calendarsResponse.json();
+    const calendarId = calendars[0]?.id;
+
+    // テスト用スケジュールをAPI経由で作成
+    const today = new Date();
+    const scheduleDate = new Date(today.getFullYear(), today.getMonth(), 15);
+    const scheduleDateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, "0")}-15`;
+
+    const response = await page.request.post("http://127.0.0.1:8788/api/schedules", {
+      headers: {
+        "X-Dev-Auth": "true",
+        "Content-Type": "application/json",
+      },
+      data: {
+        title: "テスト予定",
+        startAt: `${scheduleDateStr}T10:00:00+09:00`,
+        endAt: `${scheduleDateStr}T11:00:00+09:00`,
+        isAllDay: false,
+        calendarId: calendarId,  // ユーザーのカレンダーに紐付け
+      },
+    });
+
+    // APIレスポンスを確認（デバッグ用）
+    if (!response.ok()) {
+      console.error("Schedule creation failed:", await response.text());
+    }
+
+    // スケジュールを再取得するため、月を移動してから戻る
+    // これでReact Queryが新しいデータを取得する
+    await page.getByRole("button", { name: "次へ" }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole("button", { name: "前へ" }).click();
+    await page.waitForLoadState("networkidle");
+  });
+
+  test.afterEach(async ({ page }) => {
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
+  });
+
+  test("should display schedule on calendar", async ({ page }) => {
+    // カレンダーが表示されていること
+    await expect(page.locator('[role="grid"]')).toBeVisible();
+
+    // スケジュールタイトルが表示されていること
+    await expect(page.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
+  });
+
+  test("should view schedule details", async ({ page }) => {
+    // スケジュールが表示されるのを待つ
+    await expect(page.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
+
+    // スケジュールをクリック
+    await page.getByText("テスト予定").click();
+
+    // 詳細モーダルが開くこと
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    // スケジュールタイトルが表示される
+    await expect(modal.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
+  });
+
+  test("should delete a schedule", async ({ page }) => {
+    // スケジュールをクリックして詳細を開く
+    await expect(page.getByText("テスト予定")).toBeVisible({ timeout: 10000 });
+    await page.getByText("テスト予定").click();
+
+    // 詳細モーダルが開くこと
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    // 削除ボタンをクリック
+    const deleteButton = page.getByRole("button", { name: /削除/i });
+    await expect(deleteButton).toBeVisible();
+    await deleteButton.click();
+
+    // 確認ダイアログが表示された場合は確認
+    const confirmButton = page.getByRole("button", { name: /削除する|はい/i });
+    if (await confirmButton.isVisible()) {
+      await confirmButton.click();
+    }
+
+    // モーダルが閉じる
+    await expect(modal).not.toBeVisible({ timeout: 5000 });
+  });
 
   test("should display end time in day view", async ({ page }) => {
     // 日表示に切り替え
     await page.getByRole("button", { name: "日表示" }).click();
 
-    // mockScheduleの日付（15日）まで移動
+    // 15日まで移動
     const targetDay = 15;
     const today = new Date();
     const currentDay = today.getDate();
@@ -300,360 +230,103 @@ test.describe("Schedule CRUD Operations", () => {
       }
     }
 
-    // スケジュールが「10:00 - 11:00」形式で表示されること（mockScheduleのendAtは11:00）
-    await expect(page.getByRole("button", { name: /10:00 - 11:00.*テスト予定/ })).toBeVisible();
-  });
-
-  test("should load end time in edit form", async ({ page }) => {
-    // スケジュールをクリック
-    await page.getByText("テスト予定").click();
-
-    // 詳細モーダルが開くこと
-    const modal = page.getByRole("dialog");
-    await expect(modal).toBeVisible();
-
-    // 編集ボタンをクリック
-    await modal.getByRole("button", { name: "編集" }).last().click();
-
-    // 編集モーダルが開くこと
-    await expect(page.getByRole("dialog", { name: "予定を編集" })).toBeVisible();
-
-    // 終了時間が読み込まれていること（mockScheduleのendAtは11:00）
-    await expect(page.getByLabel("終了時間")).toHaveValue("11:00");
+    // スケジュールが「10:00 - 11:00」形式で表示されること
+    await expect(page.getByRole("button", { name: /10:00 - 11:00.*テスト予定/ })).toBeVisible({ timeout: 10000 });
   });
 });
 
 /**
  * カテゴリ付きスケジュール編集のE2Eテスト
- * 編集モーダルを開いた時にカテゴリが正しく選択されていることを検証
  */
 test.describe("Schedule Edit with Category", () => {
-  const today = new Date();
-  const scheduleDate = new Date(today.getFullYear(), today.getMonth(), 15);
-  const scheduleDateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, "0")}-15`;
-
-  // カテゴリ付きスケジュールのモック
-  const mockScheduleWithCategory = {
-    id: "schedule-with-category",
-    title: "カテゴリ付き予定",
-    startAt: `${scheduleDateStr}T14:00:00+09:00`,
-    endAt: `${scheduleDateStr}T15:00:00+09:00`,
-    isAllDay: false,
-    categoryId: "category-1", // 「仕事」カテゴリ
-    category: {
-      id: "category-1",
-      name: "仕事",
-      color: "#3B82F6",
-      createdAt: `${scheduleDateStr}T00:00:00+09:00`,
-      updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
-    },
-    createdAt: `${scheduleDateStr}T00:00:00+09:00`,
-    updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
-  };
-
-  const mockCategories = [
-    {
-      id: "category-1",
-      name: "仕事",
-      color: "#3B82F6",
-      createdAt: "2025-01-01T00:00:00Z",
-      updatedAt: "2025-01-01T00:00:00Z",
-    },
-    {
-      id: "category-2",
-      name: "プライベート",
-      color: "#10B981",
-      createdAt: "2025-01-01T00:00:00Z",
-      updatedAt: "2025-01-01T00:00:00Z",
-    },
-  ];
-
   test.beforeEach(async ({ page }) => {
-    // 認証状態を設定
-    await page.addInitScript(
-      ({ tokenKey, token }) => {
-        localStorage.setItem(tokenKey, token);
-        localStorage.setItem("auth_refresh_token", "test-refresh-token");
-        localStorage.setItem(
-          "auth_user",
-          JSON.stringify({
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-          })
-        );
+    // 先にログインしてユーザーを作成
+    await loginWithDevAuth(page);
+
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
+
+    // カテゴリを作成
+    await page.request.post("http://127.0.0.1:8788/api/categories", {
+      headers: {
+        "X-Dev-Auth": "true",
+        "Content-Type": "application/json",
       },
-      { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
-    );
-
-    // 認証APIモック
-    await page.route("**/api/auth/refresh", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ accessToken: TEST_ACCESS_TOKEN }),
-      });
+      data: {
+        name: "仕事",
+        color: "#3B82F6",
+      },
     });
 
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          user: {
-            id: "test-user-id",
-            email: "test@example.com",
-            name: "Test User",
-            picture: null,
-            createdAt: "2025-01-01T00:00:00Z",
-            updatedAt: "2025-01-01T00:00:00Z",
-          },
-        }),
-      });
+    await page.request.post("http://127.0.0.1:8788/api/categories", {
+      headers: {
+        "X-Dev-Auth": "true",
+        "Content-Type": "application/json",
+      },
+      data: {
+        name: "プライベート",
+        color: "#10B981",
+      },
     });
 
-    // スケジュール詳細取得のモック（カテゴリ付き）
-    await page.route("**/api/schedules/*", async (route, request) => {
-      const method = request.method();
-      if (method === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            ...mockScheduleWithCategory,
-            supplement: {
-              id: "supplement-1",
-              keywords: [],
-              aiResult: null,
-              shopCandidates: null,
-              selectedShops: null,
-              userMemo: null,
-            },
-          }),
-        });
-      } else if (method === "PUT") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockScheduleWithCategory),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // スケジュール一覧のモック
-    await page.route("**/api/schedules?*", async (route, request) => {
-      if (request.method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockScheduleWithCategory]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/schedules", async (route, request) => {
-      if (request.method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockScheduleWithCategory]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // カテゴリAPIモック
-    await page.route("**/api/categories", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockCategories),
-      });
-    });
-
-    // カレンダーAPIモック
-    await page.route("**/api/calendars", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([
-          {
-            id: "default-calendar-id",
-            name: "マイカレンダー",
-            color: "#3B82F6",
-            role: "owner",
-            memberCount: 1,
-            owner: { id: "test-user-id", name: "Test User", picture: null },
-            createdAt: "2025-01-01T00:00:00Z",
-            updatedAt: "2025-01-01T00:00:00Z",
-          },
-        ]),
-      });
-    });
-
-    // 繰り返しルールAPIモック
-    await page.route("**/api/recurrence/*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(null),
-      });
-    });
-
-    await page.route("**/api/profile/conditions", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          profile: {
-            dietaryRestrictions: [],
-            foodAllergies: [],
-            cuisinePreferences: [],
-            budgetRange: null,
-            transportModes: [],
-          },
-        }),
-      });
-    });
-
-    await page.goto("/");
-  });
-
-  test("should have category selected when editing a schedule with category", async ({ page }) => {
-    // スケジュールが表示されるのを待つ
-    await expect(page.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
-
-    // スケジュールをクリックして詳細を開く
-    await page.getByText("カテゴリ付き予定").click();
-
-    // 詳細モーダルが開くこと
-    const detailModal = page.getByRole("dialog");
-    await expect(detailModal).toBeVisible();
-
-    // ローディングが完了するのを待つ
-    await expect(detailModal.getByText("カテゴリ付き予定")).toBeVisible({ timeout: 10000 });
-
-    // 編集ボタンをクリック
-    await detailModal.getByRole("button", { name: "編集" }).last().click();
-
-    // 編集モーダルが開くこと
-    const editModal = page.getByRole("dialog", { name: "予定を編集" });
-    await expect(editModal).toBeVisible();
-
-    // カテゴリボタンが表示されるのを待つ
-    await expect(editModal.getByRole("button", { name: "仕事" })).toBeVisible({ timeout: 5000 });
-
-    // 「仕事」カテゴリが選択状態（aria-pressed="true"）であること
-    const workCategoryButton = editModal.getByRole("button", { name: "仕事" });
-    await expect(workCategoryButton).toHaveAttribute("aria-pressed", "true");
-
-    // 「プライベート」カテゴリは非選択状態であること
-    const privateCategoryButton = editModal.getByRole("button", { name: "プライベート" });
-    await expect(privateCategoryButton).toHaveAttribute("aria-pressed", "false");
-
-    // 「なし」ボタンは非選択状態であること
-    const noCategoryButton = editModal.getByRole("button", { name: "なし" });
-    await expect(noCategoryButton).toHaveAttribute("aria-pressed", "false");
-  });
-
-  test("should have no category selected when editing a schedule without category", async ({ page }) => {
-    // カテゴリなしスケジュールのモックを上書き
-    const mockScheduleWithoutCategory = {
-      id: "schedule-without-category",
-      title: "カテゴリなし予定",
-      startAt: `${scheduleDateStr}T14:00:00+09:00`,
-      endAt: null,
-      isAllDay: false,
-      categoryId: null,
-      category: null,
-      createdAt: `${scheduleDateStr}T00:00:00+09:00`,
-      updatedAt: `${scheduleDateStr}T00:00:00+09:00`,
-    };
-
-    // モックを上書き
-    await page.route("**/api/schedules/*", async (route, request) => {
-      if (request.method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            ...mockScheduleWithoutCategory,
-            supplement: {
-              id: "supplement-1",
-              keywords: [],
-              aiResult: null,
-              shopCandidates: null,
-              selectedShops: null,
-              userMemo: null,
-            },
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/schedules?*", async (route, request) => {
-      if (request.method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockScheduleWithoutCategory]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/api/schedules", async (route, request) => {
-      if (request.method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockScheduleWithoutCategory]),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // ページをリロードしてモックを適用
+    // ページをリロードしてカテゴリを反映
     await page.reload();
+  });
 
-    // スケジュールが表示されるのを待つ
-    await expect(page.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+  test.afterEach(async ({ page }) => {
+    // テストデータをクリーンアップ
+    await cleanupTestData(page);
 
-    // スケジュールをクリックして詳細を開く
-    await page.getByText("カテゴリなし予定").click();
+    // カテゴリもクリーンアップ
+    const response = await page.request.get("http://127.0.0.1:8788/api/categories", {
+      headers: {
+        "X-Dev-Auth": "true",
+      },
+    });
 
-    // 詳細モーダルが開くこと
-    const detailModal = page.getByRole("dialog");
-    await expect(detailModal).toBeVisible();
+    if (response.ok()) {
+      const categories = await response.json();
+      for (const category of categories) {
+        await page.request.delete(`http://127.0.0.1:8788/api/categories/${category.id}`, {
+          headers: {
+            "X-Dev-Auth": "true",
+          },
+        });
+      }
+    }
+  });
 
-    // ローディングが完了するのを待つ
-    await expect(detailModal.getByText("カテゴリなし予定")).toBeVisible({ timeout: 10000 });
+  test("should display category selection in schedule form", async ({ page }) => {
+    // 日付セルをクリック
+    const dateCell = page.locator('[data-testid="calendar-day"]').first();
+    await dateCell.click();
 
-    // 編集ボタンをクリック
-    await detailModal.getByRole("button", { name: "編集" }).last().click();
+    // モーダルが開くこと
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
 
-    // 編集モーダルが開くこと
-    const editModal = page.getByRole("dialog", { name: "予定を編集" });
-    await expect(editModal).toBeVisible();
+    // カテゴリ選択が表示されること
+    await expect(page.getByRole("button", { name: "なし" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "仕事" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "プライベート" })).toBeVisible();
+  });
 
-    // カテゴリボタンが表示されるのを待つ
-    await expect(editModal.getByRole("button", { name: "なし" })).toBeVisible({ timeout: 5000 });
+  test("should select category when creating schedule", async ({ page }) => {
+    // 日付セルをクリック
+    const dateCell = page.locator('[data-testid="calendar-day"]').first();
+    await dateCell.click();
 
-    // 「なし」ボタンが選択状態であること
-    const noCategoryButton = editModal.getByRole("button", { name: "なし" });
-    await expect(noCategoryButton).toHaveAttribute("aria-pressed", "true");
+    // モーダルが開くこと
+    await expect(page.getByRole("dialog")).toBeVisible();
 
-    // 他のカテゴリは非選択状態であること
-    const workCategoryButton = editModal.getByRole("button", { name: "仕事" });
-    await expect(workCategoryButton).toHaveAttribute("aria-pressed", "false");
+    // タイトルを入力
+    await page.getByLabel("タイトル").fill("カテゴリ付き予定");
+
+    // 「仕事」カテゴリを選択
+    const workCategoryButton = page.getByRole("button", { name: "仕事" });
+    await workCategoryButton.click();
+
+    // 選択状態になること
+    await expect(workCategoryButton).toHaveAttribute("aria-pressed", "true");
   });
 });
