@@ -30,7 +30,22 @@ export const mockCalendars = [
   },
 ];
 
-export const mockCategories: { id: string; name: string; color: string }[] = [];
+export const mockCategories = [
+  {
+    id: "category-1",
+    name: "仕事",
+    color: "#3B82F6",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "category-2",
+    name: "プライベート",
+    color: "#10B981",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+];
 
 /**
  * テスト用の認証状態をセットアップ

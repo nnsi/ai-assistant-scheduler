@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { createScheduleInputSchema, updateScheduleInputSchema, type Category, type CreateRecurrenceRuleInput, type CalendarResponse } from "@ai-scheduler/shared";
 import { Button } from "@/components/common/Button";
 import { RecurrenceSettings } from "@/components/Recurrence";
@@ -83,6 +83,18 @@ export const ScheduleForm = ({
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
   const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
+  const initialCategoryIdRef = useRef(initialValues?.categoryId);
+
+  // initialValues.categoryIdが変更された場合、stateを同期
+  // （コンポーネントがkeyで再マウントされない場合のフォールバック）
+  useEffect(() => {
+    const newCategoryId = initialValues?.categoryId ?? undefined;
+    if (initialCategoryIdRef.current !== initialValues?.categoryId) {
+      initialCategoryIdRef.current = initialValues?.categoryId;
+      setCategoryId(newCategoryId);
+    }
+  }, [initialValues?.categoryId]);
+
   const [calendarId, setCalendarId] = useState<string | undefined>(
     initialValues?.calendarId ?? defaultCalendarId ?? undefined
   );
@@ -218,6 +230,7 @@ export const ScheduleForm = ({
             <button
               type="button"
               onClick={() => setCategoryId(undefined)}
+              aria-pressed={categoryId === undefined}
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm transition-all",
                 categoryId === undefined
@@ -232,6 +245,7 @@ export const ScheduleForm = ({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategoryId(cat.id)}
+                aria-pressed={categoryId === cat.id}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
                   categoryId === cat.id

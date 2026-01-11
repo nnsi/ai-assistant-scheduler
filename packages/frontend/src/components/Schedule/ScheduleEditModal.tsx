@@ -88,6 +88,7 @@ export const ScheduleEditModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="予定を編集">
       <ScheduleForm
+        key={schedule.id}
         initialValues={{
           title: schedule.title,
           startAt: schedule.startAt,

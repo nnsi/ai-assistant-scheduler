@@ -25,21 +25,32 @@ const chromiumPath = findChromiumPath();
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: "html",
   use: {
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",
+    timezoneId: "Asia/Tokyo",
   },
   projects: [
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}),
+        launchOptions: {
+          ...(chromiumPath ? { executablePath: chromiumPath } : {}),
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-software-rasterizer",
+            "--no-zygote",
+          ],
+        },
       },
     },
   ],
