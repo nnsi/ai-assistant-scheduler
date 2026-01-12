@@ -28,28 +28,11 @@ SessionStartフックが非同期モードで実行されます。セッショ�
 
 ## Skills
 
-フロントエンド/バックエンド開発時は対応するSKILLを参照する：
+開発時は対応するSKILLを参照する：
 
 - `/frontend-dev` - フロントエンド開発ガイド（core/frontendパッケージ構造、React Tips、テスト）
-- `/new-api` - 新規APIエンドポイント追加ガイド
-
-## 日時の扱い
-
-- `toISOString()`はUTC変換されるため、ローカル日付が必要な場面では使わない
-- 日付文字列が必要な場合は`date-fns`の`format(date, "yyyy-MM-dd")`を使う
-- Zodの`datetime()`はデフォルトでUTCのみ。JSTを受け付けるなら`{ offset: true }`が必要
-
-## 型安全性
-
-- `as`による型アサーションは使わない
-- APIレスポンスはZodスキーマで`safeParse`してから使う
-- sharedパッケージにスキーマがあるならそれを再利用する
-
-## 認証機能を追加するとき
-
-- CORSの`allowHeaders`に`Authorization`を追加したか確認
-- 既存のリソース系テーブルに`user_id`が必要か検討
-- 既存テストへの影響範囲を`grep`で事前調査
+- `/backend-dev` - バックエンドAPI開発ガイド（アーキテクチャ、新規/既存API開発、テスト、デバッグ）
+- `/browser-test` - ブラウザで動作確認（Playwrightでページ表示・操作をテスト）
 
 ## サブエージェント・Codexの結果
 
@@ -65,35 +48,6 @@ SessionStartフックが非同期モードで実行されます。セッショ�
 - 問題が出たら「このルールを足そう」ではなく「何を達成したいか」から考え直す
 - 曖昧なケースの処理方針を決める（例：「不明なら除外」）
 - 出力フォーマットを目的に合わせて設計する
-
-## テストDBスキーマの同期
-
-**本番スキーマを変更したら、必ず `test/helpers.ts` の `createTestDb` も更新する。**
-
-これは繰り返し発生する問題パターン：
-1. 新しいテーブルやカラムを追加
-2. 本番は動くがテストが落ちる
-3. 原因は `createTestDb` にテーブル/カラムがない
-
-変更するべきファイル：
-- `packages/backend/src/infrastructure/db/schema.ts` → 本番スキーマ
-- `packages/backend/test/helpers.ts` → テスト用スキーマ（同期必須）
-
-## E2Eテストのモック同期
-
-新しいAPIエンドポイントを追加したら：
-1. E2Eテストに対応するモックを追加
-2. Zodスキーマの必須フィールドがモックに全て含まれているか確認
-3. `nullable`と`optional`の違いに注意（`null` vs `undefined`）
-
-※ Playwrightデバッグ方法は `/frontend-dev` SKILLを参照
-
-## Cloudflare Workers固有の制約
-
-- `process`オブジェクトが存在しない（`globalThis`で代替）
-- `better-sqlite3`はテスト用のみ。本番はD1を使用
-- SSEは100秒間イベントなしで524エラー
-- `vitest-pool-workers`はMastraの依存で動かない場合がある
 
 ## CI/CDの重複確認
 
