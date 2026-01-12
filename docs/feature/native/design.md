@@ -9,17 +9,49 @@
 
 ## 1. 技術選定
 
+### バージョン要件（2025年末時点）
+
+| 技術 | バージョン | 備考 |
+|------|-----------|------|
+| **Expo SDK** | 53 | 最新安定版 |
+| **React Native** | 0.79 | SDK 53に同梱 |
+| **React** | 19 | Concurrent Features対応 |
+| **Node.js** | 20以上 | Node 18はEOL（2025/4） |
+| **Hermes** | デフォルト | JavaScriptCoreは非推奨 |
+
+### New Architecture（必須）
+
+SDK 53では**New Architecture**がデフォルトで有効。React Native 0.82でLegacy Architecture完全廃止予定のため、最初から新アーキテクチャで構築する。
+
+| コンポーネント | 説明 |
+|---------------|------|
+| **Fabric** | 新しいレンダリングシステム。同期的なレイアウト計算 |
+| **TurboModules** | 遅延ロード対応のネイティブモジュール |
+| **Bridgeless** | JSI直接通信。ブリッジのオーバーヘッド解消 |
+| **Codegen** | TypeScriptから型安全なネイティブコード生成 |
+
+```json
+// app.json - New Architectureはデフォルト有効
+{
+  "expo": {
+    "newArchEnabled": true
+  }
+}
+```
+
 ### 採用技術
 
 | カテゴリ | 技術 | 理由 |
 |---------|------|------|
-| フレームワーク | React Native + Expo | OTAアップデート、プッシュ通知の容易さ |
-| スタイリング | NativeWind | 既存Tailwindクラスの再利用 |
-| ナビゲーション | React Navigation | RN標準、Deep Linking対応 |
-| 状態管理 | TanStack Query | 既存実装をそのまま流用 |
-| ストレージ | AsyncStorage | localStorage代替 |
+| フレームワーク | React Native 0.79 + Expo SDK 53 | New Architecture標準、OTAアップデート対応 |
+| スタイリング | NativeWind v4 | 既存Tailwindクラスの再利用、CSS変数対応 |
+| ナビゲーション | Expo Router v4 | ファイルベースルーティング、型安全 |
+| 状態管理 | TanStack Query v5 | 既存実装をそのまま流用 |
+| ストレージ | expo-secure-store / AsyncStorage | 機密データ / 一般データで使い分け |
+| Lint/Format | Biome | ESLint+Prettier統合、高速 |
 | プッシュ通知 | Expo Notifications | 無料、実装容易 |
 | OTA | EAS Update | ストア審査なしで更新可能 |
+| JSエンジン | Hermes | デフォルト、高速起動・低メモリ |
 
 ### 比較検討
 
@@ -49,8 +81,8 @@ packages/
 │   ├── components/  # Web専用UIコンポーネント
 │   └── storage.ts   # localStorage実装
 ├── mobile/          # 新規：React Native アプリ
+│   ├── app/         # Expo Router（ファイルベースルーティング）
 │   ├── components/  # RN専用UIコンポーネント
-│   ├── navigation/  # React Navigation設定
 │   └── storage.ts   # AsyncStorage実装
 └── backend/         # 既存（変更なし）
 ```
@@ -85,8 +117,8 @@ packages/
 │ │ Tailwind  │ │                  │ │  NativeWind   │ │
 │ └───────────┘ │                  │ └───────────────┘ │
 │ ┌───────────┐ │                  │ ┌───────────────┐ │
-│ │TanStack   │ │                  │ │React          │ │
-│ │Router     │ │                  │ │Navigation     │ │
+│ │TanStack   │ │                  │ │Expo Router    │ │
+│ │Router     │ │                  │ │(file-based)   │ │
 │ └───────────┘ │                  │ └───────────────┘ │
 └───────────────┘                  └───────────────────┘
 ```
@@ -299,53 +331,130 @@ export const useGoogleAuth = () => {
 
 ---
 
-## 6. ナビゲーション設計
+## 6. ナビゲーション設計（Expo Router）
 
-### 画面構成
+### ディレクトリ構造
+
+Expo Routerはファイルベースルーティングを採用。`app/`配下のファイル構造がそのままルートになる。
 
 ```
-RootNavigator
-├── AuthStack (未認証)
-│   ├── LoginScreen
-│   └── OAuthCallbackScreen
-├── MainStack (認証済み)
-│   ├── MainTabs
-│   │   ├── CalendarTab
-│   │   │   ├── MonthView
-│   │   │   ├── WeekView
-│   │   │   └── DayView
-│   │   ├── SearchTab (AI検索)
-│   │   └── SettingsTab
-│   ├── ScheduleDetailScreen
-│   ├── ScheduleEditScreen
-│   ├── CalendarSettingsScreen
-│   └── MemberManagementScreen
-└── InviteAcceptScreen (Deep Link)
+packages/mobile/app/
+├── _layout.tsx              # RootLayout（Stack + Stack.Protected）
+├── sign-in.tsx              # ログイン画面
+├── (app)/                   # 認証後グループ
+│   ├── _layout.tsx          # 認証チェック + Stack
+│   ├── (tabs)/              # タブナビゲーション
+│   │   ├── _layout.tsx      # Tabs レイアウト
+│   │   ├── index.tsx        # カレンダー（Home）
+│   │   ├── search.tsx       # AI検索
+│   │   └── settings.tsx     # 設定
+│   ├── schedule/
+│   │   ├── [id].tsx         # 詳細（動的ルート）
+│   │   └── edit/[id].tsx    # 編集
+│   └── calendar/
+│       └── [id]/
+│           └── members.tsx  # メンバー管理
+└── invite/
+    └── [token].tsx          # 招待リンク処理（Deep Link）
 ```
 
-### ルート定義
+### RootLayout（認証分岐）
 
 ```typescript
-// packages/mobile/navigation/types.ts
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-  InviteAccept: { token: string };
-};
+// app/_layout.tsx
+import { Stack } from 'expo-router';
+import { useSession } from '@/contexts/session';
 
-export type MainTabParamList = {
-  Calendar: undefined;
-  Search: undefined;
-  Settings: undefined;
-};
+export default function RootLayout() {
+  const { session, isLoading } = useSession();
 
-export type CalendarStackParamList = {
-  CalendarView: { view?: "month" | "week" | "day" };
-  ScheduleDetail: { id: string };
-  ScheduleEdit: { id?: string; date?: string };
-  CalendarSettings: { id: string };
-  MemberManagement: { calendarId: string };
-};
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="sign-in" />
+      </Stack.Protected>
+
+      {/* 招待リンクは認証状態によらずアクセス可能 */}
+      <Stack.Screen name="invite/[token]" />
+    </Stack>
+  );
+}
+```
+
+### タブレイアウト
+
+```typescript
+// app/(app)/(tabs)/_layout.tsx
+import { Tabs } from 'expo-router';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+export default function TabLayout() {
+  return (
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'カレンダー',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="calendar-today" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'AI検索',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="search" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: '設定',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="settings" size={24} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+```
+
+### 動的ルート（パラメータ取得）
+
+```typescript
+// app/(app)/schedule/[id].tsx
+import { useLocalSearchParams } from 'expo-router';
+
+export default function ScheduleDetail() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  // id を使ってスケジュール詳細を取得
+}
+```
+
+### 型安全なナビゲーション
+
+Expo Routerでは型定義は自動生成されるため、手動定義不要。
+`npx expo customize tsconfig.json`で型チェックを有効化。
+
+```typescript
+// 型安全なナビゲーション
+import { router } from 'expo-router';
+
+// OK: パスは自動補完される
+router.push('/schedule/123');
+router.push({ pathname: '/calendar/[id]/members', params: { id: 'abc' } });
 ```
 
 ---
@@ -548,24 +657,32 @@ export const checkForUpdates = async () => {
 
 ### 必要なツール
 
-- Node.js 18+
-- pnpm 8+
+- Node.js 20以上（Node 18はEOL）
+- pnpm 9+
 - Expo CLI (`npx expo`)
 - EAS CLI (`npm install -g eas-cli`)
-- Xcode（iOS開発）
-- Android Studio（Android開発）
+- Xcode 15+（iOS開発、macOS Sonoma推奨）
+- Android Studio Hedgehog+（Android開発）
+- Biome（lint/format、`npx @biomejs/biome`）
 
 ### 開発コマンド
 
 ```bash
+# プロジェクト初期化
+npx create-expo-app@latest mobile --template blank-typescript
+
 # 開発サーバー起動
 pnpm --filter mobile start
 
-# iOS シミュレータ
+# iOS シミュレータ（New Architecture有効）
 pnpm --filter mobile ios
 
-# Android エミュレータ
+# Android エミュレータ（New Architecture有効）
 pnpm --filter mobile android
+
+# Lint/Format（Biome）
+pnpm --filter mobile check     # lint + format check
+pnpm --filter mobile check --write  # 自動修正
 
 # ビルド（EAS）
 eas build --platform ios --profile preview
@@ -575,16 +692,44 @@ eas build --platform android --profile preview
 eas update --branch production --message "バグ修正"
 ```
 
+### React 19 の新機能活用
+
+```tsx
+// useTransition でUI更新を非ブロッキングに
+import { useTransition } from 'react';
+
+function SearchScreen() {
+  const [isPending, startTransition] = useTransition();
+
+  const handleSearch = (query: string) => {
+    startTransition(() => {
+      // 重い更新処理（UIがブロックされない）
+      setSearchResults(filterResults(query));
+    });
+  };
+}
+
+// use() でPromiseを直接読み取り
+import { use } from 'react';
+
+function ScheduleDetail({ schedulePromise }: { schedulePromise: Promise<Schedule> }) {
+  const schedule = use(schedulePromise); // Suspenseと連携
+  return <Text>{schedule.title}</Text>;
+}
+```
+
 ---
 
 ## 11. リスク・課題
 
 | リスク | 影響度 | 対策 |
 |--------|--------|------|
-| SSE（AI検索）の不安定さ | 中 | WebSocket代替を検討、polyfill導入 |
-| NativeWindの未対応クラス | 低 | カスタムスタイルで対応 |
-| Deep Linkingの設定複雑さ | 中 | 段階的に実装、テスト自動化 |
+| SSE（AI検索）の不安定さ | 中 | React Native 0.79+はReadableStream対応、polyfill不要 |
+| NativeWindの未対応クラス | 低 | NativeWind v4でCSS変数対応、カスタムスタイルで補完 |
+| Deep Linkingの設定複雑さ | 中 | Expo Router v4で簡素化、テスト自動化 |
 | iOS/Android差異 | 低 | Platform.select()で分岐 |
+| サードパーティライブラリのNew Architecture対応 | 中 | expo-*パッケージは全対応済み、その他は事前確認 |
+| Metro bundlerのpackage.json exports対応 | 低 | SDK 53でデフォルト有効、monorepo設定要確認 |
 
 ---
 
@@ -606,4 +751,5 @@ Dart言語への移行コストが高く、既存コード再利用不可のた�
 
 ## 更新履歴
 
+- 2026-01-12: Expo SDK 53 / React Native 0.79 / React 19 対応、Expo Router採用、Biome導入
 - 2026-01-11: 初版作成

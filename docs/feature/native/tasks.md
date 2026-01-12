@@ -5,7 +5,18 @@
 Webアプリケーションの React Native 化を段階的に進めるタスクリスト。
 ビジネスロジックの共通化（coreパッケージ）を優先し、Web/モバイル両対応を実現する。
 
-**推定総工数**: 1.5〜2ヶ月
+### 技術スタック（2025年末時点）
+
+| 技術 | バージョン |
+|------|-----------|
+| Expo SDK | 53 |
+| React Native | 0.79 |
+| React | 19 |
+| Node.js | 20以上 |
+| Expo Router | v4 |
+| NativeWind | v4 |
+
+**New Architecture**: デフォルト有効（Fabric + TurboModules + Bridgeless）
 
 ---
 
@@ -13,12 +24,17 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 0.1 開発環境セットアップ
 
-- [ ] Expo プロジェクト初期化（`packages/mobile`）
+- [ ] Node.js 20以上を確認
+- [ ] Expo プロジェクト初期化（`packages/mobile`、SDK 53）
+  ```bash
+  cd packages && npx create-expo-app@latest mobile --template blank-typescript
+  ```
 - [ ] pnpm workspace 設定更新
 - [ ] TypeScript 設定（パス解決、共有パッケージ参照）
-- [ ] ESLint/Prettier 設定（RN対応）
-- [ ] NativeWind セットアップ
+- [ ] Biome 設定（lint/format統合）
+- [ ] NativeWind v4 セットアップ
 - [ ] Tailwind config 移植（カラー定義等）
+- [ ] New Architecture 有効確認（SDK 53はデフォルト有効）
 
 ### 0.2 CI/CD 準備
 
@@ -101,7 +117,7 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 2.2 トークン管理
 
-- [ ] アクセストークン管理（SecureStore検討）
+- [ ] アクセストークン管理（expo-secure-store）
 - [ ] リフレッシュトークン管理
 - [ ] 自動トークンリフレッシュ実装
 - [ ] ログアウト処理
@@ -123,13 +139,33 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ## Phase 3: ナビゲーション・基本UI
 
-### 3.1 React Navigation セットアップ
+### 3.1 Expo Router セットアップ（ファイルベースルーティング）
 
-- [ ] @react-navigation 依存関係追加
-- [ ] RootNavigator 実装
-- [ ] AuthStack 実装（Login, OAuthCallback）
-- [ ] MainTabs 実装（Calendar, Search, Settings）
-- [ ] 型定義（ParamList）
+- [ ] app/ ディレクトリ構造作成
+  ```
+  app/
+  ├── _layout.tsx          # RootLayout（Stack + Stack.Protected）
+  ├── sign-in.tsx          # ログイン画面
+  ├── (app)/               # 認証後グループ
+  │   ├── _layout.tsx      # 認証チェック + Stack
+  │   ├── (tabs)/          # タブナビゲーション
+  │   │   ├── _layout.tsx  # Tabs レイアウト
+  │   │   ├── index.tsx    # カレンダー（Home）
+  │   │   ├── search.tsx   # AI検索
+  │   │   └── settings.tsx # 設定
+  │   ├── schedule/
+  │   │   ├── [id].tsx     # 詳細（動的ルート）
+  │   │   └── edit/[id].tsx
+  │   └── calendar/
+  │       └── [id]/
+  │           └── members.tsx
+  └── invite/
+      └── [token].tsx      # 招待リンク処理
+  ```
+- [ ] RootLayout 実装（Stack.Protected で認証分岐）
+- [ ] (app)/_layout.tsx（セッション検証、未認証時リダイレクト）
+- [ ] (tabs)/_layout.tsx（Tabs コンポーネント、アイコン設定）
+- [ ] 型定義不要（ファイルベースで自動生成）
 
 ### 3.2 共通UIコンポーネント
 
@@ -149,8 +185,8 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 3.4 アイコン対応
 
-- [ ] lucide-react-native または代替ライブラリ選定
-- [ ] アイコンコンポーネント作成
+- [ ] @expo/vector-icons（Expo標準）使用
+- [ ] アイコンコンポーネント作成（MaterialIcons等）
 - [ ] 既存アイコン使用箇所のマッピング
 
 **推定作業量**: 中（1週間）
@@ -234,9 +270,9 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 - [ ] SearchScreen UI
 - [ ] 検索入力フォーム
-- [ ] SSE ストリーミング対応（polyfill検討）
+- [ ] SSE ストリーミング対応（RN 0.79はReadableStream対応済み）
 - [ ] 検索結果表示
-- [ ] Markdown レンダリング（react-native-markdown）
+- [ ] Markdown レンダリング（@ronradtke/react-native-markdown-display）
 
 ### 6.2 キーワード提案
 
@@ -303,7 +339,7 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 8.3 E2Eテスト
 
-- [ ] Detox または Maestro セットアップ
+- [ ] Maestro セットアップ（YAML定義、CI統合容易）
 - [ ] 認証フローテスト
 - [ ] スケジュール作成フローテスト
 - [ ] 招待フローテスト
@@ -410,4 +446,5 @@ Phase 2 (認証) ──→ Phase 3 (ナビゲーション)
 
 ## 更新履歴
 
+- 2026-01-12: Expo SDK 53 / React Native 0.79 / React 19 対応、Expo Router採用、Biome導入
 - 2026-01-11: 初版作成
