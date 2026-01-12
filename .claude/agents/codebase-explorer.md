@@ -115,6 +115,58 @@ ls packages/frontend/e2e/
 [2-3文で機能やデータフローを説明]
 ```
 
+## スキーマ同期の確認
+
+本番スキーマとテストスキーマが同期しているか確認する場合：
+
+```bash
+# 本番スキーマのテーブル確認
+grep -E "^export const " packages/backend/src/infra/db/schema.ts
+
+# テストスキーマのテーブル確認
+grep "CREATE TABLE" packages/backend/test/helpers.ts
+
+# 差分確認（新しいカラムがテストにあるか）
+grep "is_all_day" packages/backend/src/infra/db/schema.ts
+grep "is_all_day" packages/backend/test/helpers.ts
+```
+
+## E2Eモックの同期確認
+
+Zodスキーマとモックが一致しているか確認：
+
+```bash
+# スキーマの必須フィールド確認
+grep -A 20 "scheduleSchema" packages/shared/src/schemas/schedule.ts
+
+# モックの確認
+grep -A 20 "mockSchedule" packages/frontend/e2e/
+```
+
+`nullable()` には `null` を、`optional()` は省略可能。
+
+## よくある調査パターン
+
+### 機能の実装場所
+```bash
+# バックエンド: feature -> route -> usecase
+ls packages/backend/src/feature/
+grep -l "createSchedule" packages/backend/src/feature/schedule/
+```
+
+### 型/スキーマの定義場所
+```bash
+# shared（API用）
+grep -l "Schedule" packages/shared/src/schemas/
+# backend（内部用）
+grep -l "ScheduleEntity" packages/backend/src/domain/
+```
+
+### 「〜がどこで使われているか」
+```bash
+grep -r "useModalManager" packages/frontend/src/ --include="*.tsx"
+```
+
 ## 注意事項
 
 - 長いファイル内容は読み込まない。必要な部分だけgrepで抽出する

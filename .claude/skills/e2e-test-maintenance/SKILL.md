@@ -123,6 +123,68 @@ console.log(JSON.stringify(snapshot, null, 2));
 await page.pause(); // ブラウザを開いたまま停止
 ```
 
+## タイムゾーン設定
+
+JSTで日時を扱うテストでは、タイムゾーン設定が必須：
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    timezoneId: "Asia/Tokyo",
+  },
+});
+```
+
+これがないと、`11:00`を期待しているのに`02:00`（9時間ずれ）が返される。
+
+## エラーコンテキストの活用
+
+テスト失敗時に自動生成される`error-context.md`は宝。スクリーンショットより情報量が多い：
+
+- ページのアクセシビリティツリー（何が表示されているか）
+- 要素の一覧（何が表示されていないか）
+- ネットワークリクエスト
+
+「キーワードボタンが表示されない」→ スナップショットを見れば何が表示されているか分かる。
+
+## 実APIベースのE2Eテスト
+
+モックベースだとバックエンドロジックはテストできない。実APIを使う場合：
+
+```typescript
+// e2e-server.tsを使用
+// packages/backend/e2e-server.ts がSQLiteを使ったテストサーバーを提供
+
+// テストファイルでサーバーを起動
+import { spawn } from "child_process";
+const server = spawn("pnpm", ["run", "e2e:server"]);
+```
+
+注意点：
+- `calendarId`がnullのスケジュールは選択カレンダーでフィルタリングされて表示されない
+- テスト用データにはcalendarIdを含める
+
+## コンテナ環境でのChromium
+
+コンテナ環境でPlaywrightを動かす場合のオプション：
+
+```typescript
+// playwright.config.ts
+launchOptions: {
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-software-rasterizer",
+    "--no-zygote",  // これが重要
+  ],
+}
+```
+
+`--no-zygote`がないとクラッシュすることがある。
+
 ## チェックリスト
 
 新機能を追加した後：
@@ -131,3 +193,5 @@ await page.pause(); // ブラウザを開いたまま停止
 - [ ] Zodスキーマの必須フィールドがモックに含まれている
 - [ ] ボタン名やラベルが変更されていたらセレクタを更新
 - [ ] 既存のテストが全てパスする
+- [ ] タイムゾーン設定が適切（JSTを扱う場合）
+- [ ] agentTypesなど列挙型のモック値がスキーマと一致している
