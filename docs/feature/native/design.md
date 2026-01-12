@@ -123,6 +123,44 @@ packages/
 └───────────────┘                  └───────────────────┘
 ```
 
+### Hooks層の3層構造
+
+core/hooks/ は以下の3層で構成される：
+
+```
+1. ビジネスロジック（純粋TS）
+   └── api/client.ts              ... API呼び出し関数
+
+2. ビジネスロジックHooks（apiをラップ、TanStack Queryでキャッシュ管理）
+   └── hooks/useSchedules.ts      ... create(), update(), remove()
+   └── hooks/useScheduleSearch.ts ... 検索
+   └── hooks/useRecurrence.ts     ... 繰り返しルール
+   └── hooks/useSupplements.ts    ... お店選択、メモ
+   └── hooks/useAI.ts             ... AI機能（キーワード提案、検索）
+   └── hooks/useCategories.ts
+   └── hooks/useProfile.ts
+
+3. UIロジックHooks（ビジネスロジックHooksを組み合わせ、UI状態を管理）
+   └── hooks/useScheduleFormModal.ts  ... ウィザードのstep管理
+   └── hooks/useSearchModal.ts        ... 検索フィルター状態
+```
+
+**ルール**: UIロジックHooksはapiを直接呼ばず、ビジネスロジックHooks経由で呼ぶ
+
+```typescript
+// NG
+const schedule = await api.createSchedule(data);
+
+// OK
+const { create } = useSchedules();
+const schedule = await create(data);
+```
+
+**理由**:
+- ビジネスロジックHooksがキャッシュ管理を担当
+- UIロジックHooksは状態管理・ハンドラーに専念
+- mobileでもUIロジックHooksをそのまま再利用可能
+
 ---
 
 ## 3. Storage抽象化

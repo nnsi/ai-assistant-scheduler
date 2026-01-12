@@ -1,5 +1,6 @@
 // Schedule hooks
 export { useSchedules } from "./useSchedules";
+export { useScheduleSearch } from "./useScheduleSearch";
 
 // Calendar hooks
 export {
@@ -22,6 +23,9 @@ export { useProfile } from "./useProfile";
 
 // Recurrence hooks
 export { useRecurrence } from "./useRecurrence";
+
+// Supplement hooks
+export { useSupplements } from "./useSupplements";
 
 // Calendar Invitation hooks
 export {
@@ -46,3 +50,16 @@ export {
 
 // Modal Manager hooks
 export { useModalManager } from "./useModalManager";
+
+// UI Logic hooks (Headless)
+export {
+  useScheduleFormModal,
+  type ScheduleFormData,
+  type ScheduleFormStep,
+  type UseScheduleFormModalConfig,
+} from "./useScheduleFormModal";
+
+export {
+  useSearchModal,
+  type UseSearchModalConfig,
+} from "./useSearchModal";

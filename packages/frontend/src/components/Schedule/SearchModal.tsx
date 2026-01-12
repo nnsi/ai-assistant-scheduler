@@ -1,10 +1,7 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
-import { useCategories } from "@/hooks/useCategories";
-import * as api from "@/lib/api";
+import { useSearchModal } from "@ai-scheduler/core/hooks";
 import { formatDateString } from "@/lib/date";
 import type { Schedule } from "@ai-scheduler/shared";
 
@@ -14,49 +11,45 @@ type SearchModalProps = {
   onScheduleClick: (schedule: Schedule) => void;
 };
 
-export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalProps) => {
-  const [query, setQuery] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
-
-  const { categories } = useCategories();
-
-  const hasFilters = !!(query || startDate || endDate || categoryId);
-
-  const { data: results = [], isLoading, refetch } = useQuery<Schedule[]>({
-    queryKey: ["search-schedules", query, startDate, endDate, categoryId],
-    queryFn: () => api.searchSchedules({
-      query: query || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      categoryId,
-    }),
-    enabled: hasFilters,
+export const SearchModal = ({
+  isOpen,
+  onClose,
+  onScheduleClick,
+}: SearchModalProps) => {
+  const {
+    // フィルター状態
+    query,
+    setQuery,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    categoryId,
+    setCategoryId,
+    // 検索状態
+    results,
+    isLoading,
+    hasFilters,
+    // データ
+    categories,
+    // ハンドラー
+    handleSearch,
+    handleClear,
+    handleScheduleSelect,
+  } = useSearchModal({
+    onScheduleClick,
+    onClose,
   });
-
-  const handleSearch = () => {
-    refetch();
-  };
-
-  const handleClear = () => {
-    setQuery("");
-    setStartDate("");
-    setEndDate("");
-    setCategoryId(undefined);
-  };
-
-  const handleScheduleSelect = (schedule: Schedule) => {
-    onScheduleClick(schedule);
-    onClose();
-  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="予定を検索" size="lg">
       <div className="space-y-4">
         {/* 検索フォーム */}
         <div>
-          <label htmlFor="search-query" className="block text-sm font-medium text-stone-700 mb-2">
+          <label
+            htmlFor="search-query"
+            className="block text-sm font-medium text-stone-700 mb-2"
+          >
             キーワード
           </label>
           <input
@@ -82,7 +75,10 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="search-start" className="block text-sm font-medium text-stone-700 mb-2">
+            <label
+              htmlFor="search-start"
+              className="block text-sm font-medium text-stone-700 mb-2"
+            >
               開始日
             </label>
             <input
@@ -100,7 +96,10 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
             />
           </div>
           <div>
-            <label htmlFor="search-end" className="block text-sm font-medium text-stone-700 mb-2">
+            <label
+              htmlFor="search-end"
+              className="block text-sm font-medium text-stone-700 mb-2"
+            >
               終了日
             </label>
             <input
@@ -148,7 +147,11 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
                       ? "text-white"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                   )}
-                  style={categoryId === cat.id ? { backgroundColor: cat.color } : undefined}
+                  style={
+                    categoryId === cat.id
+                      ? { backgroundColor: cat.color }
+                      : undefined
+                  }
                 >
                   <span
                     className="w-2.5 h-2.5 rounded-full"
@@ -195,9 +198,13 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
                         "hover:scale-[1.01]",
                         !categoryColor && "bg-stone-50 hover:bg-stone-100"
                       )}
-                      style={categoryColor ? {
-                        backgroundColor: `${categoryColor}15`,
-                      } : undefined}
+                      style={
+                        categoryColor
+                          ? {
+                              backgroundColor: `${categoryColor}15`,
+                            }
+                          : undefined
+                      }
                     >
                       <div className="flex items-center gap-2">
                         {categoryColor && (
@@ -214,10 +221,13 @@ export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalPro
                         {formatDateString(schedule.startAt, "yyyy/MM/dd")}
                         {!schedule.isAllDay && (
                           <span className="ml-1">
-                            {" "}{formatDateString(schedule.startAt, "HH:mm")}
+                            {" "}
+                            {formatDateString(schedule.startAt, "HH:mm")}
                           </span>
                         )}
-                        {schedule.isAllDay && <span className="ml-1">{" "}(終日)</span>}
+                        {schedule.isAllDay && (
+                          <span className="ml-1"> (終日)</span>
+                        )}
                       </div>
                     </button>
                   );

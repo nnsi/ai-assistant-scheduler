@@ -25,6 +25,79 @@ packages/
     └── storage.ts   # localStorage実装
 ```
 
+## 3層アーキテクチャ
+
+coreパッケージは3層構造でコードを整理している。
+
+```
+1. ビジネスロジック（純粋TS）
+   └── core/api/client.ts        ... API呼び出し関数
+
+2. ビジネスロジックHooks（apiをラップ、キャッシュ管理）
+   └── core/hooks/useSchedules.ts      ... create(), update(), remove()
+   └── core/hooks/useScheduleSearch.ts ... 検索
+   └── core/hooks/useRecurrence.ts     ... 繰り返しルール管理
+   └── core/hooks/useSupplements.ts    ... お店選択、メモ
+   └── core/hooks/useAI.ts             ... AI機能
+   └── core/hooks/useCategories.ts
+   └── core/hooks/useProfile.ts
+
+3. UIロジックHooks（ビジネスロジックHooksを組み合わせ、UI状態を管理）
+   └── core/hooks/useScheduleFormModal.ts  ... ウィザードのstep管理
+   └── core/hooks/useSearchModal.ts        ... 検索フィルター状態
+
+4. UI（UIロジックHooksを呼び出し、描画のみ）
+   └── frontend/components/...
+```
+
+### ルール
+
+**UIロジックHooksはapiを直接呼ばない**:
+
+```typescript
+// NG: UIロジックhookがapi直接呼び出し
+import * as api from "../api";
+const schedule = await api.createSchedule(data);
+
+// OK: ビジネスロジックhook経由
+import { useSchedules } from "./useSchedules";
+const { create } = useSchedules();
+const schedule = await create(data);
+```
+
+**理由**:
+- ビジネスロジックHooksがTanStack Queryでキャッシュ管理
+- UIロジックHooksは状態管理・ハンドラーに専念
+- mobileパッケージでもUIロジックHooksをそのまま再利用可能
+
+### 新しいUIロジックHookの作り方
+
+```typescript
+// packages/core/src/hooks/useMyModal.ts
+export function useMyModal(config: UseMyModalConfig) {
+  // 1. ビジネスロジックHooksを使う
+  const { create } = useSchedules();
+  const { categories } = useCategories();
+
+  // 2. UI状態を管理
+  const [step, setStep] = useState<Step>("form");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 3. ハンドラーを定義（ビジネスロジックhookを呼ぶ）
+  const handleSubmit = useCallback(async (data) => {
+    setIsSubmitting(true);
+    try {
+      await create(data);  // ← hook経由
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [create]);
+
+  // 4. UIに必要なものだけ返す
+  return { step, isSubmitting, categories, handleSubmit };
+}
+```
+
 ## 開発フロー
 
 ### 1. 新しいフック/ユーティリティを追加する場合
