@@ -117,3 +117,48 @@ jobs:
       - name: Type check frontend
         run: pnpm --filter frontend typecheck
 
+  e2e:
+    name: E2E Tests
+    needs: changes
+    # releaseブランチへのPRでのみ実行
+    if: github.base_ref == 'release' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter frontend exec playwright install chromium
+
+      - name: Create backend .dev.vars for CI
+        working-directory: packages/backend
+        run: |
+          cat > .dev.vars << EOF
+          ENABLE_DEV_AUTH=true
+          USE_MOCK_AI=true
+          JWT_SECRET=test-secret-for-ci
+          EOF
+
+      - name: Run D1 migrations
+        working-directory: packages/backend
+        run: pnpm wrangler d1 migrations apply ai-scheduler-db --local
+
+      - name: Run E2E tests
+        run: pnpm --filter frontend test:e2e
+        env:
+          CI: true
+

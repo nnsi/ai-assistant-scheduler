@@ -32,7 +32,7 @@ export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") =
   // ユースケース
   const createSchedule = createCreateScheduleUseCase(scheduleRepo, supplementRepo);
   const getSchedules = createGetSchedulesUseCase(scheduleRepo, calendarRepo);
-  const getScheduleById = createGetScheduleByIdUseCase(scheduleRepo, supplementRepo);
+  const getScheduleById = createGetScheduleByIdUseCase(scheduleRepo, supplementRepo, calendarRepo);
   const updateSchedule = createUpdateScheduleUseCase(scheduleRepo);
   const deleteSchedule = createDeleteScheduleUseCase(scheduleRepo);
   const updateMemo = createUpdateMemoUseCase(supplementRepo, scheduleRepo);

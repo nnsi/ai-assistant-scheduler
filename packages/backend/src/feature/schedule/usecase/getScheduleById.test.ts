@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createGetScheduleByIdUseCase } from "./getScheduleById";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { ScheduleEntity } from "../../../domain/model/schedule";
 import type { Supplement } from "../../../domain/model/supplement";
 
@@ -54,13 +55,24 @@ describe("getScheduleByIdUseCase", () => {
       update: vi.fn(),
       delete: vi.fn(),
     } as SupplementRepo,
+    calendarRepo: {
+      findByUserId: vi.fn().mockResolvedValue([]),
+      findById: vi.fn(),
+      findByOwnerId: vi.fn(),
+      findDefaultByUserId: vi.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    } as CalendarRepo,
   });
 
   it("should return schedule with supplement", async () => {
-    const { scheduleRepo, supplementRepo } = createMockRepos();
+    const { scheduleRepo, supplementRepo, calendarRepo } = createMockRepos();
     const getScheduleById = createGetScheduleByIdUseCase(
       scheduleRepo,
-      supplementRepo
+      supplementRepo,
+      calendarRepo
     );
 
     const result = await getScheduleById("1", testUserId);
@@ -75,16 +87,17 @@ describe("getScheduleByIdUseCase", () => {
         "キーワード2",
       ]);
     }
-    expect(scheduleRepo.findByIdAndUserId).toHaveBeenCalledWith("1", testUserId);
+    expect(scheduleRepo.findById).toHaveBeenCalledWith("1");
   });
 
   it("should return schedule without supplement when no supplement exists", async () => {
-    const { scheduleRepo, supplementRepo } = createMockRepos();
+    const { scheduleRepo, supplementRepo, calendarRepo } = createMockRepos();
     vi.mocked(supplementRepo.findByScheduleId).mockResolvedValue(null);
 
     const getScheduleById = createGetScheduleByIdUseCase(
       scheduleRepo,
-      supplementRepo
+      supplementRepo,
+      calendarRepo
     );
 
     const result = await getScheduleById("1", testUserId);
@@ -96,12 +109,13 @@ describe("getScheduleByIdUseCase", () => {
   });
 
   it("should return error when schedule not found", async () => {
-    const { scheduleRepo, supplementRepo } = createMockRepos();
-    vi.mocked(scheduleRepo.findByIdAndUserId).mockResolvedValue(null);
+    const { scheduleRepo, supplementRepo, calendarRepo } = createMockRepos();
+    vi.mocked(scheduleRepo.findById).mockResolvedValue(null);
 
     const getScheduleById = createGetScheduleByIdUseCase(
       scheduleRepo,
-      supplementRepo
+      supplementRepo,
+      calendarRepo
     );
 
     const result = await getScheduleById("nonexistent", testUserId);

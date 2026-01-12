@@ -1,87 +1,55 @@
 /**
- * E2Eテスト用の定数
+ * E2Eテスト用のヘルパー関数
+ * 実APIを叩く形式のE2Eテスト用
  */
 
-/** テスト用アクセストークン */
-export const TEST_ACCESS_TOKEN = "test-access-token";
-
-/** テスト用リフレッシュトークン */
-export const TEST_REFRESH_TOKEN = "test-refresh-token";
-
-/** ローカルストレージのキー */
-export const AUTH_TOKEN_KEY = "auth_access_token";
-export const REFRESH_TOKEN_KEY = "auth_refresh_token";
-
-/** テスト用のモックデータ */
-export const mockCalendars = [
-  {
-    id: "default-calendar-id",
-    name: "マイカレンダー",
-    color: "#3B82F6",
-    role: "owner",
-    memberCount: 1,
-    owner: {
-      id: "test-user-id",
-      name: "Test User",
-      picture: null,
-    },
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-01T00:00:00Z",
-  },
-];
-
-export const mockCategories = [
-  {
-    id: "category-1",
-    name: "仕事",
-    color: "#3B82F6",
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-01T00:00:00Z",
-  },
-  {
-    id: "category-2",
-    name: "プライベート",
-    color: "#10B981",
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-01T00:00:00Z",
-  },
-];
+import type { Page } from "@playwright/test";
 
 /**
- * テスト用の認証状態をセットアップ
+ * dev-loginを使って認証済み状態を作成
  * @param page Playwrightのページオブジェクト
  */
-export const setupAuthenticatedState = async (
-  page: import("@playwright/test").Page
-): Promise<void> => {
-  await page.evaluate(
-    ({ tokenKey, token }) => {
-      localStorage.setItem(tokenKey, token);
-    },
-    { tokenKey: AUTH_TOKEN_KEY, token: TEST_ACCESS_TOKEN }
-  );
+export const loginWithDevAuth = async (page: Page): Promise<void> => {
+  await page.goto("/login");
+
+  // 開発環境ログインボタンをクリック
+  const devLoginButton = page.getByRole("button", { name: /開発環境ログイン/i });
+  await devLoginButton.click();
+
+  // ログイン完了を待つ（カレンダーページにリダイレクトされる）
+  await page.waitForURL(/^(?!.*\/login).*$/, { timeout: 10000 });
 };
 
 /**
- * カレンダーとカテゴリのAPIモックをセットアップ
+ * dev-userを作成（API経由でdev-loginを叩く）
+ * beforeEachでスケジュール作成前に呼び出す
  * @param page Playwrightのページオブジェクト
  */
-export const setupCalendarMocks = async (
-  page: import("@playwright/test").Page
-): Promise<void> => {
-  await page.route("**/api/calendars", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(mockCalendars),
-    });
+export const ensureDevUserExists = async (page: Page): Promise<void> => {
+  await page.request.post("http://127.0.0.1:8788/api/auth/dev-login");
+};
+
+/**
+ * テストデータをクリーンアップ
+ * テスト終了時にスケジュールを削除する
+ * @param page Playwrightのページオブジェクト
+ */
+export const cleanupTestData = async (page: Page): Promise<void> => {
+  // スケジュール一覧を取得して全て削除
+  const response = await page.request.get("http://127.0.0.1:8788/api/schedules", {
+    headers: {
+      "X-Dev-Auth": "true",
+    },
   });
 
-  await page.route("**/api/categories", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(mockCategories),
-    });
-  });
+  if (response.ok()) {
+    const schedules = await response.json();
+    for (const schedule of schedules) {
+      await page.request.delete(`http://127.0.0.1:8788/api/schedules/${schedule.id}`, {
+        headers: {
+          "X-Dev-Auth": "true",
+        },
+      });
+    }
+  }
 };

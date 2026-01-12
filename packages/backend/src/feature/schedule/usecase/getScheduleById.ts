@@ -1,5 +1,6 @@
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import { toPublicSchedule } from "../../../domain/model/schedule";
 import type { Schedule } from "@ai-scheduler/shared";
 import type { Supplement } from "../../../domain/model/supplement";
@@ -22,15 +23,20 @@ const parseOccurrenceId = (id: string): { parentId: string; date: string } | nul
 
 export const createGetScheduleByIdUseCase = (
   scheduleRepo: ScheduleRepo,
-  supplementRepo: SupplementRepo
+  supplementRepo: SupplementRepo,
+  calendarRepo: CalendarRepo
 ) => {
   return async (
     id: string,
     userId: string
   ): Promise<Result<ScheduleWithSupplement>> => {
     try {
+      // ユーザーがアクセスできる全てのカレンダーを取得
+      const calendars = await calendarRepo.findByUserId(userId);
+      const accessibleCalendarIds = new Set(calendars.map((c) => c.id));
+
       // まず通常のIDとして検索
-      let schedule = await scheduleRepo.findByIdAndUserId(id, userId);
+      let schedule = await scheduleRepo.findById(id);
       let scheduleId = id;
       let occurrenceDate: string | null = null;
 
@@ -38,7 +44,7 @@ export const createGetScheduleByIdUseCase = (
       if (!schedule) {
         const parsed = parseOccurrenceId(id);
         if (parsed) {
-          schedule = await scheduleRepo.findByIdAndUserId(parsed.parentId, userId);
+          schedule = await scheduleRepo.findById(parsed.parentId);
           if (schedule) {
             scheduleId = parsed.parentId;
             occurrenceDate = parsed.date;
@@ -47,6 +53,17 @@ export const createGetScheduleByIdUseCase = (
       }
 
       if (!schedule) {
+        return err(createNotFoundError("スケジュール"));
+      }
+
+      // アクセス権限チェック
+      // - calendarIdがある場合: そのカレンダーにアクセスできるか
+      // - calendarIdがnullの場合: 作成者本人か（レガシーデータ）
+      const hasAccess = schedule.calendarId
+        ? accessibleCalendarIds.has(schedule.calendarId)
+        : schedule.userId === userId;
+
+      if (!hasAccess) {
         return err(createNotFoundError("スケジュール"));
       }
 

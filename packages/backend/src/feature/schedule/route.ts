@@ -55,7 +55,7 @@ app.use("*", async (c, next) => {
   c.set("getSchedules", createGetSchedulesUseCase(scheduleRepo, calendarRepo));
   c.set(
     "getScheduleById",
-    createGetScheduleByIdUseCase(scheduleRepo, supplementRepo)
+    createGetScheduleByIdUseCase(scheduleRepo, supplementRepo, calendarRepo)
   );
   c.set("updateSchedule", createUpdateScheduleUseCase(scheduleRepo));
   c.set("deleteSchedule", createDeleteScheduleUseCase(scheduleRepo));
