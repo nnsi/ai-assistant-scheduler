@@ -1,7 +1,10 @@
 /**
- * Class name ユーティリティ（@ai-scheduler/core からの re-export）
+ * Class name ユーティリティ
  *
- * 互換性のため、既存の import パスを維持しています。
- * 新規コードでは @ai-scheduler/core/utils から直接インポートしてください。
+ * Tailwind CSSのクラス名をマージするためのヘルパー関数。
+ * UIに関連するため、coreではなくfrontendに配置。
  */
-export { cn } from "@ai-scheduler/core/utils";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));

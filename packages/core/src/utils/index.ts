@@ -31,9 +31,6 @@ export {
   isAfter,
 } from "./date";
 
-// Class name utilities
-export { cn } from "./cn";
-
 // Recurrence utilities
 export {
   generateOccurrences,
