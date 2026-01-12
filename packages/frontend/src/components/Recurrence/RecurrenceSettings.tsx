@@ -279,7 +279,7 @@ export const RecurrenceSettings = ({
                 min={1}
                 max={99}
                 value={interval}
-                onChange={(e) => handleIntervalChange(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+                onChange={(e) => handleIntervalChange(Math.max(1, Math.min(99, Number.parseInt(e.target.value) || 1)))}
                 className={cn(
                   "w-20 px-3 py-2 rounded-lg border border-stone-200 bg-white",
                   "text-stone-800 text-center",
@@ -328,7 +328,7 @@ export const RecurrenceSettings = ({
                   min={1}
                   max={31}
                   value={dayOfMonth}
-                  onChange={(e) => handleDayOfMonthChange(Math.max(1, Math.min(31, parseInt(e.target.value) || 1)))}
+                  onChange={(e) => handleDayOfMonthChange(Math.max(1, Math.min(31, Number.parseInt(e.target.value) || 1)))}
                   className={cn(
                     "w-20 px-3 py-2 rounded-lg border border-stone-200 bg-white",
                     "text-stone-800 text-center",
@@ -387,7 +387,7 @@ export const RecurrenceSettings = ({
                         min={1}
                         max={999}
                         value={endCount}
-                        onChange={(e) => handleEndCountChange(Math.max(1, Math.min(999, parseInt(e.target.value) || 1)))}
+                        onChange={(e) => handleEndCountChange(Math.max(1, Math.min(999, Number.parseInt(e.target.value) || 1)))}
                         className={cn(
                           "w-16 px-2 py-1.5 rounded-lg border border-stone-200 bg-white",
                           "text-stone-800 text-sm text-center",

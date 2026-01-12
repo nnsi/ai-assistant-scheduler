@@ -152,7 +152,7 @@ const scheduleWithBoth: ScheduleWithSupplement = {
 2. **RHC CAFE** - おしゃれな雰囲気
 
 [詳細を見る](https://example.com)`,
-    userMemo: `友達と行く予定。要予約確認。`,
+    userMemo: "友達と行く予定。要予約確認。",
   },
 };
 

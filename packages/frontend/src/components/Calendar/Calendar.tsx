@@ -31,11 +31,11 @@ export const Calendar = ({
   // 日付ごとのスケジュールをマッピング
   const schedulesByDate = useMemo(() => {
     const map = new Map<string, Schedule[]>();
-    schedules.forEach((schedule) => {
+    for (const schedule of schedules) {
       const dateKey = schedule.startAt.split("T")[0];
       const existing = map.get(dateKey) || [];
       map.set(dateKey, [...existing, schedule]);
-    });
+    }
     return map;
   }, [schedules]);
 

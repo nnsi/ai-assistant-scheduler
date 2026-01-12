@@ -20,6 +20,7 @@ describe("userRepo", () => {
 
   beforeAll(() => {
     db = createTestDb();
+    // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
     userRepo = createUserRepo(db as any);
   });
 

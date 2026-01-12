@@ -397,7 +397,7 @@ const streamRequest = async (
   };
 
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const fetchOptions: RequestInit = {

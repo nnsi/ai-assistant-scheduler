@@ -97,7 +97,7 @@ export const createCalendarMember = (
   userId: string,
   role: MemberRole,
   invitedBy: string | null,
-  accepted: boolean = false
+  accepted = false
 ): CalendarMemberEntity => {
   const now = new Date().toISOString();
   return {

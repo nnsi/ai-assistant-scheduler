@@ -128,6 +128,7 @@ export const SearchResults = ({
   const streamingContainerRef = useRef<HTMLDivElement>(null);
 
   // ストリーミング中は自動スクロールで最新内容を表示
+  // biome-ignore lint/correctness/useExhaustiveDependencies: result changes trigger scroll update during streaming
   useEffect(() => {
     if (isStreaming && streamingContainerRef.current) {
       streamingContainerRef.current.scrollTop = streamingContainerRef.current.scrollHeight;

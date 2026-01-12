@@ -8,7 +8,6 @@ import {
 } from "@ai-scheduler/shared";
 import {
   createTestDb,
-  createTestUser,
   resetDatabase,
   type TestDb,
 } from "../../test/helpers";
@@ -48,8 +47,11 @@ const createTestAuthApp = (
   oauthProvider: OAuthProvider
 ) => {
   const app = new Hono();
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const userRepo = createUserRepo(db as any);
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const refreshTokenRepo = createRefreshTokenRepo(db as any);
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const calendarRepo = createCalendarRepo(db as any);
   const jwtService = createJwtService("test-jwt-secret");
 

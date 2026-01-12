@@ -138,7 +138,7 @@ export function getErrorMessage(error: unknown): string {
  * コンソールにエラーをログ出力する（開発時のデバッグ用）
  * @param isDev - 開発環境かどうか（環境から注入）
  */
-export function logError(context: string, error: unknown, isDev: boolean = false): void {
+export function logError(context: string, error: unknown, isDev = false): void {
   if (isDev) {
     console.error(`[${context}]`, error);
   }

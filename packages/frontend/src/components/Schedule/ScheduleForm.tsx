@@ -114,12 +114,12 @@ export const ScheduleForm = ({
     const result = schema.safeParse({ title, startAt, endAt, isAllDay, categoryId, calendarId });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      for (const err of result.error.errors) {
         const fieldName = err.path[0];
         if (typeof fieldName === "string") {
           fieldErrors[fieldName] = err.message;
         }
-      });
+      }
       setErrors(fieldErrors);
       return null;
     }

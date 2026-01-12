@@ -103,6 +103,7 @@ describe("getSchedulesUseCase", () => {
   it("should return schedules even when user has no calendars (legacy data)", async () => {
     const mockRepo = createMockRepo();
     const mockCalendarRepo = createMockCalendarRepo();
+    // biome-ignore lint/suspicious/noExplicitAny: Mock type casting
     (mockCalendarRepo.findByUserId as any).mockResolvedValue([]);
     const getSchedules = createGetSchedulesUseCase(mockRepo, mockCalendarRepo);
 

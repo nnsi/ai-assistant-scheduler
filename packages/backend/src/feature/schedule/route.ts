@@ -68,14 +68,14 @@ const getSchedulesQuerySchema = z.object({
   year: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : undefined))
+    .transform((v) => (v ? Number.parseInt(v, 10) : undefined))
     .refine((v) => v === undefined || (!Number.isNaN(v) && v >= 1 && v <= 9999), {
       message: "年は1〜9999の整数で指定してください",
     }),
   month: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : undefined))
+    .transform((v) => (v ? Number.parseInt(v, 10) : undefined))
     .refine((v) => v === undefined || (!Number.isNaN(v) && v >= 1 && v <= 12), {
       message: "月は1〜12の整数で指定してください",
     }),

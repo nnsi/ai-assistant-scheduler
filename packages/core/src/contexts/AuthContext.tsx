@@ -146,6 +146,7 @@ export function AuthProvider({
   }, [refreshAccessToken]);
 
   // 初回マウント時にリフレッシュトークン（Cookie）でアクセストークンを取得
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally run only on mount
   useEffect(() => {
     const initializeAuth = async () => {
       // React Strict Modeでの二重実行を防止

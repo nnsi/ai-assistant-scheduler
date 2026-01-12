@@ -13,9 +13,9 @@ import {
 // トークンをマスク表示用に変換
 const maskToken = (token: string): string => {
   if (token.length <= 10) {
-    return token.substring(0, 3) + "...";
+    return `${token.substring(0, 3)}...`;
   }
-  return token.substring(0, 5) + "..." + token.substring(token.length - 3);
+  return `${token.substring(0, 5)}...${token.substring(token.length - 3)}`;
 };
 
 export const createGetInvitationsUseCase = (

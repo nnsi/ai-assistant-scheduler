@@ -48,9 +48,9 @@ function extractDDLInfo(ddl: string) {
 
   // CREATE TABLE文を抽出
   const tableRegex = /CREATE TABLE IF NOT EXISTS (\w+)\s*\(([\s\S]*?)\);/gi;
-  let match;
+  let match: RegExpExecArray | null = tableRegex.exec(ddl);
 
-  while ((match = tableRegex.exec(ddl)) !== null) {
+  while (match !== null) {
     const tableName = match[1];
     const columnDefs = match[2];
 
@@ -67,6 +67,7 @@ function extractDDLInfo(ddl: string) {
     }
 
     tables[tableName] = { columns };
+    match = tableRegex.exec(ddl);
   }
 
   return tables;

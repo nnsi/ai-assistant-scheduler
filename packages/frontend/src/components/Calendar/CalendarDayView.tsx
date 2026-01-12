@@ -166,13 +166,12 @@ export const CalendarDayView = ({
       let display = formatDateString(schedule.startAt, "HH:mm");
       if (schedule.endAt) display += ` - ${formatDateString(schedule.endAt, "HH:mm")}`;
       return display;
-    } else if (isStartDay) {
+    }if (isStartDay) {
       return `${formatDateString(schedule.startAt, "HH:mm")} →`;
-    } else if (isEndDay && schedule.endAt) {
+    }if (isEndDay && schedule.endAt) {
       return `→ ${formatDateString(schedule.endAt, "HH:mm")}`;
-    } else {
-      return "終日";
     }
+      return "終日";
   };
 
   return (

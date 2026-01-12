@@ -69,7 +69,7 @@ export const optionalAuthMiddleware = createMiddleware<{
 
   const authHeader = c.req.header("Authorization");
 
-  if (authHeader && authHeader.startsWith("Bearer ")) {
+  if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     const jwtService = createJwtService(c.env.JWT_SECRET);
     const payload = await jwtService.verifyAccessToken(token);

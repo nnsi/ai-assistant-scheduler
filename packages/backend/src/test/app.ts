@@ -20,13 +20,16 @@ import { getStatusCode } from "../shared/http";
 import type { TestDb } from "./helpers";
 
 // テスト用のHonoアプリを作成（userIdはテスト用に固定）
-export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") => {
+export const createTestApp = (db: TestDb, testUserId = "test-user-id") => {
   const app = new Hono();
 
   // Drizzleのdbをschedule/supplementリポジトリが期待する形式に変換
   // better-sqlite3のDrizzleインスタンスをD1互換のインターフェースとして使用
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const scheduleRepo = createScheduleRepo(db as any);
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const supplementRepo = createSupplementRepo(db as any);
+  // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const calendarRepo = createCalendarRepo(db as any);
 
   // ユースケース
@@ -42,8 +45,8 @@ export const createTestApp = (db: TestDb, testUserId: string = "test-user-id") =
 
   // GET /api/schedules
   const getSchedulesQuerySchema = z.object({
-    year: z.string().optional().transform((v) => (v ? parseInt(v, 10) : undefined)),
-    month: z.string().optional().transform((v) => (v ? parseInt(v, 10) : undefined)),
+    year: z.string().optional().transform((v) => (v ? Number.parseInt(v, 10) : undefined)),
+    month: z.string().optional().transform((v) => (v ? Number.parseInt(v, 10) : undefined)),
   });
 
   app.get("/api/schedules", zValidator("query", getSchedulesQuerySchema), async (c) => {

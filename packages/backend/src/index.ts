@@ -66,7 +66,7 @@ export function createApp() {
         if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
           const portMatch = origin.match(/:(\d+)$/);
           if (portMatch) {
-            const port = parseInt(portMatch[1], 10);
+            const port = Number.parseInt(portMatch[1], 10);
             if (ALLOWED_DEV_PORTS.includes(port)) {
               return origin;
             }

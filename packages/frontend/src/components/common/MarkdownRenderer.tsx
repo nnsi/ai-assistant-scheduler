@@ -45,6 +45,7 @@ export const MarkdownRenderer = ({
         "prose-hr:my-4 prose-hr:border-gray-200",
         className
       )}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Sanitized markdown output
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

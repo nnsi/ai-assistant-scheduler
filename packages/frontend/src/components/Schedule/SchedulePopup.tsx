@@ -43,13 +43,12 @@ export const SchedulePopup = ({
   });
 
   // モーダルを閉じたらステップをリセット
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ai.reset is a stable reference
   useEffect(() => {
     if (!isOpen) {
       setStep("detail");
       ai.reset();
     }
-    // ai.resetは安定した参照なのでdepsから除外しても安全
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const memoMutation = useMutation({

@@ -142,6 +142,7 @@ let globalDb: TestDb;
 // E2E用のBindings（D1アダプター経由でSQLiteを使用）
 const e2eBindings: Bindings = {
   get DB() {
+    // biome-ignore lint/suspicious/noExplicitAny: D1Adapter to D1Database compatibility
     return createD1Adapter(globalSqlite) as any;
   },
   OPENROUTER_API_KEY: "e2e-test-key",
@@ -171,7 +172,7 @@ function initializeDatabase() {
 
 // サーバー起動
 initializeDatabase();
-const port = parseInt(process.env.PORT || "8788", 10);
+const port = Number.parseInt(process.env.PORT || "8788", 10);
 
 console.log(`E2E test server starting on port ${port}...`);
 serve(

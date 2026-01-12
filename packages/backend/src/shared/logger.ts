@@ -14,8 +14,7 @@ const isDevelopment = (): boolean => {
   // Cloudflare Workers環境では process が undefined
   // Node.js環境（テスト実行時など）では process.env.NODE_ENV で判定
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nodeProcess = (globalThis as any).process;
+    const nodeProcess = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process;
     return nodeProcess?.env?.NODE_ENV !== "production";
   } catch {
     // Cloudflare Workers環境 = 本番環境
