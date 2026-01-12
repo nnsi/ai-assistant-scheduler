@@ -3,12 +3,12 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useSchedules } from "./useSchedules";
-import * as api from "@/lib/api";
+import * as api from "@ai-scheduler/core/api";
 import type { Schedule } from "@ai-scheduler/shared";
-import type { ScheduleOccurrence } from "@/lib/recurrence";
+import type { ScheduleOccurrence } from "@ai-scheduler/core/utils";
 
 // api モジュールをモック
-vi.mock("@/lib/api", () => ({
+vi.mock("@ai-scheduler/core/api", () => ({
   fetchSchedules: vi.fn(),
   createSchedule: vi.fn(),
   updateSchedule: vi.fn(),

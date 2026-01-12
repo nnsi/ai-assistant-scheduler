@@ -42,49 +42,49 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 1.1 パッケージ構造作成
 
-- [ ] `packages/core` ディレクトリ作成
-- [ ] package.json 設定（dependencies, exports）
-- [ ] tsconfig.json 設定
+- [x] `packages/core` ディレクトリ作成
+- [x] package.json 設定（dependencies, exports）
+- [x] tsconfig.json 設定
 
 ### 1.2 Storage 抽象化
 
-- [ ] Storage インターフェース定義
-- [ ] Web 用 localStorage 実装（`packages/web/storage.ts`）
+- [x] Storage インターフェース定義
+- [x] Web 用 localStorage 実装（`packages/frontend/src/storage.ts`）
 - [ ] RN 用 AsyncStorage 実装（`packages/mobile/storage.ts`）
-- [ ] 既存 Context の Storage 依存性注入対応
+- [x] 既存 Context の Storage 依存性注入対応
 
 ### 1.3 API クライアント移行
 
-- [ ] `lib/api.ts` → `core/api/` へ移動
-- [ ] fetchWithAuth の共通化
-- [ ] Cookie依存の除去（RN対応）
-- [ ] エラーハンドリング共通化
+- [x] `lib/api.ts` → `core/api/` へ移動
+- [x] fetchWithAuth の共通化
+- [x] Cookie依存の除去（RN対応）→ 設定注入方式に変更
+- [x] エラーハンドリング共通化
 
 ### 1.4 カスタムフック移行
 
-- [ ] `useSchedules` → core へ移動
-- [ ] `useCalendars` → core へ移動
-- [ ] `useCategories` → core へ移動
-- [ ] `useAuth` → core へ移動
-- [ ] `useAI` → core へ移動
-- [ ] その他フック精査・移動
+- [x] `useSchedules` → core へ移動
+- [x] `useCalendars` → core へ移動
+- [x] `useCategories` → core へ移動
+- [x] `useAuth` → core へ移動
+- [x] `useAI` → core へ移動
+- [x] その他フック精査・移動
 
 ### 1.5 Context 移行
 
-- [ ] `AuthContext` → core へ移動（Storage抽象化）
-- [ ] `CalendarContext` → core へ移動（Storage抽象化）
-- [ ] Provider構成の整理
+- [x] `AuthContext` → core へ移動（Storage抽象化）
+- [x] `CalendarContext` → core へ移動（Storage抽象化）
+- [x] Provider構成の整理
 
 ### 1.6 ユーティリティ移行
 
-- [ ] `lib/date.ts` → core へ移動
-- [ ] `lib/utils.ts`（cn関数等）→ core へ移動
-- [ ] その他共通ユーティリティ精査
+- [x] `lib/date.ts` → core へ移動
+- [x] `lib/utils.ts`（cn関数等）→ core へ移動
+- [x] その他共通ユーティリティ精査
 
 ### 1.7 Web側の参照更新
 
-- [ ] import パス更新（frontend → web リネーム検討）
-- [ ] 動作確認・既存テスト通過確認
+- [x] import パス更新（frontend → web リネーム検討）
+- [x] 動作確認・既存テスト通過確認
 
 **推定作業量**: 中（1-2週間）
 

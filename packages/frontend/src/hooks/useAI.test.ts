@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAI } from "./useAI";
-import * as api from "@/lib/api";
+import * as api from "@ai-scheduler/core/api";
+import type { SuggestKeywordsResult, SearchResult } from "@ai-scheduler/core/api";
 
 // api モジュールをモック
-vi.mock("@/lib/api", () => ({
+vi.mock("@ai-scheduler/core/api", () => ({
   suggestKeywords: vi.fn(),
   searchWithKeywords: vi.fn(),
 }));
@@ -66,8 +67,8 @@ describe("useAI", () => {
     });
 
     it("ローディング状態が正しく管理される", async () => {
-      let resolvePromise: (value: api.SuggestKeywordsResult) => void;
-      const promise = new Promise<api.SuggestKeywordsResult>((resolve) => {
+      let resolvePromise: (value: SuggestKeywordsResult) => void;
+      const promise = new Promise<SuggestKeywordsResult>((resolve) => {
         resolvePromise = resolve;
       });
       vi.mocked(api.suggestKeywords).mockReturnValue(promise);
@@ -105,7 +106,7 @@ describe("useAI", () => {
       expect(result.current.searchResult).toBe("");
       expect(result.current.isLoadingSearch).toBe(false);
 
-      let returnedResult: api.SearchResult | null = null;
+      let returnedResult: SearchResult | null = null;
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",
@@ -132,7 +133,7 @@ describe("useAI", () => {
 
       const { result } = renderHook(() => useAI());
 
-      let returnedResult: api.SearchResult | null = null;
+      let returnedResult: SearchResult | null = null;
       await act(async () => {
         returnedResult = await result.current.search(
           "会議タイトル",

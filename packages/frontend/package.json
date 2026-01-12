@@ -17,6 +17,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ai-scheduler/core": "workspace:*",
     "@ai-scheduler/shared": "workspace:*",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-router": "^1.147.0",

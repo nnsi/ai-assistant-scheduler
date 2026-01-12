@@ -26,6 +26,13 @@ SessionStartフックが非同期モードで実行されます。セッショ�
 - `pnpm typecheck` - Type check (backend)
 - `pnpm db:migrate` - Run D1 database migrations (local)
 
+## Skills
+
+フロントエンド/バックエンド開発時は対応するSKILLを参照する：
+
+- `/frontend-dev` - フロントエンド開発ガイド（core/frontendパッケージ構造、React Tips、テスト）
+- `/new-api` - 新規APIエンドポイント追加ガイド
+
 ## 日時の扱い
 
 - `toISOString()`はUTC変換されるため、ローカル日付が必要な場面では使わない
@@ -43,30 +50,6 @@ SessionStartフックが非同期モードで実行されます。セッショ�
 - CORSの`allowHeaders`に`Authorization`を追加したか確認
 - 既存のリソース系テーブルに`user_id`が必要か検討
 - 既存テストへの影響範囲を`grep`で事前調査
-
-## React 18 Strict Mode
-
-- `useEffect`内で直接API通信を行わない（二重実行される）
-- データフェッチングには`TanStack Query`（React Query）を使う
-- 一度きりの処理（OAuth認証コールバック等）は`useRef`で二重実行を防止
-
-```typescript
-// 悪い例
-useEffect(() => {
-  fetch('/api/data').then(...)
-}, []);
-
-// 良い例（React Query）
-const { data } = useQuery({ queryKey: ['data'], queryFn: fetchData });
-
-// 良い例（一度きりの処理）
-const isProcessingRef = useRef(false);
-useEffect(() => {
-  if (isProcessingRef.current) return;
-  isProcessingRef.current = true;
-  // 処理...
-}, []);
-```
 
 ## サブエージェント・Codexの結果
 
@@ -103,28 +86,7 @@ useEffect(() => {
 2. Zodスキーマの必須フィールドがモックに全て含まれているか確認
 3. `nullable`と`optional`の違いに注意（`null` vs `undefined`）
 
-Playwrightでテストが失敗したときのデバッグ：
-```typescript
-// ブラウザコンソールのエラーを確認
-page.on("console", msg => console.log(msg.text()));
-
-// スクリーンショットを撮ってから操作
-await page.screenshot({ path: 'debug.png' });
-```
-
-## Hono RPC Clientの制限
-
-- 全てのルートで型推論できるわけではない
-- パスパラメータを含むルートで型推論が効かない場合がある
-- fallbackとして`fetchWithAuth`を直接使う
-
-```typescript
-// Hono RPCで型推論できる場合
-const res = await client.schedules.$get();
-
-// 型推論できない場合のfallback
-const res = await fetchWithAuth(`/api/invitations/${token}`);
-```
+※ Playwrightデバッグ方法は `/frontend-dev` SKILLを参照
 
 ## Cloudflare Workers固有の制約
 
@@ -178,53 +140,3 @@ grep -r "sync" packages/ --include="*.ts"
 ```
 
 過去の別プロジェクトの記憶や一般的なアプリの知識が混ざって、存在しない機能を想像してしまうことがある。
-
-## TanStack Router
-
-- `beforeLoad`はナビゲーション時にしか実行されない
-- 認証状態が変わったときは`router.invalidate()`を呼ぶ必要がある
-
-```typescript
-// 認証状態が変化したらルーターを再評価
-useEffect(() => {
-  if (prev.isAuthenticated !== isAuthenticated) {
-    router.invalidate();
-  }
-}, [isAuthenticated]);
-```
-
-## 複数ブラウザでの確認
-
-CSSやJavaScriptの位置計算は、ブラウザ間で差異が出やすい。Chrome以外（Firefox、Safari）でも確認する。
-
-特に以下のケースはブラウザ間で挙動が異なる可能性がある：
-- absoluteポジションの位置計算（pxベースよりパーセンテージベースの方が安定）
-- CSS Gridの挙動
-- スクロールバーの幅
-
-## 空配列へのフォールバック
-
-`??`演算子は`null`/`undefined`のみフォールバックし、空配列`[]`はそのまま通過する。
-
-```typescript
-// NG: []の場合フォールバックしない
-const items = agentTypes ?? ["search"]; // agentTypes=[] → []
-
-// OK: 空配列もフォールバック
-const items = agentTypes?.length ? agentTypes : ["search"];
-```
-
-## カレンダーフィルタリングの注意
-
-`calendarId = null`のスケジュールは、選択されたカレンダーでフィルタリングすると除外される。
-既存データにcalendarIdがない場合はマイグレーションでデフォルトカレンダーを紐付ける。
-
-## デバッグ時の仮説検証
-
-「APIは正しいのに表示されない」場合は、フロントエンドのフィルタリング・レンダリングを疑う。
-
-```
-1. APIが正しいデータを返しているか確認 → ✓
-2. データが返っているのに表示されない → フロントエンドの問題
-3. フィルタリング、レンダリングロジックを確認
-```
