@@ -11,3 +11,6 @@ test-results/
 
 *storybook.log
 storybook-static
+
+# Claude Code temp files
+tmpclaude-*
