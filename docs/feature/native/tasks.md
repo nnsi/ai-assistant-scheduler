@@ -5,13 +5,13 @@
 Webアプリケーションの React Native 化を段階的に進めるタスクリスト。
 ビジネスロジックの共通化（coreパッケージ）を優先し、Web/モバイル両対応を実現する。
 
-### 技術スタック（2025年末時点）
+### 技術スタック（2026年1月時点）
 
 | 技術 | バージョン |
 |------|-----------|
-| Expo SDK | 53 |
-| React Native | 0.79 |
-| React | 19 |
+| Expo SDK | 54 |
+| React Native | 0.81.5 |
+| React | 19.1.0 |
 | Node.js | 20以上 |
 | Expo Router | v4 |
 | NativeWind | v4 |
@@ -24,17 +24,17 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 0.1 開発環境セットアップ
 
-- [ ] Node.js 20以上を確認
-- [ ] Expo プロジェクト初期化（`packages/mobile`、SDK 53）
+- [x] Node.js 20以上を確認
+- [x] Expo プロジェクト初期化（`packages/mobile`、SDK 54）
   ```bash
   cd packages && npx create-expo-app@latest mobile --template blank-typescript
   ```
-- [ ] pnpm workspace 設定更新
-- [ ] TypeScript 設定（パス解決、共有パッケージ参照）
-- [ ] Biome 設定（lint/format統合）
-- [ ] NativeWind v4 セットアップ
-- [ ] Tailwind config 移植（カラー定義等）
-- [ ] New Architecture 有効確認（SDK 53はデフォルト有効）
+- [x] pnpm workspace 設定更新
+- [x] TypeScript 設定（パス解決、共有パッケージ参照）
+- [x] Biome 設定（lint/format統合）
+- [x] NativeWind v4 セットアップ
+- [x] Tailwind config 移植（カラー定義等）
+- [x] New Architecture 有効確認（SDK 54はデフォルト有効）
 
 ### 0.2 CI/CD 準備
 
@@ -446,5 +446,6 @@ Phase 2 (認証) ──→ Phase 3 (ナビゲーション)
 
 ## 更新履歴
 
+- 2026-01-12: Phase 0.1完了（Expo SDK 54 / React Native 0.81.5 / React 19.1.0）
 - 2026-01-12: Expo SDK 53 / React Native 0.79 / React 19 対応、Expo Router採用、Biome導入
 - 2026-01-11: 初版作成

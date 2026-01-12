@@ -1,0 +1,29 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@ai-scheduler/core": [
+        "../core/src"
+      ],
+      "@ai-scheduler/core/*": [
+        "../core/src/*"
+      ],
+      "@ai-scheduler/shared": [
+        "../shared/src"
+      ],
+      "@ai-scheduler/shared/*": [
+        "../shared/src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "nativewind-env.d.ts"
+  ]
+}
