@@ -16,7 +16,7 @@ export type Bindings = {
 };
 
 // 開発環境で許可するlocalhostポート
-const ALLOWED_DEV_PORTS = [5173, 5174, 3000, 6006];
+const ALLOWED_DEV_PORTS = [5173, 5174, 3000, 6006, 8081, 8082];
 
 /**
  * Honoアプリを作成するファクトリ関数

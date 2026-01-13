@@ -66,7 +66,7 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 - [x] Storage インターフェース定義
 - [x] Web 用 localStorage 実装（`packages/frontend/src/storage.ts`）
-- [ ] RN 用 AsyncStorage 実装（`packages/mobile/storage.ts`）
+- [x] RN 用 AsyncStorage 実装（`packages/mobile/storage.ts`）
 - [x] 既存 Context の Storage 依存性注入対応
 
 ### 1.3 API クライアント移行
@@ -110,27 +110,27 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 2.1 OAuth 実装
 
-- [ ] expo-auth-session セットアップ
-- [ ] Google OAuth 設定（iOS/Android Client ID）
-- [ ] Google 認証フロー実装
-- [ ] バックエンドとの認証連携
+- [x] expo-auth-session セットアップ
+- [x] Google OAuth 設定（iOS/Android Client ID）
+- [x] Google 認証フロー実装
+- [x] バックエンドとの認証連携
 
 ### 2.2 トークン管理
 
-- [ ] アクセストークン管理（expo-secure-store）
-- [ ] リフレッシュトークン管理
-- [ ] 自動トークンリフレッシュ実装
-- [ ] ログアウト処理
+- [x] アクセストークン管理（expo-secure-store）
+- [x] リフレッシュトークン管理
+- [x] 自動トークンリフレッシュ実装
+- [x] ログアウト処理
 
 ### 2.3 認証状態管理
 
-- [ ] 認証状態の永続化（AsyncStorage）
-- [ ] アプリ起動時の認証復帰
-- [ ] 認証エラーハンドリング
+- [x] 認証状態の永続化（AsyncStorage）
+- [x] アプリ起動時の認証復帰
+- [x] 認証エラーハンドリング
 
 ### 2.4 Deep Linking（認証関連）
 
-- [ ] OAuth callback URL スキーム設定
+- [x] OAuth callback URL スキーム設定
 - [ ] Universal Links / App Links 設定（将来）
 
 **推定作業量**: 中（1週間）
@@ -141,7 +141,7 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 3.1 Expo Router セットアップ（ファイルベースルーティング）
 
-- [ ] app/ ディレクトリ構造作成
+- [x] app/ ディレクトリ構造作成
   ```
   app/
   ├── _layout.tsx          # RootLayout（Stack + Stack.Protected）
@@ -162,32 +162,32 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
   └── invite/
       └── [token].tsx      # 招待リンク処理
   ```
-- [ ] RootLayout 実装（Stack.Protected で認証分岐）
-- [ ] (app)/_layout.tsx（セッション検証、未認証時リダイレクト）
-- [ ] (tabs)/_layout.tsx（Tabs コンポーネント、アイコン設定）
-- [ ] 型定義不要（ファイルベースで自動生成）
+- [x] RootLayout 実装（Stack.Protected で認証分岐）
+- [x] (app)/_layout.tsx（セッション検証、未認証時リダイレクト）
+- [x] (tabs)/_layout.tsx（Tabs コンポーネント、アイコン設定）
+- [x] 型定義不要（ファイルベースで自動生成）
 
 ### 3.2 共通UIコンポーネント
 
-- [ ] Button コンポーネント
-- [ ] Input コンポーネント
+- [x] Button コンポーネント
+- [x] Input コンポーネント
 - [ ] Modal コンポーネント
-- [ ] LoadingSpinner コンポーネント
-- [ ] ErrorMessage コンポーネント
+- [x] LoadingSpinner コンポーネント
+- [x] ErrorMessage コンポーネント
 - [ ] Toast/Notification コンポーネント
 
 ### 3.3 レイアウトコンポーネント
 
-- [ ] SafeAreaView ラッパー
+- [x] SafeAreaView ラッパー
 - [ ] Header コンポーネント
-- [ ] TabBar カスタマイズ
+- [x] TabBar カスタマイズ
 - [ ] スクロールビュー共通化
 
 ### 3.4 アイコン対応
 
-- [ ] @expo/vector-icons（Expo標準）使用
-- [ ] アイコンコンポーネント作成（MaterialIcons等）
-- [ ] 既存アイコン使用箇所のマッピング
+- [x] @expo/vector-icons（Expo標準）使用
+- [x] アイコンコンポーネント作成（MaterialIcons等）
+- [x] 既存アイコン使用箇所のマッピング
 
 **推定作業量**: 中（1週間）
 
@@ -197,33 +197,33 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 4.1 カレンダービュー
 
-- [ ] MonthView コンポーネント（月表示）
+- [x] MonthView コンポーネント（月表示）
 - [ ] WeekView コンポーネント（週表示）
 - [ ] DayView コンポーネント（日表示）
 - [ ] ビュー切り替えUI
-- [ ] 日付ナビゲーション（前月/次月等）
+- [x] 日付ナビゲーション（前月/次月等）
 
 ### 4.2 スケジュール表示
 
-- [ ] スケジュールカード コンポーネント
-- [ ] カレンダー色分け表示
-- [ ] 繰り返しスケジュールアイコン
-- [ ] 終日イベント表示
+- [x] スケジュールカード コンポーネント
+- [x] カレンダー色分け表示
+- [x] 繰り返しスケジュールアイコン
+- [x] 終日イベント表示
 
 ### 4.3 スケジュール詳細
 
-- [ ] ScheduleDetailScreen
-- [ ] 編集ボタン（権限に応じて表示）
-- [ ] 削除確認ダイアログ
+- [x] ScheduleDetailScreen
+- [x] 編集ボタン（権限に応じて表示）
+- [x] 削除確認ダイアログ
 
 ### 4.4 スケジュール作成・編集
 
-- [ ] ScheduleEditScreen
-- [ ] 日時ピッカー（DateTimePicker）
-- [ ] カレンダー選択
-- [ ] カテゴリ選択
+- [x] ScheduleEditScreen
+- [x] 日時ピッカー（DateTimePicker）
+- [x] カレンダー選択
+- [x] カテゴリ選択
 - [ ] 繰り返し設定UI
-- [ ] バリデーション
+- [x] バリデーション
 
 ### 4.5 カレンダー管理
 
@@ -240,25 +240,25 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 5.1 メンバー管理UI
 
-- [ ] MemberManagementScreen
-- [ ] メンバー一覧表示
-- [ ] 権限バッジ表示
-- [ ] 権限変更UI
-- [ ] メンバー削除
+- [x] MemberManagementScreen
+- [x] メンバー一覧表示
+- [x] 権限バッジ表示
+- [x] 権限変更UI
+- [x] メンバー削除
 
 ### 5.2 招待機能
 
-- [ ] 招待リンク生成UI
-- [ ] 招待リンク共有（Share API）
-- [ ] 招待リンク一覧
-- [ ] 招待リンク無効化
+- [x] 招待リンク生成UI
+- [x] 招待リンク共有（Share API）
+- [x] 招待リンク一覧
+- [x] 招待リンク無効化
 
 ### 5.3 招待受諾フロー
 
-- [ ] Deep Link 受信処理（/invite/:token）
-- [ ] InviteAcceptScreen
-- [ ] 未ログイン時の処理
-- [ ] 招待受諾・拒否処理
+- [x] Deep Link 受信処理（/invite/:token）
+- [x] InviteAcceptScreen
+- [x] 未ログイン時の処理
+- [x] 招待受諾・拒否処理
 
 **推定作業量**: 中（1週間）
 
@@ -268,23 +268,23 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 6.1 AI検索
 
-- [ ] SearchScreen UI
-- [ ] 検索入力フォーム
-- [ ] SSE ストリーミング対応（RN 0.79はReadableStream対応済み）
-- [ ] 検索結果表示
-- [ ] Markdown レンダリング（@ronradtke/react-native-markdown-display）
+- [x] SearchScreen UI
+- [x] 検索入力フォーム
+- [x] SSE ストリーミング対応（RN 0.79はReadableStream対応済み）
+- [x] 検索結果表示
+- [x] Markdown レンダリング（@ronradtke/react-native-markdown-display）
 
 ### 6.2 キーワード提案
 
-- [ ] キーワード提案UI
-- [ ] ストリーミング表示
-- [ ] 提案からの検索連携
+- [x] キーワード提案UI
+- [x] ストリーミング表示
+- [x] 提案からの検索連携
 
 ### 6.3 エラーハンドリング
 
-- [ ] ネットワークエラー表示
+- [x] ネットワークエラー表示
 - [ ] タイムアウト処理
-- [ ] リトライUI
+- [x] リトライUI
 
 **推定作業量**: 中（1週間）
 
@@ -294,10 +294,10 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 ### 7.1 設定画面
 
-- [ ] SettingsScreen
-- [ ] プロファイル表示
-- [ ] ログアウトボタン
-- [ ] アプリバージョン表示
+- [x] SettingsScreen
+- [x] プロファイル表示
+- [x] ログアウトボタン
+- [x] アプリバージョン表示
 
 ### 7.2 プッシュ通知
 
@@ -329,12 +329,12 @@ Webアプリケーションの React Native 化を段階的に進めるタスク
 
 - [ ] core パッケージのテスト移行
 - [ ] hooks テスト
-- [ ] utils テスト
+- [x] utils テスト（Storage）
 
 ### 8.2 コンポーネントテスト
 
-- [ ] React Native Testing Library セットアップ
-- [ ] 主要コンポーネントのテスト
+- [x] React Native Testing Library セットアップ
+- [x] 主要コンポーネントのテスト（Button, Input, LoadingSpinner, ErrorMessage）
 - [ ] ナビゲーションテスト
 
 ### 8.3 E2Eテスト
