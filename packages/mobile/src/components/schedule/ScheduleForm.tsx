@@ -24,6 +24,11 @@ interface ScheduleFormData {
   isAllDay: boolean;
   calendarId: string;
   categoryId: string | null;
+  userMemo: string;
+  recurrenceRule: {
+    frequency: "daily" | "weekly" | "monthly" | "yearly";
+    interval: number;
+  } | null;
 }
 
 interface ScheduleFormProps {
@@ -34,7 +39,9 @@ interface ScheduleFormProps {
   defaultCalendarId: string | null;
   onSubmit: (data: ScheduleFormData) => Promise<void>;
   onCancel: () => void;
+  onAISearch?: (title: string, startAt: Date) => void;
   isSubmitting: boolean;
+  isEditMode?: boolean;
 }
 
 export function ScheduleForm({
@@ -45,7 +52,9 @@ export function ScheduleForm({
   defaultCalendarId,
   onSubmit,
   onCancel,
+  onAISearch,
   isSubmitting,
+  isEditMode = false,
 }: ScheduleFormProps) {
   // フォーム状態
   const [title, setTitle] = useState(initialData?.title || "");
@@ -56,6 +65,15 @@ export function ScheduleForm({
   const [categoryId, setCategoryId] = useState<string | null>(
     initialData?.categoryId || null
   );
+  const [userMemo, setUserMemo] = useState(initialData?.userMemo || "");
+  const [hasRecurrence, setHasRecurrence] = useState(!!initialData?.recurrenceRule);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<"daily" | "weekly" | "monthly" | "yearly">(
+    initialData?.recurrenceRule?.frequency || "weekly"
+  );
+  const [recurrenceInterval, setRecurrenceInterval] = useState(
+    initialData?.recurrenceRule?.interval || 1
+  );
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
   // 日時
   const defaultDate = initialDate || new Date();
@@ -132,8 +150,19 @@ export function ScheduleForm({
       isAllDay,
       calendarId,
       categoryId,
+      userMemo,
+      recurrenceRule: hasRecurrence
+        ? { frequency: recurrenceFrequency, interval: recurrenceInterval }
+        : null,
     });
-  }, [title, startTime, endTime, isAllDay, calendarId, categoryId, onSubmit]);
+  }, [title, startTime, endTime, isAllDay, calendarId, categoryId, userMemo, hasRecurrence, recurrenceFrequency, recurrenceInterval, onSubmit]);
+
+  const frequencyLabels: Record<string, string> = {
+    daily: "毎日",
+    weekly: "毎週",
+    monthly: "毎月",
+    yearly: "毎年",
+  };
 
   const selectedCalendar = calendars.find((c) => c.id === calendarId);
   const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -151,6 +180,26 @@ export function ScheduleForm({
           autoFocus
         />
       </View>
+
+      {/* AIで補完ボタン（新規作成時のみ） */}
+      {!isEditMode && onAISearch && (
+        <View className="mx-4 mt-3">
+          <Pressable
+            onPress={() => {
+              if (title.trim()) {
+                onAISearch(title.trim(), startTime);
+              }
+            }}
+            disabled={!title.trim()}
+            className={`flex-row items-center justify-center rounded-xl py-3 ${
+              title.trim() ? "bg-purple-500 active:bg-purple-600" : "bg-gray-300"
+            }`}
+          >
+            <MaterialIcons name="auto-awesome" size={20} color="#ffffff" />
+            <Text className="ml-2 text-white font-semibold">AIで補完</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* 終日切替 */}
       <View className="mx-4 mt-3 rounded-xl bg-white p-4">
@@ -333,6 +382,81 @@ export function ScheduleForm({
                 )}
               </Pressable>
             ))}
+          </View>
+        )}
+      </View>
+
+      {/* メモ */}
+      <View className="mx-4 mt-3 rounded-xl bg-white p-4">
+        <View className="flex-row items-center mb-2">
+          <MaterialIcons name="notes" size={24} color="#6b7280" />
+          <Text className="ml-3 text-base text-gray-900">メモ</Text>
+        </View>
+        <TextInput
+          value={userMemo}
+          onChangeText={setUserMemo}
+          placeholder="メモを入力..."
+          placeholderTextColor="#9ca3af"
+          multiline
+          numberOfLines={3}
+          className="text-base text-gray-900 bg-gray-50 rounded-lg p-3 min-h-[80px]"
+          textAlignVertical="top"
+        />
+      </View>
+
+      {/* 繰り返し設定 */}
+      <View className="mx-4 mt-3 rounded-xl bg-white">
+        <View className="flex-row items-center justify-between p-4">
+          <View className="flex-row items-center">
+            <MaterialIcons name="repeat" size={24} color="#6b7280" />
+            <Text className="ml-3 text-base text-gray-900">繰り返し</Text>
+          </View>
+          <Switch
+            value={hasRecurrence}
+            onValueChange={setHasRecurrence}
+            trackColor={{ false: "#d1d5db", true: "#93c5fd" }}
+            thumbColor={hasRecurrence ? "#3b82f6" : "#f4f3f4"}
+          />
+        </View>
+
+        {hasRecurrence && (
+          <View className="border-t border-gray-100 px-4 pb-4">
+            <Pressable
+              onPress={() => setShowRecurrencePicker(!showRecurrencePicker)}
+              className="flex-row items-center justify-between py-3 active:opacity-70"
+            >
+              <Text className="text-sm text-gray-500">頻度</Text>
+              <View className="flex-row items-center">
+                <Text className="text-base text-gray-900">
+                  {recurrenceInterval === 1
+                    ? frequencyLabels[recurrenceFrequency]
+                    : `${recurrenceInterval}${recurrenceFrequency === "daily" ? "日" : recurrenceFrequency === "weekly" ? "週" : recurrenceFrequency === "monthly" ? "ヶ月" : "年"}ごと`}
+                </Text>
+                <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+              </View>
+            </Pressable>
+
+            {showRecurrencePicker && (
+              <View className="border-t border-gray-100 pt-2">
+                {(["daily", "weekly", "monthly", "yearly"] as const).map((freq) => (
+                  <Pressable
+                    key={freq}
+                    onPress={() => {
+                      setRecurrenceFrequency(freq);
+                      setShowRecurrencePicker(false);
+                    }}
+                    className="flex-row items-center py-2 active:opacity-70"
+                  >
+                    <Text className="flex-1 text-base text-gray-900">
+                      {frequencyLabels[freq]}
+                    </Text>
+                    {recurrenceFrequency === freq && (
+                      <MaterialIcons name="check" size={20} color="#3b82f6" />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
         )}
       </View>

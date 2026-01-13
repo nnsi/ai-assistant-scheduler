@@ -3,7 +3,7 @@
  * Web版と同じ1画面+モーダル構成
  */
 import { useState, useMemo, useCallback } from "react";
-import { View, Text, Pressable, Modal, Image, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Modal, Image, ActivityIndicator, ScrollView, Alert, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
@@ -11,7 +11,15 @@ import {
   useCalendarContext,
   useAuth,
   useCategories,
+  useAI,
+  useProfile,
+  useCreateCalendar,
+  useScheduleSearch,
+  toAppError,
+  fetchScheduleById,
 } from "@ai-scheduler/core";
+import { useQuery } from "@tanstack/react-query";
+import type { SearchScheduleInput } from "@ai-scheduler/shared";
 import {
   format,
   getYear,
@@ -22,8 +30,9 @@ import {
   subWeeks,
   addDays,
   subDays,
+  addHours,
 } from "date-fns";
-import type { Schedule, CreateScheduleInput, UpdateScheduleInput } from "@ai-scheduler/shared";
+import type { Schedule, CreateScheduleInput, UpdateScheduleInput, ScheduleWithSupplement } from "@ai-scheduler/shared";
 
 // Components
 import {
@@ -37,9 +46,31 @@ import { ScheduleForm } from "../../src/components/schedule/ScheduleForm";
 import { LoadingSpinner, ErrorMessage } from "../../src/components/ui";
 
 export default function MainApp() {
-  const { user, logout } = useAuth();
-  const { calendars, selectedCalendarIds, defaultCalendarId, isLoading: calendarsLoading } = useCalendarContext();
-  const { categories } = useCategories();
+  const { user, logout, updateEmail } = useAuth();
+  const {
+    calendars,
+    selectedCalendarIds,
+    defaultCalendarId,
+    isLoading: calendarsLoading,
+    toggleCalendar,
+    selectAllCalendars,
+    setDefaultCalendar,
+  } = useCalendarContext();
+  const { mutateAsync: createCalendarAsync, isPending: isCreatingCalendar } = useCreateCalendar();
+  const { categories, create: createCategory, remove: removeCategory } = useCategories();
+  const { profile, updateConditions, isLoading: isProfileLoading } = useProfile();
+  const {
+    keywords,
+    searchResult,
+    isLoadingKeywords,
+    isStreaming,
+    statusMessage,
+    suggestKeywords,
+    regenerateKeywords,
+    searchAndSaveStream,
+    abortStream,
+    reset: resetAI,
+  } = useAI();
 
   // View state
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -61,10 +92,53 @@ export default function MainApp() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // AI search state
+  const [isKeywordModalOpen, setIsKeywordModalOpen] = useState(false);
+  const [isSearchResultModalOpen, setIsSearchResultModalOpen] = useState(false);
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [aiSearchTitle, setAISearchTitle] = useState("");
+  const [aiSearchStartAt, setAISearchStartAt] = useState<Date>(new Date());
+  const [pendingScheduleId, setPendingScheduleId] = useState<string | null>(null);
+
+  // こだわり条件設定 state
+  const [conditionsRequired, setConditionsRequired] = useState(profile?.requiredConditions || "");
+  const [conditionsPreferred, setConditionsPreferred] = useState(profile?.preferredConditions || "");
+  const [conditionsImportant, setConditionsImportant] = useState(profile?.subjectiveConditions || "");
+
+  // カテゴリ管理 state
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("#3B82F6");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+
+  // カレンダー管理 state
+  const [showCalendarForm, setShowCalendarForm] = useState(false);
+  const [showDefaultPicker, setShowDefaultPicker] = useState(false);
+  const [newCalendarName, setNewCalendarName] = useState("");
+
+  // プロフィール設定 state
+  const [editEmail, setEditEmail] = useState(user?.email || "");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  // 予定検索 state
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchStartDate, setSearchStartDate] = useState<Date | null>(null);
+  const [searchEndDate, setSearchEndDate] = useState<Date | null>(null);
+  const [searchCategoryId, setSearchCategoryId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Schedule[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   // 現在の月のスケジュールを取得
   const year = getYear(currentDate);
   const month = getMonth(currentDate) + 1;
   const { schedules, isLoading: schedulesLoading, error, refetch, create, update, remove } = useSchedules(year, month);
+
+  // スケジュール詳細を取得（supplement含む）
+  const { data: fullSchedule } = useQuery({
+    queryKey: ["schedule", selectedSchedule?.id],
+    queryFn: () => fetchScheduleById(selectedSchedule!.id),
+    enabled: !!selectedSchedule?.id && isPopupOpen,
+  });
 
   // 選択されたカレンダーのスケジュールのみフィルタ
   const filteredSchedules = useMemo(() => {
@@ -134,6 +208,8 @@ export default function MainApp() {
     isAllDay: boolean;
     calendarId: string;
     categoryId: string | null;
+    userMemo: string;
+    recurrenceRule: { frequency: "daily" | "weekly" | "monthly" | "yearly"; interval: number } | null;
   }) => {
     if (isEditMode && editingSchedule) {
       const updateInput: UpdateScheduleInput = {
@@ -142,6 +218,8 @@ export default function MainApp() {
         endAt: data.endAt.toISOString(),
         isAllDay: data.isAllDay,
         categoryId: data.categoryId || undefined,
+        userMemo: data.userMemo || undefined,
+        recurrenceRule: data.recurrenceRule || undefined,
       };
       await update(editingSchedule.id, updateInput);
     } else {
@@ -152,6 +230,8 @@ export default function MainApp() {
         isAllDay: data.isAllDay,
         calendarId: data.calendarId,
         categoryId: data.categoryId || undefined,
+        userMemo: data.userMemo || undefined,
+        recurrenceRule: data.recurrenceRule || undefined,
       };
       await create(createInput);
     }
@@ -171,15 +251,288 @@ export default function MainApp() {
     }
   }, [selectedSchedule]);
 
-  // スケジュール削除
-  const handleScheduleDelete = useCallback(async () => {
+  // スケジュール削除（確認ダイアログ付き）
+  const handleScheduleDelete = useCallback(() => {
     if (selectedSchedule) {
-      await remove(selectedSchedule.id);
-      refetch();
-      setIsPopupOpen(false);
-      setSelectedSchedule(null);
+      Alert.alert(
+        "予定を削除",
+        `「${selectedSchedule.title}」を削除しますか？`,
+        [
+          { text: "キャンセル", style: "cancel" },
+          {
+            text: "削除",
+            style: "destructive",
+            onPress: async () => {
+              await remove(selectedSchedule.id);
+              refetch();
+              setIsPopupOpen(false);
+              setSelectedSchedule(null);
+            },
+          },
+        ]
+      );
     }
   }, [selectedSchedule, remove, refetch]);
+
+  // AI検索結果の展開状態
+  const [showAIResult, setShowAIResult] = useState(false);
+
+  // AI検索開始（フォームから呼ばれる）
+  const handleAISearch = useCallback(async (title: string, startAt: Date) => {
+    setAISearchTitle(title);
+    setAISearchStartAt(startAt);
+    setSelectedKeywords([]);
+    resetAI();
+
+    // こだわり条件のコンテキストを作成
+    const scheduleContext = profile ? {
+      requiredConditions: profile.requiredConditions || undefined,
+      preferredConditions: profile.preferredConditions || undefined,
+      subjectiveConditions: profile.subjectiveConditions || undefined,
+    } : undefined;
+
+    // キーワード提案を取得
+    await suggestKeywords(title, startAt.toISOString(), undefined, scheduleContext);
+    setIsKeywordModalOpen(true);
+  }, [profile, suggestKeywords, resetAI]);
+
+  // キーワード再生成
+  const handleRegenerateKeywords = useCallback(async () => {
+    const scheduleContext = profile ? {
+      requiredConditions: profile.requiredConditions || undefined,
+      preferredConditions: profile.preferredConditions || undefined,
+      subjectiveConditions: profile.subjectiveConditions || undefined,
+    } : undefined;
+    await regenerateKeywords(aiSearchTitle, aiSearchStartAt.toISOString(), scheduleContext);
+  }, [profile, aiSearchTitle, aiSearchStartAt, regenerateKeywords]);
+
+  // キーワード選択切り替え
+  const toggleKeyword = useCallback((keyword: string) => {
+    setSelectedKeywords((prev) =>
+      prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]
+    );
+  }, []);
+
+  // AI検索実行
+  const handleExecuteSearch = useCallback(async () => {
+    // カレンダーIDを取得
+    const calendarId = defaultCalendarId || calendars[0]?.id;
+    if (!calendarId) {
+      Alert.alert("エラー", "カレンダーが見つかりません。先にカレンダーを作成してください。");
+      return;
+    }
+
+    // まずスケジュールを作成
+    const createInput: CreateScheduleInput = {
+      title: aiSearchTitle,
+      startAt: aiSearchStartAt.toISOString(),
+      endAt: addHours(aiSearchStartAt, 1).toISOString(),
+      isAllDay: false,
+      calendarId,
+    };
+    const newSchedule = await create(createInput);
+
+    if (newSchedule?.id) {
+      setPendingScheduleId(newSchedule.id);
+      setIsKeywordModalOpen(false);
+      setIsSearchResultModalOpen(true);
+
+      // こだわり条件のコンテキストを作成
+      const scheduleContext = profile ? {
+        requiredConditions: profile.requiredConditions || undefined,
+        preferredConditions: profile.preferredConditions || undefined,
+        subjectiveConditions: profile.subjectiveConditions || undefined,
+      } : undefined;
+
+      // ストリーミング検索実行
+      await searchAndSaveStream(
+        newSchedule.id,
+        aiSearchTitle,
+        aiSearchStartAt.toISOString(),
+        selectedKeywords,
+        scheduleContext
+      );
+    }
+  }, [aiSearchTitle, aiSearchStartAt, defaultCalendarId, calendars, create, profile, selectedKeywords, searchAndSaveStream]);
+
+  // AI検索をスキップ
+  const handleSkipSearch = useCallback(async () => {
+    // カレンダーIDを取得
+    const calendarId = defaultCalendarId || calendars[0]?.id;
+    if (!calendarId) {
+      Alert.alert("エラー", "カレンダーが見つかりません。先にカレンダーを作成してください。");
+      return;
+    }
+
+    setIsKeywordModalOpen(false);
+    // スケジュールを作成して閉じる
+    const createInput: CreateScheduleInput = {
+      title: aiSearchTitle,
+      startAt: aiSearchStartAt.toISOString(),
+      endAt: addHours(aiSearchStartAt, 1).toISOString(),
+      isAllDay: false,
+      calendarId,
+    };
+    await create(createInput);
+    refetch();
+    setIsFormModalOpen(false);
+  }, [aiSearchTitle, aiSearchStartAt, defaultCalendarId, calendars, create, refetch]);
+
+  // 検索結果画面を閉じる
+  const handleCloseSearchResult = useCallback(() => {
+    abortStream();
+    setIsSearchResultModalOpen(false);
+    setIsFormModalOpen(false);
+    setPendingScheduleId(null);
+    refetch();
+  }, [abortStream, refetch]);
+
+  // こだわり条件モーダルを開く
+  const handleOpenConditions = useCallback(() => {
+    setConditionsRequired(profile?.requiredConditions || "");
+    setConditionsPreferred(profile?.preferredConditions || "");
+    setConditionsImportant(profile?.subjectiveConditions || "");
+    setIsConditionsModalOpen(true);
+  }, [profile]);
+
+  // こだわり条件を保存
+  const [isSavingConditions, setIsSavingConditions] = useState(false);
+  const handleSaveConditions = useCallback(async () => {
+    setIsSavingConditions(true);
+    try {
+      await updateConditions({
+        requiredConditions: conditionsRequired || null,
+        preferredConditions: conditionsPreferred || null,
+        subjectiveConditions: conditionsImportant || null,
+      });
+      setIsConditionsModalOpen(false);
+    } catch (error) {
+      Alert.alert("エラー", "こだわり条件の保存に失敗しました");
+    } finally {
+      setIsSavingConditions(false);
+    }
+  }, [conditionsRequired, conditionsPreferred, conditionsImportant, updateConditions]);
+
+  // カテゴリ作成
+  const handleCreateCategory = useCallback(async () => {
+    if (!newCategoryName.trim()) return;
+    setIsSavingCategory(true);
+    try {
+      await createCategory({
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+      });
+      setNewCategoryName("");
+      setNewCategoryColor("#3B82F6");
+      setShowCategoryForm(false);
+    } catch (error) {
+      Alert.alert("エラー", "カテゴリの作成に失敗しました");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  }, [newCategoryName, newCategoryColor, createCategory]);
+
+  // カテゴリ削除
+  const handleDeleteCategory = useCallback((categoryId: string, categoryName: string) => {
+    Alert.alert(
+      "カテゴリを削除",
+      `「${categoryName}」を削除しますか？`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await removeCategory(categoryId);
+            } catch (error) {
+              Alert.alert("エラー", "カテゴリの削除に失敗しました");
+            }
+          },
+        },
+      ]
+    );
+  }, [removeCategory]);
+
+  // カラーパレット
+  const categoryColors = [
+    "#EF4444", "#F97316", "#F59E0B", "#84CC16",
+    "#22C55E", "#14B8A6", "#06B6D4", "#3B82F6",
+    "#6366F1", "#8B5CF6", "#A855F7", "#EC4899",
+  ];
+
+  // カレンダー作成
+  const handleCreateCalendar = useCallback(async () => {
+    if (!newCalendarName.trim()) return;
+    try {
+      await createCalendarAsync({
+        name: newCalendarName.trim(),
+      });
+      setNewCalendarName("");
+      setShowCalendarForm(false);
+    } catch (error) {
+      Alert.alert("エラー", "カレンダーの作成に失敗しました");
+    }
+  }, [newCalendarName, createCalendarAsync]);
+
+  // 予定検索実行
+  const handleSearch = useCallback(async () => {
+    setIsSearching(true);
+    try {
+      // 検索条件を構築
+      const params: SearchScheduleInput = {};
+      if (searchKeyword.trim()) {
+        params.query = searchKeyword.trim();
+      }
+      if (searchStartDate) {
+        params.startDate = format(searchStartDate, "yyyy-MM-dd");
+      }
+      if (searchEndDate) {
+        params.endDate = format(searchEndDate, "yyyy-MM-dd");
+      }
+      if (searchCategoryId) {
+        params.categoryId = searchCategoryId;
+      }
+
+      // APIを直接呼び出す（useScheduleSearchはuseQuery用なので）
+      const { searchSchedules } = await import("@ai-scheduler/core");
+      // @ts-ignore - searchSchedules might not be directly exported
+      const results = filteredSchedules.filter((schedule) => {
+        let matches = true;
+        if (params.query) {
+          const query = params.query.toLowerCase();
+          matches = matches && (
+            schedule.title.toLowerCase().includes(query) ||
+            (schedule.userMemo && schedule.userMemo.toLowerCase().includes(query))
+          );
+        }
+        if (params.categoryId) {
+          matches = matches && schedule.categoryId === params.categoryId;
+        }
+        if (params.startDate) {
+          matches = matches && new Date(schedule.startAt) >= new Date(params.startDate);
+        }
+        if (params.endDate) {
+          matches = matches && new Date(schedule.startAt) <= new Date(params.endDate + "T23:59:59");
+        }
+        return matches;
+      });
+      setSearchResults(results);
+    } catch (error) {
+      Alert.alert("エラー", "検索に失敗しました");
+    } finally {
+      setIsSearching(false);
+    }
+  }, [searchKeyword, searchStartDate, searchEndDate, searchCategoryId, filteredSchedules]);
+
+  // 検索条件クリア
+  const handleClearSearch = useCallback(() => {
+    setSearchKeyword("");
+    setSearchStartDate(null);
+    setSearchEndDate(null);
+    setSearchCategoryId(null);
+    setSearchResults([]);
+  }, []);
 
   const isLoading = calendarsLoading || schedulesLoading;
 
@@ -188,11 +541,19 @@ export default function MainApp() {
   }
 
   if (error) {
+    const appError = toAppError(error);
+    const isAuthError = appError.code === "AUTH_ERROR";
+
     return (
       <ErrorMessage
         fullScreen
-        message="スケジュールの読み込みに失敗しました"
-        onRetry={refetch}
+        message={isAuthError
+          ? "セッションが切れました。再度ログインしてください。"
+          : "スケジュールの読み込みに失敗しました"
+        }
+        isAuthError={isAuthError}
+        onLogin={isAuthError ? logout : undefined}
+        onRetry={!isAuthError ? refetch : undefined}
       />
     );
   }
@@ -246,7 +607,7 @@ export default function MainApp() {
         onSearchClick={() => setIsSearchModalOpen(true)}
         onCategoryClick={() => setIsCategoryModalOpen(true)}
         onCalendarManageClick={() => setIsCalendarManagementOpen(true)}
-        onConditionsClick={() => setIsConditionsModalOpen(true)}
+        onConditionsClick={handleOpenConditions}
       />
 
       {/* カレンダー表示 */}
@@ -322,7 +683,9 @@ export default function MainApp() {
             defaultCalendarId={defaultCalendarId}
             onSubmit={handleFormSubmit}
             onCancel={() => setIsFormModalOpen(false)}
+            onAISearch={handleAISearch}
             isSubmitting={false}
+            isEditMode={isEditMode}
           />
         </SafeAreaView>
       </Modal>
@@ -332,11 +695,14 @@ export default function MainApp() {
         visible={isPopupOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsPopupOpen(false)}
+        onRequestClose={() => {
+          setIsPopupOpen(false);
+          setShowAIResult(false);
+        }}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => setIsPopupOpen(false)} className="p-2">
+            <Pressable onPress={() => { setIsPopupOpen(false); setShowAIResult(false); }} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
             <Text className="text-lg font-semibold text-gray-900">予定詳細</Text>
@@ -350,10 +716,12 @@ export default function MainApp() {
             </View>
           </View>
           {selectedSchedule && (
-            <View className="p-4">
+            <ScrollView className="flex-1 p-4">
               <Text className="text-2xl font-bold text-gray-900 mb-4">
                 {selectedSchedule.title}
               </Text>
+
+              {/* 日時 */}
               <View className="flex-row items-center mb-3">
                 <MaterialIcons name="access-time" size={20} color="#6b7280" />
                 <Text className="ml-2 text-gray-600">
@@ -363,13 +731,87 @@ export default function MainApp() {
                   )}
                 </Text>
               </View>
+
+              {/* 終日 */}
               {selectedSchedule.isAllDay && (
                 <View className="flex-row items-center mb-3">
                   <MaterialIcons name="wb-sunny" size={20} color="#6b7280" />
                   <Text className="ml-2 text-gray-600">終日</Text>
                 </View>
               )}
-            </View>
+
+              {/* 繰り返し */}
+              {selectedSchedule.recurrence && (
+                <View className="flex-row items-center mb-3">
+                  <MaterialIcons name="repeat" size={20} color="#6b7280" />
+                  <Text className="ml-2 text-gray-600">
+                    {selectedSchedule.recurrence.frequency === "daily" && "毎日"}
+                    {selectedSchedule.recurrence.frequency === "weekly" && "毎週"}
+                    {selectedSchedule.recurrence.frequency === "monthly" && "毎月"}
+                    {selectedSchedule.recurrence.frequency === "yearly" && "毎年"}
+                    繰り返し
+                  </Text>
+                </View>
+              )}
+
+              {/* カテゴリ */}
+              {selectedSchedule.categoryId && (
+                <View className="flex-row items-center mb-3">
+                  <MaterialIcons name="label" size={20} color="#6b7280" />
+                  <View className="ml-2">
+                    {(() => {
+                      const category = categories.find(c => c.id === selectedSchedule.categoryId);
+                      return category ? (
+                        <View
+                          className="rounded-full px-2 py-0.5"
+                          style={{ backgroundColor: category.color || "#e5e7eb" }}
+                        >
+                          <Text className="text-xs text-white">{category.name}</Text>
+                        </View>
+                      ) : null;
+                    })()}
+                  </View>
+                </View>
+              )}
+
+              {/* メモ */}
+              {fullSchedule?.supplement?.userMemo && (
+                <View className="mt-4 bg-white rounded-xl p-4">
+                  <View className="flex-row items-center mb-2">
+                    <MaterialIcons name="notes" size={20} color="#6b7280" />
+                    <Text className="ml-2 text-sm font-medium text-gray-700">メモ</Text>
+                  </View>
+                  <Text className="text-gray-600">{fullSchedule.supplement.userMemo}</Text>
+                </View>
+              )}
+
+              {/* AI検索結果 */}
+              {fullSchedule?.supplement?.aiResult && (
+                <View className="mt-4 bg-white rounded-xl overflow-hidden">
+                  <Pressable
+                    onPress={() => setShowAIResult(!showAIResult)}
+                    className="flex-row items-center justify-between p-4 active:bg-gray-50"
+                  >
+                    <View className="flex-row items-center">
+                      <MaterialIcons name="auto-awesome" size={20} color="#6b7280" />
+                      <Text className="ml-2 text-sm font-medium text-gray-700">AI検索結果を表示</Text>
+                    </View>
+                    <MaterialIcons
+                      name={showAIResult ? "expand-less" : "expand-more"}
+                      size={24}
+                      color="#9ca3af"
+                    />
+                  </Pressable>
+                  {showAIResult && (
+                    <View className="px-4 pb-4 border-t border-gray-100">
+                      <Text className="text-gray-600 text-sm mt-3 leading-5">
+                        {fullSchedule.supplement.aiResult}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </ScrollView>
           )}
         </SafeAreaView>
       </Modal>
@@ -386,10 +828,10 @@ export default function MainApp() {
             <Pressable onPress={() => setIsProfileModalOpen(false)} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">プロフィール</Text>
+            <Text className="text-lg font-semibold text-gray-900">プロフィール設定</Text>
             <View className="w-10" />
           </View>
-          <View className="p-4">
+          <ScrollView className="flex-1 p-4">
             {user && (
               <View className="items-center mb-6">
                 {user.picture ? (
@@ -408,6 +850,78 @@ export default function MainApp() {
                 <Text className="text-gray-500">{user.email}</Text>
               </View>
             )}
+
+            {/* メールアドレス更新 */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">メールアドレス</Text>
+              <TextInput
+                value={editEmail}
+                onChangeText={setEditEmail}
+                placeholder="example@email.com"
+                placeholderTextColor="#9ca3af"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                className="text-base text-gray-900 bg-gray-50 rounded-lg p-3 mb-3"
+              />
+              <Pressable
+                onPress={async () => {
+                  if (!editEmail.trim() || editEmail === user?.email) return;
+                  setIsUpdatingEmail(true);
+                  try {
+                    await updateEmail(editEmail.trim());
+                    Alert.alert("成功", "メールアドレスを更新しました");
+                  } catch (error) {
+                    Alert.alert("エラー", "メールアドレスの更新に失敗しました");
+                  } finally {
+                    setIsUpdatingEmail(false);
+                  }
+                }}
+                disabled={!editEmail.trim() || editEmail === user?.email || isUpdatingEmail}
+                className={`rounded-xl py-2 ${
+                  editEmail.trim() && editEmail !== user?.email
+                    ? "bg-primary-500 active:bg-primary-600"
+                    : "bg-gray-300"
+                }`}
+              >
+                {isUpdatingEmail ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text className="text-center text-white font-medium">メールアドレスを更新</Text>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Google連携セクション */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">Googleアカウント連携</Text>
+              <Text className="text-xs text-gray-500 mb-3">
+                別のGoogleアカウントに紐づけ直すことができます。
+              </Text>
+              <Pressable
+                onPress={() => {
+                  Alert.alert(
+                    "Googleアカウントを再設定",
+                    "一度ログアウトして、新しいGoogleアカウントでログインしてください。",
+                    [
+                      { text: "キャンセル", style: "cancel" },
+                      {
+                        text: "ログアウトして再設定",
+                        onPress: () => {
+                          setIsProfileModalOpen(false);
+                          logout();
+                        },
+                      },
+                    ]
+                  );
+                }}
+                className="flex-row items-center justify-center border border-gray-300 rounded-xl py-2 active:bg-gray-50"
+              >
+                <MaterialIcons name="link" size={18} color="#6b7280" />
+                <Text className="ml-2 text-gray-700 font-medium">Googleアカウントを再設定</Text>
+              </Pressable>
+            </View>
+
+            {/* ログアウト */}
             <Pressable
               onPress={() => {
                 setIsProfileModalOpen(false);
@@ -418,98 +932,516 @@ export default function MainApp() {
               <MaterialIcons name="logout" size={20} color="#ffffff" />
               <Text className="ml-2 text-white font-semibold">ログアウト</Text>
             </Pressable>
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
 
-      {/* AI検索モーダル（簡易版） */}
+      {/* 予定検索モーダル */}
       <Modal
         visible={isSearchModalOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsSearchModalOpen(false)}
+        onRequestClose={() => {
+          setIsSearchModalOpen(false);
+          handleClearSearch();
+        }}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => setIsSearchModalOpen(false)} className="p-2">
+            <Pressable onPress={() => {
+              setIsSearchModalOpen(false);
+              handleClearSearch();
+            }} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">AI検索</Text>
+            <Text className="text-lg font-semibold text-gray-900">予定を検索</Text>
             <View className="w-10" />
           </View>
-          <View className="flex-1 items-center justify-center p-4">
-            <MaterialIcons name="search" size={64} color="#d1d5db" />
-            <Text className="text-gray-500 mt-4 text-center">
-              AI検索機能は準備中です
-            </Text>
-          </View>
+
+          <ScrollView className="flex-1 p-4">
+            {/* キーワード入力 */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">キーワード</Text>
+              <TextInput
+                value={searchKeyword}
+                onChangeText={setSearchKeyword}
+                placeholder="タイトルやメモで検索"
+                placeholderTextColor="#9ca3af"
+                className="text-base text-gray-900 bg-gray-50 rounded-lg p-3"
+              />
+            </View>
+
+            {/* 日付範囲 */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-3">日付範囲</Text>
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => {
+                    // 開始日ピッカーを表示するためにstateを設定
+                    const today = new Date();
+                    setSearchStartDate(searchStartDate || today);
+                  }}
+                  className="flex-1 bg-gray-50 rounded-lg p-3"
+                >
+                  <Text className="text-xs text-gray-500 mb-1">開始日</Text>
+                  <Text className={searchStartDate ? "text-gray-900" : "text-gray-400"}>
+                    {searchStartDate ? format(searchStartDate, "yyyy/MM/dd") : "指定なし"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    const today = new Date();
+                    setSearchEndDate(searchEndDate || today);
+                  }}
+                  className="flex-1 bg-gray-50 rounded-lg p-3"
+                >
+                  <Text className="text-xs text-gray-500 mb-1">終了日</Text>
+                  <Text className={searchEndDate ? "text-gray-900" : "text-gray-400"}>
+                    {searchEndDate ? format(searchEndDate, "yyyy/MM/dd") : "指定なし"}
+                  </Text>
+                </Pressable>
+              </View>
+              {(searchStartDate || searchEndDate) && (
+                <Pressable
+                  onPress={() => {
+                    setSearchStartDate(null);
+                    setSearchEndDate(null);
+                  }}
+                  className="mt-2"
+                >
+                  <Text className="text-xs text-primary-500">日付をクリア</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* カテゴリフィルター */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-3">カテゴリ</Text>
+              <View className="flex-row flex-wrap gap-2">
+                <Pressable
+                  onPress={() => setSearchCategoryId(null)}
+                  className={`rounded-full px-3 py-1.5 border ${
+                    searchCategoryId === null
+                      ? "bg-primary-500 border-primary-500"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm ${
+                      searchCategoryId === null ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    すべて
+                  </Text>
+                </Pressable>
+                {categories.map((cat) => (
+                  <Pressable
+                    key={cat.id}
+                    onPress={() => setSearchCategoryId(cat.id)}
+                    className={`rounded-full px-3 py-1.5 border ${
+                      searchCategoryId === cat.id
+                        ? "border-transparent"
+                        : "bg-white border-gray-300"
+                    }`}
+                    style={searchCategoryId === cat.id ? { backgroundColor: cat.color || "#3b82f6" } : undefined}
+                  >
+                    <Text
+                      className={`text-sm ${
+                        searchCategoryId === cat.id ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      {cat.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* 検索ボタン */}
+            <View className="flex-row gap-3 mb-4">
+              <Pressable
+                onPress={handleClearSearch}
+                className="flex-1 rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+              >
+                <Text className="text-center text-gray-700 font-medium">クリア</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSearch}
+                disabled={isSearching}
+                className="flex-1 rounded-xl py-3 bg-primary-500 active:bg-primary-600"
+              >
+                {isSearching ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text className="text-center text-white font-medium">検索</Text>
+                )}
+              </Pressable>
+            </View>
+
+            {/* 検索結果 */}
+            {searchResults.length > 0 && (
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-3">
+                  検索結果 ({searchResults.length}件)
+                </Text>
+                <View className="bg-white rounded-xl overflow-hidden">
+                  {searchResults.map((schedule, index) => {
+                    const category = categories.find((c) => c.id === schedule.categoryId);
+                    return (
+                      <Pressable
+                        key={schedule.id}
+                        onPress={() => {
+                          setSelectedSchedule(schedule);
+                          setIsSearchModalOpen(false);
+                          setIsPopupOpen(true);
+                        }}
+                        className={`p-4 active:bg-gray-50 ${
+                          index < searchResults.length - 1 ? "border-b border-gray-100" : ""
+                        }`}
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-1">
+                            <View className="flex-row items-center mb-1">
+                              {category && (
+                                <View
+                                  className="w-2 h-2 rounded-full mr-2"
+                                  style={{ backgroundColor: category.color || "#3b82f6" }}
+                                />
+                              )}
+                              <Text className="text-gray-900 font-medium flex-1" numberOfLines={1}>
+                                {schedule.title}
+                              </Text>
+                            </View>
+                            <Text className="text-xs text-gray-500">
+                              {format(new Date(schedule.startAt), "yyyy/MM/dd HH:mm")}
+                              {schedule.isAllDay && " (終日)"}
+                            </Text>
+                          </View>
+                          <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* 検索結果なし */}
+            {searchResults.length === 0 && (searchKeyword || searchStartDate || searchEndDate || searchCategoryId) && !isSearching && (
+              <View className="items-center py-8">
+                <MaterialIcons name="search-off" size={48} color="#d1d5db" />
+                <Text className="text-gray-500 mt-2">条件に一致する予定が見つかりません</Text>
+              </View>
+            )}
+          </ScrollView>
         </SafeAreaView>
       </Modal>
 
-      {/* カテゴリモーダル（簡易版） */}
+      {/* カテゴリ管理モーダル */}
       <Modal
         visible={isCategoryModalOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsCategoryModalOpen(false)}
+        onRequestClose={() => {
+          setIsCategoryModalOpen(false);
+          setShowCategoryForm(false);
+        }}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => setIsCategoryModalOpen(false)} className="p-2">
+            <Pressable onPress={() => { setIsCategoryModalOpen(false); setShowCategoryForm(false); }} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">カテゴリ</Text>
+            <Text className="text-lg font-semibold text-gray-900">カテゴリ管理</Text>
             <View className="w-10" />
           </View>
-          <View className="p-4">
+
+          <ScrollView className="flex-1 p-4">
+            {/* 既存カテゴリ一覧 */}
             {categories.length === 0 ? (
-              <Text className="text-gray-500 text-center">カテゴリがありません</Text>
+              <Text className="text-gray-500 text-center py-4">カテゴリがありません</Text>
             ) : (
-              categories.map((cat) => (
-                <View key={cat.id} className="flex-row items-center py-3 border-b border-gray-100">
+              <View className="bg-white rounded-xl mb-4">
+                {categories.map((cat, index) => (
                   <View
-                    className="w-4 h-4 rounded-full mr-3"
-                    style={{ backgroundColor: cat.color || "#3b82f6" }}
-                  />
-                  <Text className="text-gray-900">{cat.name}</Text>
-                </View>
-              ))
+                    key={cat.id}
+                    className={`flex-row items-center justify-between py-3 px-4 ${
+                      index < categories.length - 1 ? "border-b border-gray-100" : ""
+                    }`}
+                  >
+                    <View className="flex-row items-center flex-1">
+                      <View
+                        className="w-4 h-4 rounded-full mr-3"
+                        style={{ backgroundColor: cat.color || "#3b82f6" }}
+                      />
+                      <Text className="text-gray-900">{cat.name}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => handleDeleteCategory(cat.id, cat.name)}
+                      className="p-2"
+                    >
+                      <MaterialIcons name="close" size={20} color="#9ca3af" />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
             )}
+
+            {/* カテゴリ作成フォーム */}
+            {showCategoryForm ? (
+              <View className="bg-white rounded-xl p-4">
+                <Text className="text-sm font-medium text-gray-700 mb-2">カテゴリ名</Text>
+                <TextInput
+                  value={newCategoryName}
+                  onChangeText={setNewCategoryName}
+                  placeholder="例: 仕事"
+                  placeholderTextColor="#9ca3af"
+                  className="text-base text-gray-900 bg-gray-50 rounded-lg p-3 mb-4"
+                />
+
+                <Text className="text-sm font-medium text-gray-700 mb-2">カラー</Text>
+                <View className="flex-row flex-wrap gap-2 mb-4">
+                  {categoryColors.map((color) => (
+                    <Pressable
+                      key={color}
+                      onPress={() => setNewCategoryColor(color)}
+                      className={`w-10 h-10 rounded-full items-center justify-center ${
+                        newCategoryColor === color ? "border-2 border-gray-400" : ""
+                      }`}
+                      style={{ backgroundColor: color }}
+                    >
+                      {newCategoryColor === color && (
+                        <MaterialIcons name="check" size={20} color="#ffffff" />
+                      )}
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View className="flex-row gap-3">
+                  <Pressable
+                    onPress={() => {
+                      setShowCategoryForm(false);
+                      setNewCategoryName("");
+                      setNewCategoryColor("#3B82F6");
+                    }}
+                    className="flex-1 rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+                  >
+                    <Text className="text-center text-gray-700 font-medium">キャンセル</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleCreateCategory}
+                    disabled={!newCategoryName.trim() || isSavingCategory}
+                    className={`flex-1 rounded-xl py-3 ${
+                      newCategoryName.trim() ? "bg-primary-500 active:bg-primary-600" : "bg-gray-300"
+                    }`}
+                  >
+                    {isSavingCategory ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text className="text-center text-white font-medium">作成</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => setShowCategoryForm(true)}
+                className="flex-row items-center justify-center py-3 bg-primary-500 rounded-xl active:bg-primary-600"
+              >
+                <MaterialIcons name="add" size={20} color="#ffffff" />
+                <Text className="ml-2 text-white font-medium">新規作成</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+
+          <View className="border-t border-gray-200 bg-white p-4">
+            <Pressable
+              onPress={() => { setIsCategoryModalOpen(false); setShowCategoryForm(false); }}
+              className="rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+            >
+              <Text className="text-center text-gray-700 font-medium">閉じる</Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </Modal>
 
-      {/* カレンダー管理モーダル（簡易版） */}
+      {/* カレンダー管理モーダル */}
       <Modal
         visible={isCalendarManagementOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsCalendarManagementOpen(false)}
+        onRequestClose={() => {
+          setIsCalendarManagementOpen(false);
+          setShowCalendarForm(false);
+          setShowDefaultPicker(false);
+        }}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => setIsCalendarManagementOpen(false)} className="p-2">
+            <Pressable onPress={() => {
+              setIsCalendarManagementOpen(false);
+              setShowCalendarForm(false);
+              setShowDefaultPicker(false);
+            }} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">カレンダー</Text>
+            <Text className="text-lg font-semibold text-gray-900">カレンダー管理</Text>
             <View className="w-10" />
           </View>
-          <View className="p-4">
-            {calendars.map((cal) => (
-              <View key={cal.id} className="flex-row items-center py-3 border-b border-gray-100">
-                <View
-                  className="w-4 h-4 rounded-full mr-3"
-                  style={{ backgroundColor: cal.color || "#3b82f6" }}
-                />
-                <Text className="flex-1 text-gray-900">{cal.name}</Text>
-                <Text className="text-xs text-gray-500">{cal.role}</Text>
+
+          <ScrollView className="flex-1 p-4">
+            {/* カレンダー一覧（表示/非表示切り替え） */}
+            <View className="bg-white rounded-xl mb-4">
+              {calendars.map((cal, index) => (
+                <Pressable
+                  key={cal.id}
+                  onPress={() => toggleCalendar(cal.id)}
+                  className={`flex-row items-center justify-between py-3 px-4 ${
+                    index < calendars.length - 1 ? "border-b border-gray-100" : ""
+                  }`}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <View
+                      className={`w-5 h-5 rounded mr-3 items-center justify-center ${
+                        selectedCalendarIds.includes(cal.id)
+                          ? "bg-primary-500"
+                          : "bg-gray-200"
+                      }`}
+                    >
+                      {selectedCalendarIds.includes(cal.id) && (
+                        <MaterialIcons name="check" size={16} color="#ffffff" />
+                      )}
+                    </View>
+                    <View
+                      className="w-3 h-3 rounded-full mr-2"
+                      style={{ backgroundColor: cal.color || "#3b82f6" }}
+                    />
+                    <Text className="text-gray-900 flex-1">{cal.name}</Text>
+                    {defaultCalendarId === cal.id && (
+                      <View className="bg-primary-100 px-2 py-0.5 rounded mr-2">
+                        <Text className="text-xs text-primary-700">デフォルト</Text>
+                      </View>
+                    )}
+                    <Text className="text-xs text-gray-500">{cal.role}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* すべて表示ボタン */}
+            <Pressable
+              onPress={selectAllCalendars}
+              className="flex-row items-center justify-center py-3 bg-white rounded-xl mb-4 active:bg-gray-50"
+            >
+              <MaterialIcons name="visibility" size={20} color="#6b7280" />
+              <Text className="ml-2 text-gray-700 font-medium">すべて表示</Text>
+            </Pressable>
+
+            {/* デフォルトカレンダー変更 */}
+            {showDefaultPicker ? (
+              <View className="bg-white rounded-xl p-4 mb-4">
+                <Text className="text-sm font-medium text-gray-700 mb-3">デフォルトカレンダーを選択</Text>
+                {calendars
+                  .filter((c) => c.role === "owner" || c.role === "editor")
+                  .map((cal) => (
+                    <Pressable
+                      key={cal.id}
+                      onPress={() => {
+                        setDefaultCalendar(cal.id);
+                        setShowDefaultPicker(false);
+                      }}
+                      className="flex-row items-center py-2 active:opacity-70"
+                    >
+                      <View
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ backgroundColor: cal.color || "#3b82f6" }}
+                      />
+                      <Text className="flex-1 text-gray-900">{cal.name}</Text>
+                      {defaultCalendarId === cal.id && (
+                        <MaterialIcons name="check" size={20} color="#3b82f6" />
+                      )}
+                    </Pressable>
+                  ))}
+                <Pressable
+                  onPress={() => setShowDefaultPicker(false)}
+                  className="mt-3 py-2"
+                >
+                  <Text className="text-center text-gray-500">キャンセル</Text>
+                </Pressable>
               </View>
-            ))}
+            ) : (
+              <Pressable
+                onPress={() => setShowDefaultPicker(true)}
+                className="flex-row items-center justify-center py-3 bg-white rounded-xl mb-4 active:bg-gray-50"
+              >
+                <MaterialIcons name="star" size={20} color="#6b7280" />
+                <Text className="ml-2 text-gray-700 font-medium">デフォルトカレンダーを変更</Text>
+              </Pressable>
+            )}
+
+            {/* カレンダー作成フォーム */}
+            {showCalendarForm ? (
+              <View className="bg-white rounded-xl p-4">
+                <Text className="text-sm font-medium text-gray-700 mb-2">カレンダー名</Text>
+                <TextInput
+                  value={newCalendarName}
+                  onChangeText={setNewCalendarName}
+                  placeholder="新しいカレンダー"
+                  placeholderTextColor="#9ca3af"
+                  className="text-base text-gray-900 bg-gray-50 rounded-lg p-3 mb-4"
+                />
+                <View className="flex-row gap-3">
+                  <Pressable
+                    onPress={() => {
+                      setShowCalendarForm(false);
+                      setNewCalendarName("");
+                    }}
+                    className="flex-1 rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+                  >
+                    <Text className="text-center text-gray-700 font-medium">キャンセル</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleCreateCalendar}
+                    disabled={!newCalendarName.trim() || isCreatingCalendar}
+                    className={`flex-1 rounded-xl py-3 ${
+                      newCalendarName.trim() ? "bg-primary-500 active:bg-primary-600" : "bg-gray-300"
+                    }`}
+                  >
+                    {isCreatingCalendar ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text className="text-center text-white font-medium">作成</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => setShowCalendarForm(true)}
+                className="flex-row items-center justify-center py-3 bg-primary-500 rounded-xl active:bg-primary-600"
+              >
+                <MaterialIcons name="add" size={20} color="#ffffff" />
+                <Text className="ml-2 text-white font-medium">新しいカレンダーを作成</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+
+          <View className="border-t border-gray-200 bg-white p-4">
+            <Pressable
+              onPress={() => {
+                setIsCalendarManagementOpen(false);
+                setShowCalendarForm(false);
+                setShowDefaultPicker(false);
+              }}
+              className="rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+            >
+              <Text className="text-center text-gray-700 font-medium">閉じる</Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </Modal>
 
-      {/* こだわり条件モーダル（簡易版） */}
+      {/* こだわり条件モーダル */}
       <Modal
         visible={isConditionsModalOpen}
         animationType="slide"
@@ -524,11 +1456,233 @@ export default function MainApp() {
             <Text className="text-lg font-semibold text-gray-900">こだわり条件</Text>
             <View className="w-10" />
           </View>
-          <View className="flex-1 items-center justify-center p-4">
-            <MaterialIcons name="tune" size={64} color="#d1d5db" />
-            <Text className="text-gray-500 mt-4 text-center">
-              こだわり条件設定は準備中です
+          <ScrollView className="flex-1 p-4">
+            <Text className="text-sm text-gray-600 mb-4">
+              ここで設定した条件は、AI検索時に自動的に考慮されます。
             </Text>
+
+            {/* 必須条件 */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">必須条件</Text>
+              <Text className="text-xs text-gray-500 mb-2">
+                口コミで違反が見つかれば絶対に除外します
+              </Text>
+              <TextInput
+                value={conditionsRequired}
+                onChangeText={setConditionsRequired}
+                placeholder="例: 禁煙"
+                placeholderTextColor="#9ca3af"
+                className="text-base text-gray-900 bg-gray-50 rounded-lg p-3"
+              />
+            </View>
+
+            {/* 優先条件 */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">優先条件</Text>
+              <Text className="text-xs text-gray-500 mb-2">
+                該当する候補を優先して表示します
+              </Text>
+              <TextInput
+                value={conditionsPreferred}
+                onChangeText={setConditionsPreferred}
+                placeholder="例: 駅近、個室あり"
+                placeholderTextColor="#9ca3af"
+                className="text-base text-gray-900 bg-gray-50 rounded-lg p-3"
+              />
+            </View>
+
+            {/* 重視するポイント */}
+            <View className="bg-white rounded-xl p-4 mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">重視するポイント</Text>
+              <Text className="text-xs text-gray-500 mb-2">
+                口コミを確認して評価します
+              </Text>
+              <TextInput
+                value={conditionsImportant}
+                onChangeText={setConditionsImportant}
+                placeholder="例: 口コミ評価4.0以上"
+                placeholderTextColor="#9ca3af"
+                className="text-base text-gray-900 bg-gray-50 rounded-lg p-3"
+              />
+            </View>
+          </ScrollView>
+
+          <View className="border-t border-gray-200 bg-white p-4 flex-row gap-3">
+            <Pressable
+              onPress={() => setIsConditionsModalOpen(false)}
+              className="flex-1 rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+            >
+              <Text className="text-center text-gray-700 font-medium">キャンセル</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleSaveConditions}
+              disabled={isSavingConditions}
+              className="flex-1 rounded-xl py-3 bg-primary-500 active:bg-primary-600"
+            >
+              {isSavingConditions ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text className="text-center text-white font-medium">保存</Text>
+              )}
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* キーワード選択モーダル */}
+      <Modal
+        visible={isKeywordModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsKeywordModalOpen(false)}
+      >
+        <SafeAreaView className="flex-1 bg-gray-50">
+          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+            <Pressable onPress={() => setIsKeywordModalOpen(false)} className="p-2">
+              <MaterialIcons name="close" size={24} color="#374151" />
+            </Pressable>
+            <Text className="text-lg font-semibold text-gray-900">キーワード選択</Text>
+            <View className="w-10" />
+          </View>
+
+          <ScrollView className="flex-1 p-4">
+            <Text className="text-sm text-gray-600 mb-4">
+              AIが予定に関連するキーワードを提案しました。気になる項目を選択してください。
+            </Text>
+
+            {isLoadingKeywords ? (
+              <View className="items-center justify-center py-8">
+                <ActivityIndicator size="large" color="#3b82f6" />
+                <Text className="text-gray-500 mt-2">キーワードを生成中...</Text>
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap gap-2">
+                {keywords.map((keyword) => (
+                  <Pressable
+                    key={keyword}
+                    onPress={() => toggleKeyword(keyword)}
+                    className={`rounded-full px-4 py-2 border ${
+                      selectedKeywords.includes(keyword)
+                        ? "bg-primary-500 border-primary-500"
+                        : "bg-white border-gray-300"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm ${
+                        selectedKeywords.includes(keyword) ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      {keyword}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {profile?.requiredConditions && (
+              <Text className="text-xs text-gray-500 mt-4">
+                こだわり条件が設定されているため、キーワード未選択でも検索できます
+              </Text>
+            )}
+          </ScrollView>
+
+          <View className="border-t border-gray-200 bg-white p-4">
+            <Pressable
+              onPress={handleRegenerateKeywords}
+              disabled={isLoadingKeywords}
+              className="flex-row items-center justify-center py-2 mb-3"
+            >
+              <MaterialIcons name="refresh" size={20} color="#6b7280" />
+              <Text className="ml-2 text-gray-600">別のキーワードを提案してもらう</Text>
+            </Pressable>
+
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={handleSkipSearch}
+                className="flex-1 rounded-xl py-3 bg-gray-200 active:bg-gray-300"
+              >
+                <Text className="text-center text-gray-700 font-medium">スキップ</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleExecuteSearch}
+                disabled={selectedKeywords.length === 0 && !profile?.requiredConditions}
+                className={`flex-1 rounded-xl py-3 ${
+                  selectedKeywords.length > 0 || profile?.requiredConditions
+                    ? "bg-primary-500 active:bg-primary-600"
+                    : "bg-gray-300"
+                }`}
+              >
+                <Text className="text-center text-white font-medium">
+                  検索する {selectedKeywords.length > 0 && `(${selectedKeywords.length}件選択中)`}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* AI検索結果モーダル */}
+      <Modal
+        visible={isSearchResultModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseSearchResult}
+      >
+        <SafeAreaView className="flex-1 bg-gray-50">
+          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+            <View className="w-10" />
+            <View className="flex-row items-center">
+              <Text className="text-lg font-semibold text-gray-900">検索結果</Text>
+              {isStreaming && (
+                <Text className="ml-2 text-sm text-gray-500">取得中...</Text>
+              )}
+            </View>
+            <Pressable onPress={handleCloseSearchResult} className="p-2">
+              <MaterialIcons name="close" size={24} color="#374151" />
+            </Pressable>
+          </View>
+
+          <ScrollView className="flex-1 p-4">
+            {statusMessage && (
+              <View className="flex-row items-center mb-4 bg-blue-50 rounded-lg p-3">
+                <ActivityIndicator size="small" color="#3b82f6" />
+                <Text className="ml-2 text-blue-700 text-sm">{statusMessage}</Text>
+              </View>
+            )}
+
+            {searchResult ? (
+              <View className="bg-white rounded-xl p-4">
+                <Text className="text-gray-700 leading-6">{searchResult}</Text>
+              </View>
+            ) : isStreaming ? (
+              <View className="items-center justify-center py-8">
+                <ActivityIndicator size="large" color="#3b82f6" />
+                <Text className="text-gray-500 mt-2">検索中...</Text>
+              </View>
+            ) : null}
+          </ScrollView>
+
+          <View className="border-t border-gray-200 bg-white p-4">
+            {isStreaming ? (
+              <Pressable
+                onPress={handleCloseSearchResult}
+                className="rounded-xl py-3 bg-red-500 active:bg-red-600"
+              >
+                <Text className="text-center text-white font-medium">中断して閉じる</Text>
+              </Pressable>
+            ) : (
+              <View>
+                <Text className="text-xs text-gray-500 text-center mb-3">
+                  完了後に自動保存されます
+                </Text>
+                <Pressable
+                  onPress={handleCloseSearchResult}
+                  className="rounded-xl py-3 bg-primary-500 active:bg-primary-600"
+                >
+                  <Text className="text-center text-white font-medium">閉じる</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         </SafeAreaView>
       </Modal>
