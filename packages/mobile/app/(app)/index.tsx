@@ -564,58 +564,108 @@ export default function MainApp() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
-      {/* ヘッダー - コンパクト化 */}
-      <View className="bg-white px-3 py-2">
+      {/* 統合ヘッダー - 1段に集約 */}
+      <View className="bg-white px-2 py-1.5 border-b border-gray-100">
         <View className="flex-row items-center justify-between">
-          {/* Logo - シンプル化 */}
-          <View className="flex-row items-center gap-2">
-            <View className="w-8 h-8 rounded-lg bg-primary-500 items-center justify-center">
-              <MaterialIcons name="event" size={18} color="#ffffff" />
-            </View>
-            <Text className="text-base font-bold text-gray-900">
-              Scheduler
-            </Text>
+          {/* 左: 日付ナビゲーション */}
+          <View className="flex-row items-center">
+            <Pressable
+              onPress={handlePrevious}
+              className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100"
+            >
+              <MaterialIcons name="chevron-left" size={26} color="#374151" />
+            </Pressable>
+            <Pressable
+              onPress={handleToday}
+              className="px-1.5 py-1 active:bg-gray-100 rounded-lg"
+            >
+              <Text className="text-base font-bold text-gray-900">
+                {viewMode === "month" && format(currentDate, "yyyy年M月", { locale: ja })}
+                {viewMode === "week" && (() => {
+                  const weekStart = new Date(currentDate);
+                  weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                  const weekEnd = new Date(weekStart);
+                  weekEnd.setDate(weekStart.getDate() + 6);
+                  if (weekStart.getMonth() === weekEnd.getMonth()) {
+                    return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "d", { locale: ja });
+                  }
+                  return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "M/d", { locale: ja });
+                })()}
+                {viewMode === "day" && format(currentDate, "M/d(E)", { locale: ja })}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleNext}
+              className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100"
+            >
+              <MaterialIcons name="chevron-right" size={26} color="#374151" />
+            </Pressable>
           </View>
 
-          {/* User Menu - タップ領域拡大 */}
-          {user && (
+          {/* 中央: 表示モード切替 */}
+          <View className="flex-row bg-gray-100 rounded-lg p-0.5">
+            {[
+              { mode: "month" as const, label: "月" },
+              { mode: "week" as const, label: "週" },
+              { mode: "day" as const, label: "日" },
+            ].map(({ mode, label }) => (
+              <Pressable
+                key={mode}
+                onPress={() => setViewMode(mode)}
+                className={`px-3 py-1 rounded-md ${
+                  viewMode === mode ? "bg-white shadow-sm" : ""
+                }`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${
+                    viewMode === mode ? "text-primary-500" : "text-gray-500"
+                  }`}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* 右: ツールボタン + プロフィール */}
+          <View className="flex-row items-center">
             <Pressable
-              onPress={() => setIsProfileModalOpen(true)}
-              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+              onPress={() => setIsSearchModalOpen(true)}
+              className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100"
             >
-              {user.picture ? (
-                <Image
-                  source={{ uri: user.picture }}
-                  className="w-9 h-9 rounded-full"
-                />
-              ) : (
-                <View className="w-9 h-9 rounded-full bg-primary-100 items-center justify-center">
-                  <Text className="text-sm font-bold text-primary-500">
-                    {user.name?.charAt(0) || "?"}
-                  </Text>
-                </View>
-              )}
+              <MaterialIcons name="search" size={22} color="#6b7280" />
             </Pressable>
-          )}
+            <Pressable
+              onPress={() => setIsMoreMenuOpen(true)}
+              className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100"
+            >
+              <MaterialIcons name="more-vert" size={22} color="#6b7280" />
+            </Pressable>
+            {user && (
+              <Pressable
+                onPress={() => setIsProfileModalOpen(true)}
+                className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 ml-0.5"
+              >
+                {user.picture ? (
+                  <Image
+                    source={{ uri: user.picture }}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <View className="w-8 h-8 rounded-full bg-primary-100 items-center justify-center">
+                    <Text className="text-xs font-bold text-primary-500">
+                      {user.name?.charAt(0) || "?"}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
 
-      {/* カレンダーヘッダー */}
-      <CalendarHeader
-        currentDate={currentDate}
-        viewMode={viewMode}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onToday={handleToday}
-        onViewModeChange={setViewMode}
-        onSearchClick={() => setIsSearchModalOpen(true)}
-        onCategoryClick={() => setIsCategoryModalOpen(true)}
-        onCalendarManageClick={() => setIsMoreMenuOpen(true)}
-        onConditionsClick={handleOpenConditions}
-      />
-
       {/* カレンダー表示 */}
-      <View className="flex-1 px-2 py-2">
+      <View className="flex-1 p-2">
         {viewMode === "month" && (
           <MonthView
             currentDate={currentDate}
@@ -623,6 +673,7 @@ export default function MainApp() {
             onScheduleClick={handleScheduleClick}
             schedules={filteredSchedules as any}
             calendars={calendars}
+            categories={categories}
             selectedCalendarIds={selectedCalendarIds}
           />
         )}
@@ -633,6 +684,7 @@ export default function MainApp() {
             onScheduleClick={handleScheduleClick}
             schedules={filteredSchedules as any}
             calendars={calendars}
+            categories={categories}
             selectedCalendarIds={selectedCalendarIds}
           />
         )}
@@ -643,12 +695,13 @@ export default function MainApp() {
             onScheduleClick={handleScheduleClick}
             schedules={filteredSchedules as any}
             calendars={calendars}
+            categories={categories}
             selectedCalendarIds={selectedCalendarIds}
           />
         )}
       </View>
 
-      {/* 新規作成ボタン（FAB）- サイズ最適化 */}
+      {/* 新規作成ボタン（FAB）- 視認性向上 */}
       <Pressable
         onPress={() => {
           setSelectedDate(new Date());
@@ -657,23 +710,23 @@ export default function MainApp() {
           setEditingSchedule(null);
           setIsFormModalOpen(true);
         }}
-        className="absolute bottom-6 right-5 w-16 h-16 rounded-full bg-primary-500 items-center justify-center active:bg-primary-600"
+        className="absolute bottom-5 right-4 w-14 h-14 rounded-full bg-primary-500 items-center justify-center active:bg-primary-600"
         style={{
           shadowColor: "#f97316",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 8,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.35,
+          shadowRadius: 6,
+          elevation: 6,
         }}
       >
-        <MaterialIcons name="add" size={32} color="#ffffff" />
+        <MaterialIcons name="add" size={28} color="#ffffff" />
       </Pressable>
 
       {/* スケジュール作成/編集モーダル */}
       <Modal
         visible={isFormModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setIsFormModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -708,7 +761,7 @@ export default function MainApp() {
       <Modal
         visible={isPopupOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => {
           setIsPopupOpen(false);
           setShowAIResult(false);
@@ -802,6 +855,26 @@ export default function MainApp() {
                       <View className="ml-3 flex-1">
                         <Text className="text-sm text-gray-500">カレンダー</Text>
                         <Text className="text-base text-gray-900 font-medium">{calendar.name}</Text>
+                      </View>
+                    </View>
+                  ) : null;
+                })()}
+
+                {/* カテゴリ */}
+                {selectedSchedule.categoryId && (() => {
+                  const category = categories.find(c => c.id === selectedSchedule.categoryId);
+                  return category ? (
+                    <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
+                      <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: `${category.color}20` || "#3b82f620" }}>
+                        <MaterialIcons name="label" size={20} color={category.color || "#3b82f6"} />
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <Text className="text-sm text-gray-500">カテゴリ</Text>
+                        <View className="flex-row items-center mt-0.5">
+                          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: category.color || "#3b82f6" }}>
+                            <Text className="text-xs text-white font-medium">{category.name}</Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
                   ) : null;
@@ -936,7 +1009,7 @@ export default function MainApp() {
       <Modal
         visible={isProfileModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setIsProfileModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -1056,7 +1129,7 @@ export default function MainApp() {
       <Modal
         visible={isSearchModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => {
           setIsSearchModalOpen(false);
           handleClearSearch();
@@ -1257,7 +1330,7 @@ export default function MainApp() {
       <Modal
         visible={isCategoryModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => {
           setIsCategoryModalOpen(false);
           setShowCategoryForm(false);
@@ -1385,7 +1458,7 @@ export default function MainApp() {
       <Modal
         visible={isCalendarManagementOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => {
           setIsCalendarManagementOpen(false);
           setShowCalendarForm(false);
@@ -1561,7 +1634,7 @@ export default function MainApp() {
       <Modal
         visible={isConditionsModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setIsConditionsModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -1649,7 +1722,7 @@ export default function MainApp() {
       <Modal
         visible={isKeywordModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setIsKeywordModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -1741,7 +1814,7 @@ export default function MainApp() {
       <Modal
         visible={isSearchResultModalOpen}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={handleCloseSearchResult}
       >
         <SafeAreaView className="flex-1 bg-gray-50">

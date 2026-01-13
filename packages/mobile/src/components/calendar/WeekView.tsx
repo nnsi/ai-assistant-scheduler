@@ -4,7 +4,7 @@
  */
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useMemo, useRef, useEffect } from "react";
-import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
+import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
 import {
   startOfWeek,
   endOfWeek,
@@ -24,6 +24,7 @@ interface WeekViewProps {
   onScheduleClick: (schedule: Schedule) => void;
   schedules: Schedule[];
   calendars: CalendarResponse[];
+  categories: Category[];
   selectedCalendarIds: string[];
 }
 
@@ -44,6 +45,7 @@ export function WeekView({
   onScheduleClick,
   schedules,
   calendars,
+  categories,
   selectedCalendarIds,
 }: WeekViewProps) {
   // 週の日付配列を生成
@@ -60,7 +62,7 @@ export function WeekView({
     );
   }, [schedules, selectedCalendarIds]);
 
-  // カレンダーID→色のマップ
+  // カレンダーID→色のマップ（フォールバック用）
   const calendarColors = useMemo(() => {
     const map = new Map<string, string>();
     for (const calendar of calendars) {
@@ -68,6 +70,26 @@ export function WeekView({
     }
     return map;
   }, [calendars]);
+
+  // カテゴリID→色のマップ
+  const categoryColors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categories) {
+      map.set(category.id, category.color || "#3b82f6");
+    }
+    return map;
+  }, [categories]);
+
+  // 予定の色を取得（カテゴリ優先、なければカレンダー色）
+  const getScheduleColor = (schedule: Schedule): string => {
+    if (schedule.categoryId && categoryColors.has(schedule.categoryId)) {
+      return categoryColors.get(schedule.categoryId)!;
+    }
+    if (schedule.calendarId && calendarColors.has(schedule.calendarId)) {
+      return calendarColors.get(schedule.calendarId)!;
+    }
+    return "#3b82f6";
+  };
 
   // 指定した日付に表示すべきスケジュールを取得
   const getSchedulesForDate = (date: Date): Schedule[] => {
@@ -176,7 +198,7 @@ export function WeekView({
                     onPress={() => onScheduleClick(schedule)}
                     className="rounded-sm px-0.5 py-0.5"
                     style={{
-                      backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
+                      backgroundColor: getScheduleColor(schedule),
                     }}
                   >
                     <Text className="text-[9px] text-white font-medium" numberOfLines={1}>
@@ -233,7 +255,7 @@ export function WeekView({
                   const { startMinutes, heightMinutes } = getSchedulePosition(schedule, date);
                   const topPosition = (startMinutes / 60) * 48;
                   const height = (heightMinutes / 60) * 48;
-                  const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
+                  const color = getScheduleColor(schedule);
 
                   return (
                     <Pressable

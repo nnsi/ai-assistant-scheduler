@@ -4,7 +4,7 @@
  */
 import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useMemo } from "react";
-import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
+import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
 import {
   startOfMonth,
   endOfMonth,
@@ -22,6 +22,7 @@ interface MonthViewProps {
   onScheduleClick: (schedule: Schedule) => void;
   schedules: Schedule[];
   calendars: CalendarResponse[];
+  categories: Category[];
   selectedCalendarIds: string[];
 }
 
@@ -33,6 +34,7 @@ export function MonthView({
   onScheduleClick,
   schedules,
   calendars,
+  categories,
   selectedCalendarIds,
 }: MonthViewProps) {
   const { width } = useWindowDimensions();
@@ -69,7 +71,7 @@ export function MonthView({
     return map;
   }, [schedules, selectedCalendarIds]);
 
-  // カレンダーID→色のマップ
+  // カレンダーID→色のマップ（カテゴリがない場合のフォールバック）
   const calendarColors = useMemo(() => {
     const map = new Map<string, string>();
     for (const calendar of calendars) {
@@ -77,6 +79,26 @@ export function MonthView({
     }
     return map;
   }, [calendars]);
+
+  // カテゴリID→色のマップ
+  const categoryColors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categories) {
+      map.set(category.id, category.color || "#3b82f6");
+    }
+    return map;
+  }, [categories]);
+
+  // 予定の色を取得（カテゴリ優先、なければカレンダー色）
+  const getScheduleColor = (schedule: Schedule): string => {
+    if (schedule.categoryId && categoryColors.has(schedule.categoryId)) {
+      return categoryColors.get(schedule.categoryId)!;
+    }
+    if (schedule.calendarId && calendarColors.has(schedule.calendarId)) {
+      return calendarColors.get(schedule.calendarId)!;
+    }
+    return "#3b82f6";
+  };
 
   return (
     <View className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
@@ -113,26 +135,26 @@ export function MonthView({
                 className={`w-[14.28%] border-b border-r border-gray-50 ${
                   !isCurrentMonth ? "bg-gray-50/30" : "active:bg-gray-50"
                 }`}
-                style={{ minHeight: weekCount <= 5 ? 90 : 76 }}
+                style={{ minHeight: weekCount <= 5 ? 100 : 84 }}
               >
                 {/* 日付 */}
                 <View className="items-center pt-1">
                   <View
-                    className={`w-7 h-7 items-center justify-center rounded-full ${
+                    className={`w-6 h-6 items-center justify-center rounded-full ${
                       isTodayDate ? "bg-primary-500" : ""
                     }`}
                   >
                     <Text
-                      className={`text-sm ${
+                      className={`text-xs ${
                         isTodayDate
                           ? "text-white font-bold"
                           : !isCurrentMonth
                             ? "text-gray-300"
                             : dayOfWeek === 0
-                              ? "text-rose-500 font-medium"
+                              ? "text-rose-500 font-semibold"
                               : dayOfWeek === 6
-                                ? "text-sky-500 font-medium"
-                                : "text-gray-800 font-medium"
+                                ? "text-sky-500 font-semibold"
+                                : "text-gray-800 font-semibold"
                       }`}
                     >
                       {format(day, "d")}
@@ -140,38 +162,34 @@ export function MonthView({
                   </View>
                 </View>
 
-                {/* スケジュール表示 - よりコンパクトに */}
-                <View className="flex-1 px-0.5 pb-1 gap-0.5 mt-0.5">
-                  {daySchedules.slice(0, 2).map((schedule) => (
+                {/* スケジュール表示 - 見やすいサイズに */}
+                <View className="flex-1 px-0.5 pb-1 gap-1 mt-1">
+                  {daySchedules.slice(0, 3).map((schedule) => (
                     <Pressable
                       key={schedule.id}
                       onPress={(e) => {
                         e.stopPropagation();
                         onScheduleClick(schedule);
                       }}
-                      className="rounded-sm px-1 py-0.5"
+                      className="rounded px-1 py-0.5"
                       style={{
-                        backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
+                        backgroundColor: getScheduleColor(schedule),
                       }}
                     >
                       <Text
-                        className="text-[10px] text-white font-medium"
+                        className="text-[11px] text-white font-medium"
                         numberOfLines={1}
                       >
                         {schedule.title}
                       </Text>
                     </Pressable>
                   ))}
-                  {daySchedules.length > 2 && (
+                  {daySchedules.length > 3 && (
                     <View className="items-center">
-                      <Text className="text-[10px] text-gray-400 font-medium">
-                        +{daySchedules.length - 2}
+                      <Text className="text-[10px] text-gray-500 font-medium">
+                        +{daySchedules.length - 3}
                       </Text>
                     </View>
-                  )}
-                  {/* 予定があることを示すドット（予定が表示しきれない場合） */}
-                  {!hasSchedules && isCurrentMonth && (
-                    <View className="flex-1" />
                   )}
                 </View>
               </Pressable>

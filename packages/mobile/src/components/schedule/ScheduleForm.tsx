@@ -170,7 +170,7 @@ export function ScheduleForm({
   return (
     <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
       {/* タイトル入力 + AIボタン */}
-      <View className="mx-3 mt-3 rounded-xl bg-white overflow-hidden">
+      <View className="mx-3 mt-2 rounded-xl bg-white overflow-hidden">
         <TextInput
           value={title}
           onChangeText={setTitle}
@@ -179,7 +179,7 @@ export function ScheduleForm({
           className="text-base font-medium text-gray-900 px-4 py-3"
           autoFocus
         />
-        {/* AIで補完ボタン（新規作成時のみ） */}
+        {/* AIで補完ボタン（新規作成時のみ） - 視認性向上 */}
         {!isEditMode && onAISearch && (
           <Pressable
             onPress={() => {
@@ -188,29 +188,37 @@ export function ScheduleForm({
               }
             }}
             disabled={!title.trim()}
-            className={`flex-row items-center justify-center py-3 mx-3 mb-3 rounded-xl ${
+            className={`flex-row items-center justify-center py-2.5 mx-3 mb-2.5 rounded-xl ${
               title.trim()
-                ? "bg-gradient-to-r from-purple-500 to-primary-500 active:opacity-90"
-                : "bg-gray-200"
+                ? "active:opacity-90"
+                : "bg-gray-100"
             }`}
             style={title.trim() ? {
-              backgroundColor: "#8b5cf6",
+              backgroundColor: "#f97316",
+              shadowColor: "#f97316",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             } : undefined}
           >
-            <MaterialIcons name="auto-awesome" size={18} color={title.trim() ? "#ffffff" : "#9ca3af"} />
-            <Text className={`ml-1.5 font-semibold text-sm ${title.trim() ? "text-white" : "text-gray-400"}`}>
-              AIで補完
+            <MaterialIcons name="auto-awesome" size={18} color={title.trim() ? "#ffffff" : "#d1d5db"} />
+            <Text className={`ml-1.5 font-bold text-sm ${title.trim() ? "text-white" : "text-gray-400"}`}>
+              AIで情報補完
             </Text>
+            {title.trim() && (
+              <MaterialIcons name="chevron-right" size={18} color="#ffffff" style={{ marginLeft: 2 }} />
+            )}
           </Pressable>
         )}
       </View>
 
       {/* 終日切替 */}
-      <View className="mx-3 mt-2 rounded-xl bg-white px-4 py-3">
+      <View className="mx-3 mt-1.5 rounded-xl bg-white px-4 py-2.5">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <MaterialIcons name="wb-sunny" size={22} color="#6b7280" />
-            <Text className="ml-3 text-base text-gray-900">終日</Text>
+            <MaterialIcons name="wb-sunny" size={20} color="#6b7280" />
+            <Text className="ml-2 text-sm text-gray-900">終日</Text>
           </View>
           <Switch
             value={isAllDay}
@@ -222,11 +230,11 @@ export function ScheduleForm({
       </View>
 
       {/* 日時 */}
-      <View className="mx-3 mt-2 rounded-xl bg-white">
+      <View className="mx-3 mt-1.5 rounded-xl bg-white">
         {/* 開始 */}
-        <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
-          <MaterialIcons name="play-arrow" size={22} color="#6b7280" />
-          <Text className="ml-2 w-10 text-sm text-gray-500">開始</Text>
+        <View className="flex-row items-center border-b border-gray-100 px-4 py-2.5">
+          <MaterialIcons name="play-arrow" size={20} color="#6b7280" />
+          <Text className="ml-2 w-8 text-sm text-gray-500">開始</Text>
           <Pressable
             onPress={() => setShowStartDate(true)}
             className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
@@ -248,9 +256,9 @@ export function ScheduleForm({
         </View>
 
         {/* 終了 */}
-        <View className="flex-row items-center px-4 py-3">
-          <MaterialIcons name="stop" size={22} color="#6b7280" />
-          <Text className="ml-2 w-10 text-sm text-gray-500">終了</Text>
+        <View className="flex-row items-center px-4 py-2.5">
+          <MaterialIcons name="stop" size={20} color="#6b7280" />
+          <Text className="ml-2 w-8 text-sm text-gray-500">終了</Text>
           <Pressable
             onPress={() => setShowEndDate(true)}
             className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
@@ -273,14 +281,14 @@ export function ScheduleForm({
       </View>
 
       {/* カレンダー選択 */}
-      <View className="mx-3 mt-2 rounded-xl bg-white">
+      <View className="mx-3 mt-1.5 rounded-xl bg-white">
         <Pressable
           onPress={() => setShowCalendarPicker(!showCalendarPicker)}
-          className="flex-row items-center justify-between px-4 py-3 active:bg-gray-50"
+          className="flex-row items-center justify-between px-4 py-2.5 active:bg-gray-50"
         >
           <View className="flex-row items-center">
-            <MaterialIcons name="event" size={22} color="#6b7280" />
-            <Text className="ml-3 text-base text-gray-900">カレンダー</Text>
+            <MaterialIcons name="event" size={20} color="#6b7280" />
+            <Text className="ml-2 text-sm text-gray-900">カレンダー</Text>
           </View>
           <View className="flex-row items-center">
             {selectedCalendar && (
@@ -326,14 +334,14 @@ export function ScheduleForm({
       </View>
 
       {/* カテゴリ選択 */}
-      <View className="mx-3 mt-2 rounded-xl bg-white">
+      <View className="mx-3 mt-1.5 rounded-xl bg-white">
         <Pressable
           onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-          className="flex-row items-center justify-between px-4 py-3 active:bg-gray-50"
+          className="flex-row items-center justify-between px-4 py-2.5 active:bg-gray-50"
         >
           <View className="flex-row items-center">
-            <MaterialIcons name="label" size={22} color="#6b7280" />
-            <Text className="ml-3 text-base text-gray-900">カテゴリ</Text>
+            <MaterialIcons name="label" size={20} color="#6b7280" />
+            <Text className="ml-2 text-sm text-gray-900">カテゴリ</Text>
           </View>
           <View className="flex-row items-center">
             {selectedCategory && (
@@ -391,10 +399,10 @@ export function ScheduleForm({
       </View>
 
       {/* メモ */}
-      <View className="mx-3 mt-2 rounded-xl bg-white px-4 py-3">
-        <View className="flex-row items-center mb-2">
-          <MaterialIcons name="notes" size={22} color="#6b7280" />
-          <Text className="ml-3 text-base text-gray-900">メモ</Text>
+      <View className="mx-3 mt-1.5 rounded-xl bg-white px-4 py-2.5">
+        <View className="flex-row items-center mb-1.5">
+          <MaterialIcons name="notes" size={20} color="#6b7280" />
+          <Text className="ml-2 text-sm text-gray-900">メモ</Text>
         </View>
         <TextInput
           value={userMemo}
@@ -402,18 +410,18 @@ export function ScheduleForm({
           placeholder="メモを入力..."
           placeholderTextColor="#9ca3af"
           multiline
-          numberOfLines={3}
-          className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3 min-h-[72px]"
+          numberOfLines={2}
+          className="text-sm text-gray-900 bg-gray-50 rounded-lg p-2.5 min-h-[56px]"
           textAlignVertical="top"
         />
       </View>
 
       {/* 繰り返し設定 */}
-      <View className="mx-3 mt-2 rounded-xl bg-white">
-        <View className="flex-row items-center justify-between px-4 py-3">
+      <View className="mx-3 mt-1.5 rounded-xl bg-white">
+        <View className="flex-row items-center justify-between px-4 py-2.5">
           <View className="flex-row items-center">
-            <MaterialIcons name="repeat" size={22} color="#6b7280" />
-            <Text className="ml-3 text-base text-gray-900">繰り返し</Text>
+            <MaterialIcons name="repeat" size={20} color="#6b7280" />
+            <Text className="ml-2 text-sm text-gray-900">繰り返し</Text>
           </View>
           <Switch
             value={hasRecurrence}
@@ -466,7 +474,7 @@ export function ScheduleForm({
       </View>
 
       {/* ボタン */}
-      <View className="mx-3 mb-6 mt-5 flex-row gap-3">
+      <View className="mx-3 mb-6 mt-4 flex-row gap-3">
         <Button
           onPress={onCancel}
           variant="secondary"

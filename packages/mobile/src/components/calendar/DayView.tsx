@@ -4,7 +4,7 @@
  */
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useMemo, useRef, useEffect } from "react";
-import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
+import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
 import {
   format,
   isSameDay,
@@ -20,6 +20,7 @@ interface DayViewProps {
   onScheduleClick: (schedule: Schedule) => void;
   schedules: Schedule[];
   calendars: CalendarResponse[];
+  categories: Category[];
   selectedCalendarIds: string[];
 }
 
@@ -39,6 +40,7 @@ export function DayView({
   onScheduleClick,
   schedules,
   calendars,
+  categories,
   selectedCalendarIds,
 }: DayViewProps) {
   const today = new Date();
@@ -51,7 +53,7 @@ export function DayView({
     );
   }, [schedules, selectedCalendarIds]);
 
-  // カレンダーID→色のマップ
+  // カレンダーID→色のマップ（フォールバック用）
   const calendarColors = useMemo(() => {
     const map = new Map<string, string>();
     for (const calendar of calendars) {
@@ -59,6 +61,26 @@ export function DayView({
     }
     return map;
   }, [calendars]);
+
+  // カテゴリID→色のマップ
+  const categoryColors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categories) {
+      map.set(category.id, category.color || "#3b82f6");
+    }
+    return map;
+  }, [categories]);
+
+  // 予定の色を取得（カテゴリ優先、なければカレンダー色）
+  const getScheduleColor = (schedule: Schedule): string => {
+    if (schedule.categoryId && categoryColors.has(schedule.categoryId)) {
+      return categoryColors.get(schedule.categoryId)!;
+    }
+    if (schedule.calendarId && calendarColors.has(schedule.calendarId)) {
+      return calendarColors.get(schedule.calendarId)!;
+    }
+    return "#3b82f6";
+  };
 
   // その日に表示すべきスケジュールを抽出
   const daySchedules = useMemo(() => {
@@ -134,24 +156,12 @@ export function DayView({
 
   return (
     <View className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
-      {/* ヘッダー - シンプル化 */}
-      <View className={`border-b border-gray-100 px-4 py-3 ${isTodayDate ? "bg-primary-50" : ""}`}>
-        <View className="flex-row items-center justify-center gap-2">
-          <Text className={`text-lg font-bold ${isTodayDate ? "text-primary-600" : "text-gray-900"}`}>
-            {format(currentDate, "M月d日", { locale: ja })}
-          </Text>
-          <Text className={`text-base ${isTodayDate ? "text-primary-500" : "text-gray-500"}`}>
-            {format(currentDate, "EEEE", { locale: ja })}
-          </Text>
-        </View>
-      </View>
-
       {/* 終日イベントエリア - 予定がある場合のみ表示 */}
       {allDaySchedules.length > 0 && (
         <View className="border-b border-gray-100 bg-gray-50/50 px-4 py-2">
           <View className="gap-1.5">
             {allDaySchedules.map((schedule) => {
-              const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
+              const color = getScheduleColor(schedule);
               return (
                 <Pressable
                   key={schedule.id}
@@ -201,7 +211,7 @@ export function DayView({
               const { startMinutes, heightMinutes } = getSchedulePosition(schedule);
               const topPosition = (startMinutes / 60) * 56; // 56px per hour
               const height = (heightMinutes / 60) * 56;
-              const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
+              const color = getScheduleColor(schedule);
 
               return (
                 <Pressable
