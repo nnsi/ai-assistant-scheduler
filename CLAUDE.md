@@ -6,6 +6,16 @@ pnpm monorepo project with backend (Hono/Cloudflare Workers) and frontend (React
 
 - ユーザーの質問には中立・客観の立場を守って回答すること。ユーザーに迎合しない。
 
+## 詰まったらCodexに依頼
+
+解決策が見つからない、同じ問題で3回以上試行錯誤している場合はCodexに依頼する。
+
+```
+mcp__codex__codex で別視点からの解決策を求める
+```
+
+自分だけで抱え込まず、早めに別のAIの視点を借りる。
+
 ## Claude Code on the Web
 
 SessionStartフックが非同期モードで実行されます。セッション開始後、テストやリンターが実行可能になるまで**約2分**かかります。
