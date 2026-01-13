@@ -1,9 +1,9 @@
 /**
  * 月表示カレンダーコンポーネント
+ * Web版と同じデザイン
  */
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useMemo } from "react";
-import { MaterialIcons } from "@expo/vector-icons";
 import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
 import {
   startOfMonth,
@@ -13,17 +13,13 @@ import {
   eachDayOfInterval,
   format,
   isSameMonth,
-  isSameDay,
   isToday,
-  addMonths,
-  subMonths,
 } from "date-fns";
-import { ja } from "date-fns/locale";
 
 interface MonthViewProps {
   currentDate: Date;
-  onDateChange: (date: Date) => void;
   onDateSelect: (date: Date) => void;
+  onScheduleClick: (schedule: Schedule) => void;
   schedules: Schedule[];
   calendars: CalendarResponse[];
   selectedCalendarIds: string[];
@@ -33,8 +29,8 @@ const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 export function MonthView({
   currentDate,
-  onDateChange,
   onDateSelect,
+  onScheduleClick,
   schedules,
   calendars,
   selectedCalendarIds,
@@ -76,50 +72,15 @@ export function MonthView({
     return map;
   }, [calendars]);
 
-  const handlePrevMonth = () => {
-    onDateChange(subMonths(currentDate, 1));
-  };
-
-  const handleNextMonth = () => {
-    onDateChange(addMonths(currentDate, 1));
-  };
-
-  const handleToday = () => {
-    onDateChange(new Date());
-  };
-
   return (
-    <View className="flex-1 bg-white">
-      {/* ヘッダー */}
-      <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-        <Pressable
-          onPress={handlePrevMonth}
-          className="rounded-full p-2 active:bg-gray-100"
-        >
-          <MaterialIcons name="chevron-left" size={28} color="#374151" />
-        </Pressable>
-
-        <Pressable onPress={handleToday} className="active:opacity-70">
-          <Text className="text-xl font-bold text-gray-900">
-            {format(currentDate, "yyyy年M月", { locale: ja })}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleNextMonth}
-          className="rounded-full p-2 active:bg-gray-100"
-        >
-          <MaterialIcons name="chevron-right" size={28} color="#374151" />
-        </Pressable>
-      </View>
-
+    <View className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden">
       {/* 曜日ヘッダー */}
-      <View className="flex-row border-b border-gray-200">
+      <View className="flex-row bg-gray-50 border-b border-gray-100">
         {WEEKDAYS.map((day, index) => (
-          <View key={day} className="flex-1 items-center py-2">
+          <View key={day} className="flex-1 items-center py-2.5">
             <Text
               className={`text-sm font-medium ${
-                index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-gray-600"
+                index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-gray-600"
               }`}
             >
               {day}
@@ -143,7 +104,7 @@ export function MonthView({
                 key={dateKey}
                 onPress={() => onDateSelect(day)}
                 className={`w-[14.28%] border-b border-r border-gray-100 p-1 ${
-                  !isCurrentMonth ? "bg-gray-50" : ""
+                  !isCurrentMonth ? "bg-gray-50/50" : ""
                 }`}
                 style={{ minHeight: 80 }}
               >
@@ -159,9 +120,9 @@ export function MonthView({
                         : !isCurrentMonth
                           ? "text-gray-400"
                           : dayOfWeek === 0
-                            ? "text-red-500"
+                            ? "text-rose-500"
                             : dayOfWeek === 6
-                              ? "text-blue-500"
+                              ? "text-sky-500"
                               : "text-gray-900"
                     }`}
                   >
@@ -169,12 +130,16 @@ export function MonthView({
                   </Text>
                 </View>
 
-                {/* スケジュールドット */}
-                <View className="flex-1">
+                {/* スケジュール表示 */}
+                <View className="flex-1 gap-0.5">
                   {daySchedules.slice(0, 3).map((schedule) => (
-                    <View
+                    <Pressable
                       key={schedule.id}
-                      className="mb-0.5 rounded px-1 py-0.5"
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        onScheduleClick(schedule);
+                      }}
+                      className="rounded px-1 py-0.5"
                       style={{
                         backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
                       }}
@@ -185,7 +150,7 @@ export function MonthView({
                       >
                         {schedule.title}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                   {daySchedules.length > 3 && (
                     <Text className="text-center text-xs text-gray-500">

@@ -36,7 +36,7 @@ function RootLayoutNav() {
       router.replace("/sign-in");
     } else if (isAuthenticated && !inAuthGroup && !inInviteGroup) {
       // 認証済みでアプリグループ外にいる場合はホームへ
-      router.replace("/(app)/(tabs)");
+      router.replace("/(app)");
     }
   }, [isAuthenticated, isLoading, segments, router]);
 

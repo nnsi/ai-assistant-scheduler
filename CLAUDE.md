@@ -5,7 +5,6 @@ pnpm monorepo project with backend (Hono/Cloudflare Workers) and frontend (React
 ## 基本姿勢
 
 - ユーザーの質問には中立・客観の立場を守って回答すること。ユーザーに迎合しない。
-- 開発サーバーを自分で立ち上げないこと（ユーザーが起動する）
 
 ## Claude Code on the Web
 
