@@ -1,9 +1,9 @@
 /**
  * 週表示カレンダーコンポーネント
- * Web版と同じデザイン
+ * モバイル最適化：コンパクトなヘッダー、見やすい時間軸
  */
 import { View, Text, Pressable, ScrollView } from "react-native";
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
 import {
   startOfWeek,
@@ -27,7 +27,7 @@ interface WeekViewProps {
   selectedCalendarIds: string[];
 }
 
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const WEEKDAYS_SHORT = ["日", "月", "火", "水", "木", "金", "土"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 // 指定した日付にスケジュールが表示されるべきか判定
@@ -107,38 +107,46 @@ export function WeekView({
   };
 
   const today = new Date();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // 初期表示時に現在時刻付近にスクロール
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    const scrollTo = Math.max(0, (currentHour - 1) * 48);
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: scrollTo, animated: false });
+    }, 100);
+  }, []);
 
   return (
-    <View className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* 曜日ヘッダー */}
-      <View className="flex-row bg-gray-50 border-b border-gray-100">
-        <View className="w-12 py-2 items-center justify-center">
-          <Text className="text-xs text-gray-500">時間</Text>
-        </View>
+    <View className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
+      {/* 曜日ヘッダー - コンパクト化 */}
+      <View className="flex-row border-b border-gray-100">
+        <View className="w-10 py-1.5 items-center justify-center" />
         {days.map((date, index) => {
           const isTodayDate = isToday(date);
           return (
             <View
               key={date.toISOString()}
-              className={`flex-1 py-2 items-center border-l border-gray-100 ${
+              className={`flex-1 py-1.5 items-center ${
                 isTodayDate ? "bg-primary-50" : ""
               }`}
             >
               <Text
-                className={`text-xs font-medium ${
-                  index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-gray-600"
+                className={`text-[10px] font-medium ${
+                  index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-gray-500"
                 }`}
               >
-                {WEEKDAYS[index]}
+                {WEEKDAYS_SHORT[index]}
               </Text>
               <View
-                className={`mt-1 w-6 h-6 items-center justify-center rounded-full ${
+                className={`mt-0.5 w-6 h-6 items-center justify-center rounded-full ${
                   isTodayDate ? "bg-primary-500" : ""
                 }`}
               >
                 <Text
-                  className={`text-sm font-medium ${
-                    isTodayDate ? "text-white" : "text-gray-900"
+                  className={`text-xs font-semibold ${
+                    isTodayDate ? "text-white" : "text-gray-800"
                   }`}
                 >
                   {format(date, "d")}
@@ -149,72 +157,81 @@ export function WeekView({
         })}
       </View>
 
-      {/* 終日イベントエリア */}
-      <View className="flex-row border-b border-gray-100">
-        <View className="w-12 py-1 items-center justify-center">
-          <Text className="text-xs text-gray-500">終日</Text>
+      {/* 終日イベントエリア - 予定がある場合のみ表示 */}
+      {days.some((date) => getSchedulesForDate(date).some((s) => s.isAllDay)) && (
+        <View className="flex-row border-b border-gray-100 bg-gray-50/50">
+          <View className="w-10 py-1 items-center justify-center">
+            <Text className="text-[10px] text-gray-400">終日</Text>
+          </View>
+          {days.map((date) => {
+            const daySchedules = getSchedulesForDate(date).filter((s) => s.isAllDay);
+            return (
+              <View
+                key={date.toISOString()}
+                className="flex-1 py-1 px-0.5 min-h-[24px]"
+              >
+                {daySchedules.slice(0, 1).map((schedule) => (
+                  <Pressable
+                    key={schedule.id}
+                    onPress={() => onScheduleClick(schedule)}
+                    className="rounded-sm px-0.5 py-0.5"
+                    style={{
+                      backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
+                    }}
+                  >
+                    <Text className="text-[9px] text-white font-medium" numberOfLines={1}>
+                      {schedule.title}
+                    </Text>
+                  </Pressable>
+                ))}
+                {daySchedules.length > 1 && (
+                  <Text className="text-[9px] text-gray-400 text-center">+{daySchedules.length - 1}</Text>
+                )}
+              </View>
+            );
+          })}
         </View>
-        {days.map((date) => {
-          const daySchedules = getSchedulesForDate(date).filter((s) => s.isAllDay);
-          return (
-            <View
-              key={date.toISOString()}
-              className="flex-1 py-1 px-0.5 border-l border-gray-100 min-h-[28px]"
-            >
-              {daySchedules.slice(0, 2).map((schedule) => (
-                <Pressable
-                  key={schedule.id}
-                  onPress={() => onScheduleClick(schedule)}
-                  className="rounded px-1 py-0.5 mb-0.5"
-                  style={{
-                    backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
-                  }}
-                >
-                  <Text className="text-xs text-white" numberOfLines={1}>
-                    {schedule.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          );
-        })}
-      </View>
+      )}
 
       {/* 時間グリッド */}
-      <ScrollView className="flex-1">
+      <ScrollView ref={scrollViewRef} className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-row">
           {/* 時間列 */}
-          <View className="w-12">
+          <View className="w-10">
             {HOURS.map((hour) => (
               <View
                 key={hour}
-                className="h-12 border-b border-gray-100 items-end justify-start pr-1"
+                className="h-12 border-b border-gray-50 items-center justify-start"
               >
-                <Text className="text-xs text-gray-400">
-                  {hour.toString().padStart(2, "0")}:00
+                <Text className="text-[10px] text-gray-400 mt-[-5px]">
+                  {hour.toString().padStart(2, "0")}
                 </Text>
               </View>
             ))}
           </View>
 
           {/* 日ごとの列 */}
-          {days.map((date) => {
+          {days.map((date, dayIndex) => {
             const daySchedules = getSchedulesForDate(date).filter((s) => !s.isAllDay);
+            const isTodayDate = isToday(date);
 
             return (
-              <View key={date.toISOString()} className="flex-1 relative border-l border-gray-100">
+              <View
+                key={date.toISOString()}
+                className={`flex-1 relative border-l border-gray-50 ${isTodayDate ? "bg-primary-50/30" : ""}`}
+              >
                 {HOURS.map((hour) => (
                   <Pressable
                     key={hour}
                     onPress={() => onTimeSlotClick(date, hour)}
-                    className="h-12 border-b border-gray-100 active:bg-gray-50"
+                    className="h-12 border-b border-gray-50 active:bg-gray-100"
                   />
                 ))}
 
                 {/* スケジュール表示 */}
                 {daySchedules.map((schedule) => {
                   const { startMinutes, heightMinutes } = getSchedulePosition(schedule, date);
-                  const topPosition = (startMinutes / 60) * 48; // 48px per hour
+                  const topPosition = (startMinutes / 60) * 48;
                   const height = (heightMinutes / 60) * 48;
                   const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
 
@@ -222,14 +239,14 @@ export function WeekView({
                     <Pressable
                       key={schedule.id}
                       onPress={() => onScheduleClick(schedule)}
-                      className="absolute left-0.5 right-0.5 rounded px-1 py-0.5 overflow-hidden"
+                      className="absolute left-0.5 right-0.5 rounded-sm px-1 py-0.5 overflow-hidden"
                       style={{
                         top: topPosition,
-                        height: Math.max(18, height),
+                        height: Math.max(16, height),
                         backgroundColor: color,
                       }}
                     >
-                      <Text className="text-xs text-white" numberOfLines={1}>
+                      <Text className="text-[10px] text-white font-medium" numberOfLines={1}>
                         {schedule.title}
                       </Text>
                     </Pressable>

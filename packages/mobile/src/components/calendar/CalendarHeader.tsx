@@ -1,8 +1,8 @@
 /**
  * カレンダーヘッダー
- * Web版と同じ構成：日付ナビゲーション、表示モード切替、機能ボタン
+ * モバイル最適化：コンパクトなナビゲーション、アイコンのみのツールバー
  */
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -32,12 +32,12 @@ const getLabel = (date: Date, viewMode: CalendarViewMode): string => {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       if (weekStart.getMonth() === weekEnd.getMonth()) {
-        return format(weekStart, "yyyy年M月d日", { locale: ja }) + "〜" + format(weekEnd, "d日", { locale: ja });
+        return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "d", { locale: ja });
       }
       return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "M/d", { locale: ja });
     }
     case "day":
-      return format(date, "yyyy年M月d日(E)", { locale: ja });
+      return format(date, "M/d(E)", { locale: ja });
   }
 };
 
@@ -53,122 +53,91 @@ export const CalendarHeader = ({
   onCalendarManageClick,
   onConditionsClick,
 }: CalendarHeaderProps) => {
-  const viewModes: { mode: CalendarViewMode; icon: keyof typeof MaterialIcons.glyphMap; label: string }[] = [
-    { mode: "month", icon: "calendar-view-month", label: "月" },
-    { mode: "week", icon: "view-week", label: "週" },
-    { mode: "day", icon: "view-day", label: "日" },
+  const viewModes: { mode: CalendarViewMode; label: string }[] = [
+    { mode: "month", label: "月" },
+    { mode: "week", label: "週" },
+    { mode: "day", label: "日" },
   ];
 
   return (
-    <View className="bg-white border-b border-gray-200">
-      {/* 日付ナビゲーション */}
-      <View className="flex-row items-center justify-between px-4 py-3">
+    <View className="bg-white">
+      {/* メインナビゲーション行：日付 + 表示切替 + ツールボタン */}
+      <View className="flex-row items-center justify-between px-3 py-2">
+        {/* 日付ナビゲーション */}
         <View className="flex-row items-center">
           <Pressable
             onPress={onPrevious}
-            className="p-2 rounded-xl active:bg-gray-100"
+            className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
           >
-            <MaterialIcons name="chevron-left" size={24} color="#78716c" />
+            <MaterialIcons name="chevron-left" size={28} color="#374151" />
           </Pressable>
-          <Text className="text-lg font-semibold text-gray-900 min-w-[140px] text-center">
-            {getLabel(currentDate, viewMode)}
-          </Text>
+          <Pressable
+            onPress={onToday}
+            className="px-2 py-1 active:bg-gray-100 rounded-lg"
+          >
+            <Text className="text-base font-bold text-gray-900">
+              {getLabel(currentDate, viewMode)}
+            </Text>
+          </Pressable>
           <Pressable
             onPress={onNext}
-            className="p-2 rounded-xl active:bg-gray-100"
+            className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
           >
-            <MaterialIcons name="chevron-right" size={24} color="#78716c" />
+            <MaterialIcons name="chevron-right" size={28} color="#374151" />
           </Pressable>
         </View>
 
-        {/* 今日ボタン */}
-        <Pressable
-          onPress={onToday}
-          className="px-3 py-1.5 rounded-lg bg-gray-100 active:bg-gray-200"
-        >
-          <Text className="text-sm font-medium text-gray-700">今日</Text>
-        </Pressable>
-      </View>
-
-      {/* 表示モード切替と機能ボタン */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="border-t border-gray-100"
-        contentContainerClassName="px-4 py-2 gap-2"
-      >
-        {/* 表示モード切替 */}
-        <View className="flex-row bg-gray-100 rounded-xl p-1">
-          {viewModes.map(({ mode, icon, label }) => (
-            <Pressable
-              key={mode}
-              onPress={() => onViewModeChange(mode)}
-              className={`px-3 py-1.5 rounded-lg ${
-                viewMode === mode ? "bg-white shadow-sm" : ""
-              }`}
-            >
-              <View className="flex-row items-center gap-1">
-                <MaterialIcons
-                  name={icon}
-                  size={16}
-                  color={viewMode === mode ? "#3b82f6" : "#78716c"}
-                />
+        {/* 右側：表示モード切替 + ツールボタン */}
+        <View className="flex-row items-center gap-1">
+          {/* 表示モード切替（セグメント） */}
+          <View className="flex-row bg-gray-100 rounded-lg p-0.5 mr-2">
+            {viewModes.map(({ mode, label }) => (
+              <Pressable
+                key={mode}
+                onPress={() => onViewModeChange(mode)}
+                className={`px-3 py-1.5 rounded-md ${
+                  viewMode === mode ? "bg-white shadow-sm" : ""
+                }`}
+              >
                 <Text
-                  className={`text-sm font-medium ${
-                    viewMode === mode ? "text-primary-500" : "text-gray-600"
+                  className={`text-sm font-semibold ${
+                    viewMode === mode ? "text-primary-500" : "text-gray-500"
                   }`}
                 >
                   {label}
                 </Text>
-              </View>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* ツールボタン（アイコンのみ） */}
+          {onSearchClick && (
+            <Pressable
+              onPress={onSearchClick}
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+            >
+              <MaterialIcons name="search" size={22} color="#6b7280" />
             </Pressable>
-          ))}
-        </View>
+          )}
 
-        {/* 検索ボタン */}
-        {onSearchClick && (
-          <Pressable
-            onPress={onSearchClick}
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-lg active:bg-gray-100"
-          >
-            <MaterialIcons name="search" size={20} color="#78716c" />
-            <Text className="text-sm font-medium text-gray-600">検索</Text>
-          </Pressable>
-        )}
+          {onConditionsClick && (
+            <Pressable
+              onPress={onConditionsClick}
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+            >
+              <MaterialIcons name="tune" size={22} color="#6b7280" />
+            </Pressable>
+          )}
 
-        {/* カテゴリボタン */}
-        {onCategoryClick && (
-          <Pressable
-            onPress={onCategoryClick}
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-lg active:bg-gray-100"
-          >
-            <MaterialIcons name="label" size={20} color="#78716c" />
-            <Text className="text-sm font-medium text-gray-600">カテゴリ</Text>
-          </Pressable>
-        )}
-
-        {/* カレンダー管理ボタン */}
-        {onCalendarManageClick && (
+          {/* その他のボタンはメニューに統合（長押しでアクセス可能なことを示す点） */}
           <Pressable
             onPress={onCalendarManageClick}
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-lg active:bg-gray-100"
+            className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
           >
-            <MaterialIcons name="people" size={20} color="#78716c" />
-            <Text className="text-sm font-medium text-gray-600">カレンダー</Text>
+            <MaterialIcons name="more-vert" size={22} color="#6b7280" />
           </Pressable>
-        )}
-
-        {/* こだわり条件ボタン */}
-        {onConditionsClick && (
-          <Pressable
-            onPress={onConditionsClick}
-            className="flex-row items-center gap-1 px-3 py-1.5 rounded-lg active:bg-gray-100"
-          >
-            <MaterialIcons name="tune" size={20} color="#78716c" />
-            <Text className="text-sm font-medium text-gray-600">条件</Text>
-          </Pressable>
-        )}
-      </ScrollView>
+        </View>
+      </View>
     </View>
   );
 };

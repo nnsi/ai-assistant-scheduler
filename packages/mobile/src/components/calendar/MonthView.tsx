@@ -1,8 +1,8 @@
 /**
  * 月表示カレンダーコンポーネント
- * Web版と同じデザイン
+ * モバイル最適化：コンパクトなセル、見やすい予定表示
  */
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useMemo } from "react";
 import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
 import {
@@ -35,6 +35,9 @@ export function MonthView({
   calendars,
   selectedCalendarIds,
 }: MonthViewProps) {
+  const { width } = useWindowDimensions();
+  const cellWidth = Math.floor(width / 7) - 2;
+
   // 月の日付配列を生成（前後の週も含む）
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -44,6 +47,9 @@ export function MonthView({
 
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
+
+  // 週数を計算して高さを調整
+  const weekCount = Math.ceil(days.length / 7);
 
   // 日付ごとのスケジュールをマップ
   const schedulesByDate = useMemo(() => {
@@ -73,14 +79,14 @@ export function MonthView({
   }, [calendars]);
 
   return (
-    <View className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* 曜日ヘッダー */}
-      <View className="flex-row bg-gray-50 border-b border-gray-100">
+    <View className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
+      {/* 曜日ヘッダー - コンパクト化 */}
+      <View className="flex-row border-b border-gray-100">
         {WEEKDAYS.map((day, index) => (
-          <View key={day} className="flex-1 items-center py-2.5">
+          <View key={day} className="flex-1 items-center py-2">
             <Text
-              className={`text-sm font-medium ${
-                index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-gray-600"
+              className={`text-xs font-semibold ${
+                index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-gray-500"
               }`}
             >
               {day}
@@ -90,7 +96,7 @@ export function MonthView({
       </View>
 
       {/* カレンダーグリッド */}
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-row flex-wrap">
           {days.map((day) => {
             const dateKey = format(day, "yyyy-MM-dd");
@@ -98,64 +104,74 @@ export function MonthView({
             const isCurrentMonth = isSameMonth(day, currentDate);
             const isTodayDate = isToday(day);
             const dayOfWeek = day.getDay();
+            const hasSchedules = daySchedules.length > 0;
 
             return (
               <Pressable
                 key={dateKey}
                 onPress={() => onDateSelect(day)}
-                className={`w-[14.28%] border-b border-r border-gray-100 p-1 ${
-                  !isCurrentMonth ? "bg-gray-50/50" : ""
+                className={`w-[14.28%] border-b border-r border-gray-50 ${
+                  !isCurrentMonth ? "bg-gray-50/30" : "active:bg-gray-50"
                 }`}
-                style={{ minHeight: 80 }}
+                style={{ minHeight: weekCount <= 5 ? 90 : 76 }}
               >
-                <View
-                  className={`mb-1 h-7 w-7 items-center justify-center self-center rounded-full ${
-                    isTodayDate ? "bg-primary-500" : ""
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      isTodayDate
-                        ? "text-white"
-                        : !isCurrentMonth
-                          ? "text-gray-400"
-                          : dayOfWeek === 0
-                            ? "text-rose-500"
-                            : dayOfWeek === 6
-                              ? "text-sky-500"
-                              : "text-gray-900"
+                {/* 日付 */}
+                <View className="items-center pt-1">
+                  <View
+                    className={`w-7 h-7 items-center justify-center rounded-full ${
+                      isTodayDate ? "bg-primary-500" : ""
                     }`}
                   >
-                    {format(day, "d")}
-                  </Text>
+                    <Text
+                      className={`text-sm ${
+                        isTodayDate
+                          ? "text-white font-bold"
+                          : !isCurrentMonth
+                            ? "text-gray-300"
+                            : dayOfWeek === 0
+                              ? "text-rose-500 font-medium"
+                              : dayOfWeek === 6
+                                ? "text-sky-500 font-medium"
+                                : "text-gray-800 font-medium"
+                      }`}
+                    >
+                      {format(day, "d")}
+                    </Text>
+                  </View>
                 </View>
 
-                {/* スケジュール表示 */}
-                <View className="flex-1 gap-0.5">
-                  {daySchedules.slice(0, 3).map((schedule) => (
+                {/* スケジュール表示 - よりコンパクトに */}
+                <View className="flex-1 px-0.5 pb-1 gap-0.5 mt-0.5">
+                  {daySchedules.slice(0, 2).map((schedule) => (
                     <Pressable
                       key={schedule.id}
                       onPress={(e) => {
                         e.stopPropagation();
                         onScheduleClick(schedule);
                       }}
-                      className="rounded px-1 py-0.5"
+                      className="rounded-sm px-1 py-0.5"
                       style={{
                         backgroundColor: (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6",
                       }}
                     >
                       <Text
-                        className="text-xs text-white"
+                        className="text-[10px] text-white font-medium"
                         numberOfLines={1}
                       >
                         {schedule.title}
                       </Text>
                     </Pressable>
                   ))}
-                  {daySchedules.length > 3 && (
-                    <Text className="text-center text-xs text-gray-500">
-                      +{daySchedules.length - 3}
-                    </Text>
+                  {daySchedules.length > 2 && (
+                    <View className="items-center">
+                      <Text className="text-[10px] text-gray-400 font-medium">
+                        +{daySchedules.length - 2}
+                      </Text>
+                    </View>
+                  )}
+                  {/* 予定があることを示すドット（予定が表示しきれない場合） */}
+                  {!hasSchedules && isCurrentMonth && (
+                    <View className="flex-1" />
                   )}
                 </View>
               </Pressable>

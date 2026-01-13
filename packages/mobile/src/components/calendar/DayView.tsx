@@ -1,9 +1,9 @@
 /**
  * 日表示カレンダーコンポーネント
- * Web版と同じデザイン
+ * モバイル最適化：シンプルなヘッダー、見やすい予定カード
  */
 import { View, Text, Pressable, ScrollView } from "react-native";
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
 import {
   format,
@@ -121,22 +121,34 @@ export function DayView({
     return "終日";
   };
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // 初期表示時に現在時刻付近にスクロール
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    const scrollTo = Math.max(0, (currentHour - 1) * 56);
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: scrollTo, animated: false });
+    }, 100);
+  }, []);
+
   return (
-    <View className="flex-1 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* ヘッダー */}
-      <View className={`border-b border-gray-100 px-5 py-4 ${isTodayDate ? "bg-primary-50" : "bg-gray-50"}`}>
-        <Text className={`text-center text-xl font-semibold ${isTodayDate ? "text-primary-600" : "text-gray-900"}`}>
-          {format(currentDate, "yyyy年M月d日", { locale: ja })}
-        </Text>
-        <Text className="text-center text-sm text-gray-500 mt-0.5">
-          {format(currentDate, "EEEE", { locale: ja })}
-        </Text>
+    <View className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
+      {/* ヘッダー - シンプル化 */}
+      <View className={`border-b border-gray-100 px-4 py-3 ${isTodayDate ? "bg-primary-50" : ""}`}>
+        <View className="flex-row items-center justify-center gap-2">
+          <Text className={`text-lg font-bold ${isTodayDate ? "text-primary-600" : "text-gray-900"}`}>
+            {format(currentDate, "M月d日", { locale: ja })}
+          </Text>
+          <Text className={`text-base ${isTodayDate ? "text-primary-500" : "text-gray-500"}`}>
+            {format(currentDate, "EEEE", { locale: ja })}
+          </Text>
+        </View>
       </View>
 
-      {/* 終日イベントエリア */}
+      {/* 終日イベントエリア - 予定がある場合のみ表示 */}
       {allDaySchedules.length > 0 && (
-        <View className="border-b border-gray-100 bg-gray-50/50 px-5 py-3">
-          <Text className="text-xs text-gray-500 font-medium mb-2">終日</Text>
+        <View className="border-b border-gray-100 bg-gray-50/50 px-4 py-2">
           <View className="gap-1.5">
             {allDaySchedules.map((schedule) => {
               const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
@@ -144,10 +156,10 @@ export function DayView({
                 <Pressable
                   key={schedule.id}
                   onPress={() => onScheduleClick(schedule)}
-                  className="w-full rounded-xl px-4 py-2.5"
-                  style={{ backgroundColor: `${color}20` }}
+                  className="rounded-lg px-3 py-2"
+                  style={{ backgroundColor: color }}
                 >
-                  <Text style={{ color }} className="font-medium">
+                  <Text className="text-white font-medium text-sm">
                     {schedule.title}
                   </Text>
                 </Pressable>
@@ -158,16 +170,16 @@ export function DayView({
       )}
 
       {/* 時間グリッド */}
-      <ScrollView className="flex-1">
+      <ScrollView ref={scrollViewRef} className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-row">
           {/* 時間列 */}
-          <View className="w-16">
+          <View className="w-12">
             {HOURS.map((hour) => (
               <View
                 key={hour}
-                className="h-16 border-b border-gray-100 items-end justify-start pr-3"
+                className="h-14 border-b border-gray-50 items-center justify-start"
               >
-                <Text className="text-xs text-gray-400">
+                <Text className="text-xs text-gray-400 mt-[-5px]">
                   {hour.toString().padStart(2, "0")}:00
                 </Text>
               </View>
@@ -175,37 +187,37 @@ export function DayView({
           </View>
 
           {/* スケジュール表示エリア */}
-          <View className="flex-1 relative border-l border-gray-100">
+          <View className="flex-1 relative border-l border-gray-50">
             {HOURS.map((hour) => (
               <Pressable
                 key={hour}
                 onPress={() => onTimeSlotClick(currentDate, hour)}
-                className="h-16 border-b border-gray-100 active:bg-gray-50"
+                className="h-14 border-b border-gray-50 active:bg-gray-100"
               />
             ))}
 
             {/* スケジュール表示 */}
             {timedSchedules.map((schedule) => {
               const { startMinutes, heightMinutes } = getSchedulePosition(schedule);
-              const topPosition = (startMinutes / 60) * 64; // 64px per hour
-              const height = (heightMinutes / 60) * 64;
+              const topPosition = (startMinutes / 60) * 56; // 56px per hour
+              const height = (heightMinutes / 60) * 56;
               const color = (schedule.calendarId && calendarColors.get(schedule.calendarId)) || "#3b82f6";
 
               return (
                 <Pressable
                   key={schedule.id}
                   onPress={() => onScheduleClick(schedule)}
-                  className="absolute left-2 right-2 rounded-xl px-4 py-2 overflow-hidden shadow-sm"
+                  className="absolute left-1 right-1 rounded-lg px-3 py-1.5 overflow-hidden"
                   style={{
                     top: topPosition,
-                    height: Math.max(32, height),
+                    height: Math.max(28, height),
                     backgroundColor: color,
                   }}
                 >
-                  <Text className="text-sm text-white opacity-80">
+                  <Text className="text-xs text-white/80">
                     {getTimeDisplay(schedule)}
                   </Text>
-                  <Text className="text-white font-medium" numberOfLines={1}>
+                  <Text className="text-white font-medium text-sm" numberOfLines={1}>
                     {schedule.title}
                   </Text>
                 </Pressable>

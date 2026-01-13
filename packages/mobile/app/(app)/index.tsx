@@ -3,7 +3,7 @@
  * Web版と同じ1画面+モーダル構成
  */
 import { useState, useMemo, useCallback } from "react";
-import { View, Text, Pressable, Modal, Image, ActivityIndicator, ScrollView, Alert, TextInput } from "react-native";
+import { View, Text, Pressable, Modal, Image, ActivityIndicator, ScrollView, Alert, TextInput, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
@@ -32,6 +32,7 @@ import {
   subDays,
   addHours,
 } from "date-fns";
+import { ja } from "date-fns/locale";
 import type { Schedule, CreateScheduleInput, UpdateScheduleInput, ScheduleWithSupplement } from "@ai-scheduler/shared";
 
 // Components
@@ -115,6 +116,9 @@ export default function MainApp() {
   const [showCalendarForm, setShowCalendarForm] = useState(false);
   const [showDefaultPicker, setShowDefaultPicker] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState("");
+
+  // その他メニュー state
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // プロフィール設定 state
   const [editEmail, setEditEmail] = useState(user?.email || "");
@@ -560,33 +564,33 @@ export default function MainApp() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
-      {/* ヘッダー */}
-      <View className="bg-white/80 border-b border-gray-200/50 px-4 py-3">
+      {/* ヘッダー - コンパクト化 */}
+      <View className="bg-white px-3 py-2">
         <View className="flex-row items-center justify-between">
-          {/* Logo */}
-          <View className="flex-row items-center gap-3">
-            <View className="w-10 h-10 rounded-xl bg-primary-500 items-center justify-center shadow-sm">
-              <MaterialIcons name="event" size={20} color="#ffffff" />
+          {/* Logo - シンプル化 */}
+          <View className="flex-row items-center gap-2">
+            <View className="w-8 h-8 rounded-lg bg-primary-500 items-center justify-center">
+              <MaterialIcons name="event" size={18} color="#ffffff" />
             </View>
-            <Text className="text-lg font-semibold text-gray-900">
-              AI Scheduler
+            <Text className="text-base font-bold text-gray-900">
+              Scheduler
             </Text>
           </View>
 
-          {/* User Menu */}
+          {/* User Menu - タップ領域拡大 */}
           {user && (
             <Pressable
               onPress={() => setIsProfileModalOpen(true)}
-              className="flex-row items-center gap-2 rounded-xl px-2 py-1.5 active:bg-gray-100"
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
             >
               {user.picture ? (
                 <Image
                   source={{ uri: user.picture }}
-                  className="w-8 h-8 rounded-full"
+                  className="w-9 h-9 rounded-full"
                 />
               ) : (
-                <View className="w-8 h-8 rounded-full bg-primary-100 items-center justify-center">
-                  <Text className="text-sm font-medium text-primary-500">
+                <View className="w-9 h-9 rounded-full bg-primary-100 items-center justify-center">
+                  <Text className="text-sm font-bold text-primary-500">
                     {user.name?.charAt(0) || "?"}
                   </Text>
                 </View>
@@ -606,7 +610,7 @@ export default function MainApp() {
         onViewModeChange={setViewMode}
         onSearchClick={() => setIsSearchModalOpen(true)}
         onCategoryClick={() => setIsCategoryModalOpen(true)}
-        onCalendarManageClick={() => setIsCalendarManagementOpen(true)}
+        onCalendarManageClick={() => setIsMoreMenuOpen(true)}
         onConditionsClick={handleOpenConditions}
       />
 
@@ -644,7 +648,7 @@ export default function MainApp() {
         )}
       </View>
 
-      {/* 新規作成ボタン（FAB） */}
+      {/* 新規作成ボタン（FAB）- サイズ最適化 */}
       <Pressable
         onPress={() => {
           setSelectedDate(new Date());
@@ -653,9 +657,16 @@ export default function MainApp() {
           setEditingSchedule(null);
           setIsFormModalOpen(true);
         }}
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary-500 items-center justify-center shadow-lg active:bg-primary-600"
+        className="absolute bottom-6 right-5 w-16 h-16 rounded-full bg-primary-500 items-center justify-center active:bg-primary-600"
+        style={{
+          shadowColor: "#f97316",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+        }}
       >
-        <MaterialIcons name="add" size={28} color="#ffffff" />
+        <MaterialIcons name="add" size={32} color="#ffffff" />
       </Pressable>
 
       {/* スケジュール作成/編集モーダル */}
@@ -666,11 +677,14 @@ export default function MainApp() {
         onRequestClose={() => setIsFormModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => setIsFormModalOpen(false)} className="p-2">
+          <View className="flex-row items-center justify-between bg-white px-2 py-2">
+            <Pressable
+              onPress={() => setIsFormModalOpen(false)}
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+            >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">
+            <Text className="text-base font-semibold text-gray-900">
               {isEditMode ? "予定を編集" : "新しい予定"}
             </Text>
             <View className="w-10" />
@@ -690,7 +704,7 @@ export default function MainApp() {
         </SafeAreaView>
       </Modal>
 
-      {/* スケジュール詳細モーダル */}
+      {/* スケジュール詳細モーダル - 情報充実 */}
       <Modal
         visible={isPopupOpen}
         animationType="slide"
@@ -701,100 +715,199 @@ export default function MainApp() {
         }}
       >
         <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => { setIsPopupOpen(false); setShowAIResult(false); }} className="p-2">
+          {/* ヘッダー */}
+          <View className="flex-row items-center justify-between bg-white px-2 py-2">
+            <Pressable
+              onPress={() => { setIsPopupOpen(false); setShowAIResult(false); }}
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+            >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900">予定詳細</Text>
+            <Text className="text-base font-semibold text-gray-900">予定詳細</Text>
             <View className="flex-row">
-              <Pressable onPress={handleScheduleEdit} className="p-2">
-                <MaterialIcons name="edit" size={24} color="#3b82f6" />
+              <Pressable onPress={handleScheduleEdit} className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100">
+                <MaterialIcons name="edit" size={22} color="#3b82f6" />
               </Pressable>
-              <Pressable onPress={handleScheduleDelete} className="p-2">
-                <MaterialIcons name="delete" size={24} color="#ef4444" />
+              <Pressable onPress={handleScheduleDelete} className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100">
+                <MaterialIcons name="delete" size={22} color="#ef4444" />
               </Pressable>
             </View>
           </View>
-          {selectedSchedule && (
-            <ScrollView className="flex-1 p-4">
-              <Text className="text-2xl font-bold text-gray-900 mb-4">
-                {selectedSchedule.title}
-              </Text>
 
-              {/* 日時 */}
-              <View className="flex-row items-center mb-3">
-                <MaterialIcons name="access-time" size={20} color="#6b7280" />
-                <Text className="ml-2 text-gray-600">
-                  {format(new Date(selectedSchedule.startAt), "yyyy/M/d HH:mm")}
-                  {selectedSchedule.endAt && (
-                    <> 〜 {format(new Date(selectedSchedule.endAt), "HH:mm")}</>
-                  )}
+          {selectedSchedule && (
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+              {/* タイトルカード */}
+              <View className="bg-white px-4 py-4 border-b border-gray-100">
+                {/* カテゴリバッジ */}
+                {selectedSchedule.categoryId && (() => {
+                  const category = categories.find(c => c.id === selectedSchedule.categoryId);
+                  return category ? (
+                    <View
+                      className="self-start rounded-full px-2.5 py-1 mb-2"
+                      style={{ backgroundColor: category.color || "#3b82f6" }}
+                    >
+                      <Text className="text-xs text-white font-medium">{category.name}</Text>
+                    </View>
+                  ) : null;
+                })()}
+
+                <Text className="text-xl font-bold text-gray-900">
+                  {selectedSchedule.title}
                 </Text>
               </View>
 
-              {/* 終日 */}
-              {selectedSchedule.isAllDay && (
-                <View className="flex-row items-center mb-3">
-                  <MaterialIcons name="wb-sunny" size={20} color="#6b7280" />
-                  <Text className="ml-2 text-gray-600">終日</Text>
-                </View>
-              )}
-
-              {/* 繰り返し */}
-              {selectedSchedule.recurrence && (
-                <View className="flex-row items-center mb-3">
-                  <MaterialIcons name="repeat" size={20} color="#6b7280" />
-                  <Text className="ml-2 text-gray-600">
-                    {selectedSchedule.recurrence.frequency === "daily" && "毎日"}
-                    {selectedSchedule.recurrence.frequency === "weekly" && "毎週"}
-                    {selectedSchedule.recurrence.frequency === "monthly" && "毎月"}
-                    {selectedSchedule.recurrence.frequency === "yearly" && "毎年"}
-                    繰り返し
-                  </Text>
-                </View>
-              )}
-
-              {/* カテゴリ */}
-              {selectedSchedule.categoryId && (
-                <View className="flex-row items-center mb-3">
-                  <MaterialIcons name="label" size={20} color="#6b7280" />
-                  <View className="ml-2">
-                    {(() => {
-                      const category = categories.find(c => c.id === selectedSchedule.categoryId);
-                      return category ? (
-                        <View
-                          className="rounded-full px-2 py-0.5"
-                          style={{ backgroundColor: category.color || "#e5e7eb" }}
-                        >
-                          <Text className="text-xs text-white">{category.name}</Text>
-                        </View>
-                      ) : null;
-                    })()}
+              {/* 日時情報カード */}
+              <View className="bg-white mt-2 px-4 py-3">
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center">
+                    <MaterialIcons name="schedule" size={20} color="#3b82f6" />
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text className="text-sm text-gray-500">日時</Text>
+                    <Text className="text-base text-gray-900 font-medium">
+                      {selectedSchedule.isAllDay
+                        ? format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E)", { locale: ja }) + " 終日"
+                        : format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E) HH:mm", { locale: ja }) +
+                          (selectedSchedule.endAt ? ` 〜 ${format(new Date(selectedSchedule.endAt), "HH:mm")}` : "")}
+                    </Text>
                   </View>
                 </View>
-              )}
+
+                {/* 繰り返し */}
+                {selectedSchedule.recurrence && (
+                  <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
+                    <View className="w-10 h-10 rounded-full bg-purple-50 items-center justify-center">
+                      <MaterialIcons name="repeat" size={20} color="#8b5cf6" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-sm text-gray-500">繰り返し</Text>
+                      <Text className="text-base text-gray-900 font-medium">
+                        {selectedSchedule.recurrence.frequency === "daily" && "毎日"}
+                        {selectedSchedule.recurrence.frequency === "weekly" && "毎週"}
+                        {selectedSchedule.recurrence.frequency === "monthly" && "毎月"}
+                        {selectedSchedule.recurrence.frequency === "yearly" && "毎年"}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* カレンダー */}
+                {selectedSchedule.calendarId && (() => {
+                  const calendar = calendars.find(c => c.id === selectedSchedule.calendarId);
+                  return calendar ? (
+                    <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
+                      <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
+                        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: calendar.color || "#3b82f6" }} />
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <Text className="text-sm text-gray-500">カレンダー</Text>
+                        <Text className="text-base text-gray-900 font-medium">{calendar.name}</Text>
+                      </View>
+                    </View>
+                  ) : null;
+                })()}
+              </View>
 
               {/* メモ */}
               {fullSchedule?.supplement?.userMemo && (
-                <View className="mt-4 bg-white rounded-xl p-4">
-                  <View className="flex-row items-center mb-2">
-                    <MaterialIcons name="notes" size={20} color="#6b7280" />
-                    <Text className="ml-2 text-sm font-medium text-gray-700">メモ</Text>
+                <View className="bg-white mt-2 px-4 py-3">
+                  <View className="flex-row items-start">
+                    <View className="w-10 h-10 rounded-full bg-amber-50 items-center justify-center">
+                      <MaterialIcons name="notes" size={20} color="#f59e0b" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-sm text-gray-500 mb-1">メモ</Text>
+                      <Text className="text-base text-gray-700 leading-6">{fullSchedule.supplement.userMemo}</Text>
+                    </View>
                   </View>
-                  <Text className="text-gray-600">{fullSchedule.supplement.userMemo}</Text>
+                </View>
+              )}
+
+              {/* 選択した店舗 */}
+              {fullSchedule?.supplement?.selectedShops && fullSchedule.supplement.selectedShops.length > 0 && (
+                <View className="bg-white mt-2 px-4 py-3">
+                  <View className="flex-row items-center mb-3">
+                    <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center">
+                      <MaterialIcons name="store" size={20} color="#f43f5e" />
+                    </View>
+                    <View className="ml-3">
+                      <Text className="text-sm text-gray-500">選択した店舗</Text>
+                    </View>
+                  </View>
+                  <View className="gap-3">
+                    {fullSchedule.supplement.selectedShops.map((shop, index) => (
+                      <View key={index} className="bg-gray-50 rounded-xl p-3">
+                        <Text className="text-base font-semibold text-gray-900 mb-1">{shop.name}</Text>
+                        {shop.summary && (
+                          <Text className="text-sm text-gray-600 mb-2">{shop.summary}</Text>
+                        )}
+                        {shop.address && (
+                          <View className="flex-row items-center mb-1">
+                            <MaterialIcons name="place" size={14} color="#9ca3af" />
+                            <Text className="text-xs text-gray-500 ml-1 flex-1">{shop.address}</Text>
+                          </View>
+                        )}
+                        {shop.businessHours && (
+                          <View className="flex-row items-center mb-1">
+                            <MaterialIcons name="schedule" size={14} color="#9ca3af" />
+                            <Text className="text-xs text-gray-500 ml-1">{shop.businessHours}</Text>
+                          </View>
+                        )}
+                        {shop.urls && (
+                          <View className="flex-row flex-wrap gap-2 mt-2">
+                            {shop.urls.official && (
+                              <Pressable
+                                onPress={() => Linking.openURL(shop.urls!.official!)}
+                                className="bg-blue-100 px-2 py-1 rounded"
+                              >
+                                <Text className="text-xs text-blue-700 font-medium">公式サイト</Text>
+                              </Pressable>
+                            )}
+                            {shop.urls.reservation && (
+                              <Pressable
+                                onPress={() => Linking.openURL(shop.urls!.reservation!)}
+                                className="bg-green-100 px-2 py-1 rounded"
+                              >
+                                <Text className="text-xs text-green-700 font-medium">予約</Text>
+                              </Pressable>
+                            )}
+                            {shop.urls.tabelog && (
+                              <Pressable
+                                onPress={() => Linking.openURL(shop.urls!.tabelog!)}
+                                className="bg-orange-100 px-2 py-1 rounded"
+                              >
+                                <Text className="text-xs text-orange-700 font-medium">食べログ</Text>
+                              </Pressable>
+                            )}
+                            {shop.urls.googleMap && (
+                              <Pressable
+                                onPress={() => Linking.openURL(shop.urls!.googleMap!)}
+                                className="bg-red-100 px-2 py-1 rounded"
+                              >
+                                <Text className="text-xs text-red-700 font-medium">地図</Text>
+                              </Pressable>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                  </View>
                 </View>
               )}
 
               {/* AI検索結果 */}
               {fullSchedule?.supplement?.aiResult && (
-                <View className="mt-4 bg-white rounded-xl overflow-hidden">
+                <View className="bg-white mt-2 overflow-hidden">
                   <Pressable
                     onPress={() => setShowAIResult(!showAIResult)}
-                    className="flex-row items-center justify-between p-4 active:bg-gray-50"
+                    className="flex-row items-center px-4 py-3 active:bg-gray-50"
                   >
-                    <View className="flex-row items-center">
-                      <MaterialIcons name="auto-awesome" size={20} color="#6b7280" />
-                      <Text className="ml-2 text-sm font-medium text-gray-700">AI検索結果を表示</Text>
+                    <View className="w-10 h-10 rounded-full bg-gradient-to-r bg-primary-50 items-center justify-center">
+                      <MaterialIcons name="auto-awesome" size={20} color="#f97316" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-sm text-gray-500">AI検索結果</Text>
+                      <Text className="text-base text-gray-900 font-medium">タップして{showAIResult ? "閉じる" : "表示"}</Text>
                     </View>
                     <MaterialIcons
                       name={showAIResult ? "expand-less" : "expand-more"}
@@ -803,14 +916,17 @@ export default function MainApp() {
                     />
                   </Pressable>
                   {showAIResult && (
-                    <View className="px-4 pb-4 border-t border-gray-100">
-                      <Text className="text-gray-600 text-sm mt-3 leading-5">
+                    <View className="px-4 pb-4 pt-2 bg-gray-50 mx-4 mb-4 rounded-xl">
+                      <Text className="text-gray-700 text-sm leading-6">
                         {fullSchedule.supplement.aiResult}
                       </Text>
                     </View>
                   )}
                 </View>
               )}
+
+              {/* 下部の余白 */}
+              <View className="h-8" />
             </ScrollView>
           )}
         </SafeAreaView>
@@ -1685,6 +1801,67 @@ export default function MainApp() {
             )}
           </View>
         </SafeAreaView>
+      </Modal>
+
+      {/* その他メニュー（ボトムシート風） */}
+      <Modal
+        visible={isMoreMenuOpen}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setIsMoreMenuOpen(false)}
+      >
+        <Pressable
+          onPress={() => setIsMoreMenuOpen(false)}
+          className="flex-1 bg-black/50 justify-end"
+        >
+          <Pressable onPress={() => {}} className="bg-white rounded-t-3xl">
+            <View className="w-10 h-1 bg-gray-300 rounded-full self-center mt-3 mb-2" />
+            <View className="px-4 pb-8">
+              <Text className="text-lg font-bold text-gray-900 mb-4">メニュー</Text>
+
+              <Pressable
+                onPress={() => {
+                  setIsMoreMenuOpen(false);
+                  setIsCategoryModalOpen(true);
+                }}
+                className="flex-row items-center py-4 border-b border-gray-100 active:bg-gray-50"
+              >
+                <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-4">
+                  <MaterialIcons name="label" size={22} color="#3b82f6" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-medium text-gray-900">カテゴリ管理</Text>
+                  <Text className="text-sm text-gray-500">カテゴリの作成・編集</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setIsMoreMenuOpen(false);
+                  setIsCalendarManagementOpen(true);
+                }}
+                className="flex-row items-center py-4 border-b border-gray-100 active:bg-gray-50"
+              >
+                <View className="w-10 h-10 rounded-full bg-green-100 items-center justify-center mr-4">
+                  <MaterialIcons name="calendar-today" size={22} color="#22c55e" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-medium text-gray-900">カレンダー管理</Text>
+                  <Text className="text-sm text-gray-500">表示・デフォルト設定</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+              </Pressable>
+
+              <Pressable
+                onPress={() => setIsMoreMenuOpen(false)}
+                className="mt-4 py-3 bg-gray-100 rounded-xl active:bg-gray-200"
+              >
+                <Text className="text-center text-gray-700 font-medium">閉じる</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

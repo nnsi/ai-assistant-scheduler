@@ -168,22 +168,19 @@ export function ScheduleForm({
   const selectedCategory = categories.find((c) => c.id === categoryId);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      {/* タイトル */}
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+      {/* タイトル入力 + AIボタン */}
+      <View className="mx-3 mt-3 rounded-xl bg-white overflow-hidden">
         <TextInput
           value={title}
           onChangeText={setTitle}
           placeholder="タイトルを入力"
           placeholderTextColor="#9ca3af"
-          className="text-lg font-medium text-gray-900"
+          className="text-base font-medium text-gray-900 px-4 py-3"
           autoFocus
         />
-      </View>
-
-      {/* AIで補完ボタン（新規作成時のみ） */}
-      {!isEditMode && onAISearch && (
-        <View className="mx-4 mt-3">
+        {/* AIで補完ボタン（新規作成時のみ） */}
+        {!isEditMode && onAISearch && (
           <Pressable
             onPress={() => {
               if (title.trim()) {
@@ -191,21 +188,28 @@ export function ScheduleForm({
               }
             }}
             disabled={!title.trim()}
-            className={`flex-row items-center justify-center rounded-xl py-3 ${
-              title.trim() ? "bg-purple-500 active:bg-purple-600" : "bg-gray-300"
+            className={`flex-row items-center justify-center py-3 mx-3 mb-3 rounded-xl ${
+              title.trim()
+                ? "bg-gradient-to-r from-purple-500 to-primary-500 active:opacity-90"
+                : "bg-gray-200"
             }`}
+            style={title.trim() ? {
+              backgroundColor: "#8b5cf6",
+            } : undefined}
           >
-            <MaterialIcons name="auto-awesome" size={20} color="#ffffff" />
-            <Text className="ml-2 text-white font-semibold">AIで補完</Text>
+            <MaterialIcons name="auto-awesome" size={18} color={title.trim() ? "#ffffff" : "#9ca3af"} />
+            <Text className={`ml-1.5 font-semibold text-sm ${title.trim() ? "text-white" : "text-gray-400"}`}>
+              AIで補完
+            </Text>
           </Pressable>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* 終日切替 */}
-      <View className="mx-4 mt-3 rounded-xl bg-white p-4">
+      <View className="mx-3 mt-2 rounded-xl bg-white px-4 py-3">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <MaterialIcons name="wb-sunny" size={24} color="#6b7280" />
+            <MaterialIcons name="wb-sunny" size={22} color="#6b7280" />
             <Text className="ml-3 text-base text-gray-900">終日</Text>
           </View>
           <Switch
@@ -218,25 +222,25 @@ export function ScheduleForm({
       </View>
 
       {/* 日時 */}
-      <View className="mx-4 mt-3 rounded-xl bg-white">
+      <View className="mx-3 mt-2 rounded-xl bg-white">
         {/* 開始 */}
-        <View className="flex-row items-center border-b border-gray-100 p-4">
-          <MaterialIcons name="play-arrow" size={24} color="#6b7280" />
-          <Text className="ml-3 w-12 text-sm text-gray-500">開始</Text>
+        <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
+          <MaterialIcons name="play-arrow" size={22} color="#6b7280" />
+          <Text className="ml-2 w-10 text-sm text-gray-500">開始</Text>
           <Pressable
             onPress={() => setShowStartDate(true)}
-            className="ml-2 rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200"
+            className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
           >
-            <Text className="text-base text-gray-900">
+            <Text className="text-sm text-gray-900 font-medium">
               {format(startTime, "M/d(E)")}
             </Text>
           </Pressable>
           {!isAllDay && (
             <Pressable
               onPress={() => setShowStartTime(true)}
-              className="ml-2 rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200"
+              className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
             >
-              <Text className="text-base text-gray-900">
+              <Text className="text-sm text-gray-900 font-medium">
                 {format(startTime, "HH:mm")}
               </Text>
             </Pressable>
@@ -244,23 +248,23 @@ export function ScheduleForm({
         </View>
 
         {/* 終了 */}
-        <View className="flex-row items-center p-4">
-          <MaterialIcons name="stop" size={24} color="#6b7280" />
-          <Text className="ml-3 w-12 text-sm text-gray-500">終了</Text>
+        <View className="flex-row items-center px-4 py-3">
+          <MaterialIcons name="stop" size={22} color="#6b7280" />
+          <Text className="ml-2 w-10 text-sm text-gray-500">終了</Text>
           <Pressable
             onPress={() => setShowEndDate(true)}
-            className="ml-2 rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200"
+            className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
           >
-            <Text className="text-base text-gray-900">
+            <Text className="text-sm text-gray-900 font-medium">
               {format(endTime, "M/d(E)")}
             </Text>
           </Pressable>
           {!isAllDay && (
             <Pressable
               onPress={() => setShowEndTime(true)}
-              className="ml-2 rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200"
+              className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
             >
-              <Text className="text-base text-gray-900">
+              <Text className="text-sm text-gray-900 font-medium">
                 {format(endTime, "HH:mm")}
               </Text>
             </Pressable>
@@ -269,13 +273,13 @@ export function ScheduleForm({
       </View>
 
       {/* カレンダー選択 */}
-      <View className="mx-4 mt-3 rounded-xl bg-white">
+      <View className="mx-3 mt-2 rounded-xl bg-white">
         <Pressable
           onPress={() => setShowCalendarPicker(!showCalendarPicker)}
-          className="flex-row items-center justify-between p-4 active:bg-gray-50"
+          className="flex-row items-center justify-between px-4 py-3 active:bg-gray-50"
         >
           <View className="flex-row items-center">
-            <MaterialIcons name="event" size={24} color="#6b7280" />
+            <MaterialIcons name="event" size={22} color="#6b7280" />
             <Text className="ml-3 text-base text-gray-900">カレンダー</Text>
           </View>
           <View className="flex-row items-center">
@@ -285,10 +289,10 @@ export function ScheduleForm({
                 style={{ backgroundColor: selectedCalendar.color || "#3b82f6" }}
               />
             )}
-            <Text className="text-gray-600">
+            <Text className="text-sm text-gray-600">
               {selectedCalendar?.name || "選択してください"}
             </Text>
-            <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+            <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
           </View>
         </Pressable>
 
@@ -322,13 +326,13 @@ export function ScheduleForm({
       </View>
 
       {/* カテゴリ選択 */}
-      <View className="mx-4 mt-3 rounded-xl bg-white">
+      <View className="mx-3 mt-2 rounded-xl bg-white">
         <Pressable
           onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-          className="flex-row items-center justify-between p-4 active:bg-gray-50"
+          className="flex-row items-center justify-between px-4 py-3 active:bg-gray-50"
         >
           <View className="flex-row items-center">
-            <MaterialIcons name="label" size={24} color="#6b7280" />
+            <MaterialIcons name="label" size={22} color="#6b7280" />
             <Text className="ml-3 text-base text-gray-900">カテゴリ</Text>
           </View>
           <View className="flex-row items-center">
@@ -341,9 +345,9 @@ export function ScheduleForm({
               </View>
             )}
             {!selectedCategory && (
-              <Text className="text-gray-500">なし</Text>
+              <Text className="text-sm text-gray-500">なし</Text>
             )}
-            <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+            <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
           </View>
         </Pressable>
 
@@ -387,9 +391,9 @@ export function ScheduleForm({
       </View>
 
       {/* メモ */}
-      <View className="mx-4 mt-3 rounded-xl bg-white p-4">
+      <View className="mx-3 mt-2 rounded-xl bg-white px-4 py-3">
         <View className="flex-row items-center mb-2">
-          <MaterialIcons name="notes" size={24} color="#6b7280" />
+          <MaterialIcons name="notes" size={22} color="#6b7280" />
           <Text className="ml-3 text-base text-gray-900">メモ</Text>
         </View>
         <TextInput
@@ -399,16 +403,16 @@ export function ScheduleForm({
           placeholderTextColor="#9ca3af"
           multiline
           numberOfLines={3}
-          className="text-base text-gray-900 bg-gray-50 rounded-lg p-3 min-h-[80px]"
+          className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3 min-h-[72px]"
           textAlignVertical="top"
         />
       </View>
 
       {/* 繰り返し設定 */}
-      <View className="mx-4 mt-3 rounded-xl bg-white">
-        <View className="flex-row items-center justify-between p-4">
+      <View className="mx-3 mt-2 rounded-xl bg-white">
+        <View className="flex-row items-center justify-between px-4 py-3">
           <View className="flex-row items-center">
-            <MaterialIcons name="repeat" size={24} color="#6b7280" />
+            <MaterialIcons name="repeat" size={22} color="#6b7280" />
             <Text className="ml-3 text-base text-gray-900">繰り返し</Text>
           </View>
           <Switch
@@ -420,19 +424,19 @@ export function ScheduleForm({
         </View>
 
         {hasRecurrence && (
-          <View className="border-t border-gray-100 px-4 pb-4">
+          <View className="border-t border-gray-100 px-4 pb-3">
             <Pressable
               onPress={() => setShowRecurrencePicker(!showRecurrencePicker)}
-              className="flex-row items-center justify-between py-3 active:opacity-70"
+              className="flex-row items-center justify-between py-2.5 active:opacity-70"
             >
               <Text className="text-sm text-gray-500">頻度</Text>
               <View className="flex-row items-center">
-                <Text className="text-base text-gray-900">
+                <Text className="text-sm text-gray-900 font-medium">
                   {recurrenceInterval === 1
                     ? frequencyLabels[recurrenceFrequency]
                     : `${recurrenceInterval}${recurrenceFrequency === "daily" ? "日" : recurrenceFrequency === "weekly" ? "週" : recurrenceFrequency === "monthly" ? "ヶ月" : "年"}ごと`}
                 </Text>
-                <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+                <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
               </View>
             </Pressable>
 
@@ -447,7 +451,7 @@ export function ScheduleForm({
                     }}
                     className="flex-row items-center py-2 active:opacity-70"
                   >
-                    <Text className="flex-1 text-base text-gray-900">
+                    <Text className="flex-1 text-sm text-gray-900">
                       {frequencyLabels[freq]}
                     </Text>
                     {recurrenceFrequency === freq && (
@@ -462,11 +466,11 @@ export function ScheduleForm({
       </View>
 
       {/* ボタン */}
-      <View className="mx-4 mb-8 mt-6 flex-row">
+      <View className="mx-3 mb-6 mt-5 flex-row gap-3">
         <Button
           onPress={onCancel}
           variant="secondary"
-          className="mr-3 flex-1"
+          className="flex-1"
           disabled={isSubmitting}
         >
           キャンセル
@@ -482,8 +486,8 @@ export function ScheduleForm({
         </Button>
       </View>
 
-      {/* DateTimePickers */}
-      {showStartDate && (
+      {/* DateTimePickers - Native */}
+      {Platform.OS !== "web" && showStartDate && (
         <DateTimePicker
           value={startTime}
           mode="date"
@@ -492,7 +496,7 @@ export function ScheduleForm({
           locale="ja"
         />
       )}
-      {showStartTime && (
+      {Platform.OS !== "web" && showStartTime && (
         <DateTimePicker
           value={startTime}
           mode="time"
@@ -501,7 +505,7 @@ export function ScheduleForm({
           minuteInterval={5}
         />
       )}
-      {showEndDate && (
+      {Platform.OS !== "web" && showEndDate && (
         <DateTimePicker
           value={endTime}
           mode="date"
@@ -510,7 +514,7 @@ export function ScheduleForm({
           locale="ja"
         />
       )}
-      {showEndTime && (
+      {Platform.OS !== "web" && showEndTime && (
         <DateTimePicker
           value={endTime}
           mode="time"
@@ -518,6 +522,132 @@ export function ScheduleForm({
           onChange={handleEndTimeChange}
           minuteInterval={5}
         />
+      )}
+
+      {/* DateTimePickers - Web fallback using HTML inputs */}
+      {Platform.OS === "web" && (showStartDate || showStartTime || showEndDate || showEndTime) && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
+          <View className="bg-white rounded-2xl p-5 mx-4 w-80">
+            <Text className="text-lg font-semibold text-gray-900 mb-4 text-center">
+              {showStartDate || showStartTime ? "開始日時" : "終了日時"}
+            </Text>
+
+            {(showStartDate || showStartTime) && (
+              <View className="gap-3">
+                <View>
+                  <Text className="text-sm text-gray-500 mb-1">日付</Text>
+                  <input
+                    type="date"
+                    value={format(startTime, "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      const date = new Date(e.target.value);
+                      if (!isNaN(date.getTime())) {
+                        const newStart = new Date(startTime);
+                        newStart.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                        setStartTime(newStart);
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      fontSize: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      backgroundColor: "#f9fafb",
+                    }}
+                  />
+                </View>
+                {!isAllDay && (
+                  <View>
+                    <Text className="text-sm text-gray-500 mb-1">時間</Text>
+                    <input
+                      type="time"
+                      value={format(startTime, "HH:mm")}
+                      onChange={(e) => {
+                        const [hours, minutes] = e.target.value.split(":").map(Number);
+                        const newStart = new Date(startTime);
+                        newStart.setHours(hours, minutes);
+                        setStartTime(newStart);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        fontSize: "16px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        backgroundColor: "#f9fafb",
+                      }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+
+            {(showEndDate || showEndTime) && (
+              <View className="gap-3">
+                <View>
+                  <Text className="text-sm text-gray-500 mb-1">日付</Text>
+                  <input
+                    type="date"
+                    value={format(endTime, "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      const date = new Date(e.target.value);
+                      if (!isNaN(date.getTime())) {
+                        const newEnd = new Date(endTime);
+                        newEnd.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                        setEndTime(newEnd);
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      fontSize: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      backgroundColor: "#f9fafb",
+                    }}
+                  />
+                </View>
+                {!isAllDay && (
+                  <View>
+                    <Text className="text-sm text-gray-500 mb-1">時間</Text>
+                    <input
+                      type="time"
+                      value={format(endTime, "HH:mm")}
+                      onChange={(e) => {
+                        const [hours, minutes] = e.target.value.split(":").map(Number);
+                        const newEnd = new Date(endTime);
+                        newEnd.setHours(hours, minutes);
+                        setEndTime(newEnd);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        fontSize: "16px",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d5db",
+                        backgroundColor: "#f9fafb",
+                      }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+
+            <Pressable
+              onPress={() => {
+                setShowStartDate(false);
+                setShowStartTime(false);
+                setShowEndDate(false);
+                setShowEndTime(false);
+              }}
+              className="mt-4 bg-primary-500 rounded-xl py-3 active:opacity-80"
+              style={{ backgroundColor: "#3b82f6" }}
+            >
+              <Text className="text-white text-center font-semibold">完了</Text>
+            </Pressable>
+          </View>
+        </View>
       )}
     </ScrollView>
   );
