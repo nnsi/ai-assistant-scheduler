@@ -12,14 +12,10 @@ description: /docs/diary/に日記を書く。
 1. 現在の日付を取得する
 
 ```bash
-# Linux
-date
-
-# Windows
-Get-Date
+pnpm get-date
 ```
 
-**時刻も取得しておくこと。日付はJST基準**
+出力例: `2025-01-13 14:30 JST`
 
 2. `/docs/diary/YYYYMMDD.md` を作成または追記する
 
