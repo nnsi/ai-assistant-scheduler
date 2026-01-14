@@ -1,20 +1,12 @@
+import type { CalendarResponse, Category } from "@ai-scheduler/shared";
+import { MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { addHours, format, setHours, setMinutes, startOfDay } from "date-fns";
 /**
  * スケジュール作成・編集フォームコンポーネント
  */
-import { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  Pressable,
-  Switch,
-  Platform,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
-import { format, addHours, setHours, setMinutes, startOfDay } from "date-fns";
+import { useCallback, useEffect, useState } from "react";
+import { Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { Button } from "../ui/Button";
 
 interface ScheduleFormData {
@@ -31,8 +23,23 @@ interface ScheduleFormData {
   } | null;
 }
 
+// フォーム初期データ用の型（Schedule型とは別に定義）
+interface ScheduleFormInitialData {
+  title?: string;
+  startAt?: string;
+  endAt?: string | null;
+  isAllDay?: boolean;
+  calendarId?: string | null;
+  categoryId?: string | null;
+  userMemo?: string;
+  recurrence?: {
+    frequency: "daily" | "weekly" | "monthly" | "yearly";
+    interval: number;
+  } | null;
+}
+
 interface ScheduleFormProps {
-  initialData?: Partial<Schedule>;
+  initialData?: ScheduleFormInitialData;
   initialDate?: Date;
   calendars: CalendarResponse[];
   categories: Category[];
@@ -62,16 +69,14 @@ export function ScheduleForm({
   const [calendarId, setCalendarId] = useState(
     initialData?.calendarId || defaultCalendarId || calendars[0]?.id || ""
   );
-  const [categoryId, setCategoryId] = useState<string | null>(
-    initialData?.categoryId || null
-  );
+  const [categoryId, setCategoryId] = useState<string | null>(initialData?.categoryId || null);
   const [userMemo, setUserMemo] = useState(initialData?.userMemo || "");
-  const [hasRecurrence, setHasRecurrence] = useState(!!initialData?.recurrenceRule);
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState<"daily" | "weekly" | "monthly" | "yearly">(
-    initialData?.recurrenceRule?.frequency || "weekly"
-  );
+  const [hasRecurrence, setHasRecurrence] = useState(!!initialData?.recurrence);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<
+    "daily" | "weekly" | "monthly" | "yearly"
+  >(initialData?.recurrence?.frequency || "weekly");
   const [recurrenceInterval, setRecurrenceInterval] = useState(
-    initialData?.recurrenceRule?.interval || 1
+    initialData?.recurrence?.interval || 1
   );
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
@@ -83,9 +88,7 @@ export function ScheduleForm({
       : setMinutes(setHours(defaultDate, defaultDate.getHours() + 1), 0)
   );
   const [endTime, setEndTime] = useState<Date>(
-    initialData?.endAt
-      ? new Date(initialData.endAt)
-      : addHours(startTime, 1)
+    initialData?.endAt ? new Date(initialData.endAt) : addHours(startTime, 1)
   );
 
   // DateTimePicker表示状態
@@ -155,7 +158,19 @@ export function ScheduleForm({
         ? { frequency: recurrenceFrequency, interval: recurrenceInterval }
         : null,
     });
-  }, [title, startTime, endTime, isAllDay, calendarId, categoryId, userMemo, hasRecurrence, recurrenceFrequency, recurrenceInterval, onSubmit]);
+  }, [
+    title,
+    startTime,
+    endTime,
+    isAllDay,
+    calendarId,
+    categoryId,
+    userMemo,
+    hasRecurrence,
+    recurrenceFrequency,
+    recurrenceInterval,
+    onSubmit,
+  ]);
 
   const frequencyLabels: Record<string, string> = {
     daily: "毎日",
@@ -189,25 +204,38 @@ export function ScheduleForm({
             }}
             disabled={!title.trim()}
             className={`flex-row items-center justify-center py-2.5 mx-3 mb-2.5 rounded-xl ${
-              title.trim()
-                ? "active:opacity-90"
-                : "bg-gray-100"
+              title.trim() ? "active:opacity-90" : "bg-gray-100"
             }`}
-            style={title.trim() ? {
-              backgroundColor: "#f97316",
-              shadowColor: "#f97316",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-              elevation: 4,
-            } : undefined}
+            style={
+              title.trim()
+                ? {
+                    backgroundColor: "#f97316",
+                    shadowColor: "#f97316",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
+                  }
+                : undefined
+            }
           >
-            <MaterialIcons name="auto-awesome" size={18} color={title.trim() ? "#ffffff" : "#d1d5db"} />
-            <Text className={`ml-1.5 font-bold text-sm ${title.trim() ? "text-white" : "text-gray-400"}`}>
+            <MaterialIcons
+              name="auto-awesome"
+              size={18}
+              color={title.trim() ? "#ffffff" : "#d1d5db"}
+            />
+            <Text
+              className={`ml-1.5 font-bold text-sm ${title.trim() ? "text-white" : "text-gray-400"}`}
+            >
               AIで情報補完
             </Text>
             {title.trim() && (
-              <MaterialIcons name="chevron-right" size={18} color="#ffffff" style={{ marginLeft: 2 }} />
+              <MaterialIcons
+                name="chevron-right"
+                size={18}
+                color="#ffffff"
+                style={{ marginLeft: 2 }}
+              />
             )}
           </Pressable>
         )}
@@ -239,9 +267,7 @@ export function ScheduleForm({
             onPress={() => setShowStartDate(true)}
             className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
           >
-            <Text className="text-sm text-gray-900 font-medium">
-              {format(startTime, "M/d(E)")}
-            </Text>
+            <Text className="text-sm text-gray-900 font-medium">{format(startTime, "M/d(E)")}</Text>
           </Pressable>
           {!isAllDay && (
             <Pressable
@@ -263,18 +289,14 @@ export function ScheduleForm({
             onPress={() => setShowEndDate(true)}
             className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
           >
-            <Text className="text-sm text-gray-900 font-medium">
-              {format(endTime, "M/d(E)")}
-            </Text>
+            <Text className="text-sm text-gray-900 font-medium">{format(endTime, "M/d(E)")}</Text>
           </Pressable>
           {!isAllDay && (
             <Pressable
               onPress={() => setShowEndTime(true)}
               className="ml-2 rounded-lg bg-gray-100 px-3 py-1.5 active:bg-gray-200"
             >
-              <Text className="text-sm text-gray-900 font-medium">
-                {format(endTime, "HH:mm")}
-              </Text>
+              <Text className="text-sm text-gray-900 font-medium">{format(endTime, "HH:mm")}</Text>
             </Pressable>
           )}
         </View>
@@ -321,9 +343,7 @@ export function ScheduleForm({
                     className="h-4 w-4 rounded-full"
                     style={{ backgroundColor: calendar.color || "#3b82f6" }}
                   />
-                  <Text className="ml-3 flex-1 text-base text-gray-900">
-                    {calendar.name}
-                  </Text>
+                  <Text className="ml-3 flex-1 text-base text-gray-900">{calendar.name}</Text>
                   {calendarId === calendar.id && (
                     <MaterialIcons name="check" size={20} color="#3b82f6" />
                   )}
@@ -352,9 +372,7 @@ export function ScheduleForm({
                 <Text className="text-xs text-white">{selectedCategory.name}</Text>
               </View>
             )}
-            {!selectedCategory && (
-              <Text className="text-sm text-gray-500">なし</Text>
-            )}
+            {!selectedCategory && <Text className="text-sm text-gray-500">なし</Text>}
             <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
           </View>
         </Pressable>
@@ -369,9 +387,7 @@ export function ScheduleForm({
               className="flex-row items-center py-3 active:opacity-70"
             >
               <Text className="flex-1 text-base text-gray-500">なし</Text>
-              {categoryId === null && (
-                <MaterialIcons name="check" size={20} color="#3b82f6" />
-              )}
+              {categoryId === null && <MaterialIcons name="check" size={20} color="#3b82f6" />}
             </Pressable>
             {categories.map((category) => (
               <Pressable
@@ -459,9 +475,7 @@ export function ScheduleForm({
                     }}
                     className="flex-row items-center py-2 active:opacity-70"
                   >
-                    <Text className="flex-1 text-sm text-gray-900">
-                      {frequencyLabels[freq]}
-                    </Text>
+                    <Text className="flex-1 text-sm text-gray-900">{frequencyLabels[freq]}</Text>
                     {recurrenceFrequency === freq && (
                       <MaterialIcons name="check" size={20} color="#3b82f6" />
                     )}
@@ -475,12 +489,7 @@ export function ScheduleForm({
 
       {/* ボタン */}
       <View className="mx-3 mb-6 mt-4 flex-row gap-3">
-        <Button
-          onPress={onCancel}
-          variant="secondary"
-          className="flex-1"
-          disabled={isSubmitting}
-        >
+        <Button onPress={onCancel} variant="secondary" className="flex-1" disabled={isSubmitting}>
           キャンセル
         </Button>
         <Button
@@ -549,7 +558,7 @@ export function ScheduleForm({
                     value={format(startTime, "yyyy-MM-dd")}
                     onChange={(e) => {
                       const date = new Date(e.target.value);
-                      if (!isNaN(date.getTime())) {
+                      if (!Number.isNaN(date.getTime())) {
                         const newStart = new Date(startTime);
                         newStart.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
                         setStartTime(newStart);
@@ -600,7 +609,7 @@ export function ScheduleForm({
                     value={format(endTime, "yyyy-MM-dd")}
                     onChange={(e) => {
                       const date = new Date(e.target.value);
-                      if (!isNaN(date.getTime())) {
+                      if (!Number.isNaN(date.getTime())) {
                         const newEnd = new Date(endTime);
                         newEnd.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
                         setEndTime(newEnd);

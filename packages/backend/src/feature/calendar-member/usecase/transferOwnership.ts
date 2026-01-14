@@ -1,13 +1,13 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import { createCalendarMember } from "../../../domain/model/calendar";
 import type { TransferOwnershipInput } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import { createCalendarMember } from "../../../domain/model/calendar";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createTransferOwnershipUseCase = (
   calendarRepo: CalendarRepo,
@@ -43,9 +43,7 @@ export const createTransferOwnershipUseCase = (
         return err(createNotFoundError("新しいオーナー候補のメンバーシップ"));
       }
       if (newOwnerMember.role !== "admin") {
-        return err(
-          createForbiddenError("オーナー移譲はadmin権限を持つメンバーにのみ可能です")
-        );
+        return err(createForbiddenError("オーナー移譲はadmin権限を持つメンバーにのみ可能です"));
       }
 
       // 新しいオーナーのメンバーシップを削除（オーナーはcalendar_membersに含めない）
@@ -77,6 +75,4 @@ export const createTransferOwnershipUseCase = (
   };
 };
 
-export type TransferOwnershipUseCase = ReturnType<
-  typeof createTransferOwnershipUseCase
->;
+export type TransferOwnershipUseCase = ReturnType<typeof createTransferOwnershipUseCase>;

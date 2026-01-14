@@ -1,4 +1,3 @@
-import React from "react";
 import { render } from "@testing-library/react-native";
 import { LoadingSpinner } from "./LoadingSpinner";
 
@@ -10,9 +9,7 @@ describe("LoadingSpinner", () => {
   });
 
   test("renders with custom message", () => {
-    const { getByText } = render(
-      <LoadingSpinner message="Loading data..." />
-    );
+    const { getByText } = render(<LoadingSpinner message="Loading data..." />);
     expect(getByText("Loading data...")).toBeTruthy();
   });
 

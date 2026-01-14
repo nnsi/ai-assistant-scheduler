@@ -1,7 +1,17 @@
-import { ChevronLeft, ChevronRight, Settings2, CalendarDays, Calendar as CalendarIcon, Clock, Tag, Search, Users } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import { getMonthLabel, getWeekLabel, getDayFullLabel } from "@/lib/date";
 import { cn } from "@/lib/cn";
+import { getDayFullLabel, getMonthLabel, getWeekLabel } from "@/lib/date";
+import {
+  CalendarDays,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Search,
+  Settings2,
+  Tag,
+  Users,
+} from "lucide-react";
 
 export type CalendarViewMode = "month" | "week" | "day";
 
@@ -74,11 +84,13 @@ export const CalendarHeader = ({
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className={cn(
-          "text-lg sm:text-2xl font-display text-stone-900",
-          getMinWidth(),
-          "text-center"
-        )}>
+        <h2
+          className={cn(
+            "text-lg sm:text-2xl font-display text-stone-900",
+            getMinWidth(),
+            "text-center"
+          )}
+        >
           {getLabel()}
         </h2>
         <button

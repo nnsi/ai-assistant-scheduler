@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createJwtService } from "./jwt";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserEntity } from "../../domain/model/user";
+import { createJwtService } from "./jwt";
 
 describe("JwtService", () => {
   const testUser: UserEntity = {

@@ -1,10 +1,16 @@
-import { useState, useCallback } from "react";
-import { createScheduleInputSchema, updateScheduleInputSchema, type Category, type CreateRecurrenceRuleInput, type CalendarResponse } from "@ai-scheduler/shared";
-import { Button } from "@/components/common/Button";
-import { RecurrenceSettings } from "@/components/Recurrence";
 import { CalendarColorDot } from "@/components/CalendarManagement/CalendarColorDot";
+import { RecurrenceSettings } from "@/components/Recurrence";
+import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateString, getTimezoneOffset } from "@/lib/date";
+import {
+  type CalendarResponse,
+  type Category,
+  type CreateRecurrenceRuleInput,
+  createScheduleInputSchema,
+  updateScheduleInputSchema,
+} from "@ai-scheduler/shared";
+import { useCallback, useState } from "react";
 
 type ScheduleFormData = {
   title: string;
@@ -68,7 +74,7 @@ export const ScheduleForm = ({
   const [time, setTime] = useState(
     initialValues?.startAt
       ? formatDateString(initialValues.startAt, "HH:mm")
-      : defaultTime ?? "12:00"
+      : (defaultTime ?? "12:00")
   );
   const [showEndTime, setShowEndTime] = useState(!!initialValues?.endAt);
   const [endDate, setEndDate] = useState(
@@ -77,12 +83,12 @@ export const ScheduleForm = ({
       : formatDate(defaultDate || new Date(), "yyyy-MM-dd")
   );
   const [endTime, setEndTime] = useState(
-    initialValues?.endAt
-      ? formatDateString(initialValues.endAt, "HH:mm")
-      : "13:00"
+    initialValues?.endAt ? formatDateString(initialValues.endAt, "HH:mm") : "13:00"
   );
   const [isAllDay, setIsAllDay] = useState(initialValues?.isAllDay ?? false);
-  const [categoryId, setCategoryId] = useState<string | undefined>(initialValues?.categoryId ?? undefined);
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    initialValues?.categoryId ?? undefined
+  );
   const [calendarId, setCalendarId] = useState<string | undefined>(
     initialValues?.calendarId ?? defaultCalendarId ?? undefined
   );
@@ -108,7 +114,16 @@ export const ScheduleForm = ({
       endAt = `${endDate}T${endTimeValue}:00${getTimezoneOffset()}`;
     }
 
-    const data: ScheduleFormData = { title, startAt, endAt, isAllDay, categoryId, calendarId, recurrence, userMemo: userMemo || undefined };
+    const data: ScheduleFormData = {
+      title,
+      startAt,
+      endAt,
+      isAllDay,
+      categoryId,
+      calendarId,
+      recurrence,
+      userMemo: userMemo || undefined,
+    };
 
     const schema = mode === "edit" ? updateScheduleInputSchema : createScheduleInputSchema;
     const result = schema.safeParse({ title, startAt, endAt, isAllDay, categoryId, calendarId });
@@ -163,9 +178,7 @@ export const ScheduleForm = ({
             errors.title ? "border-red-300" : "border-stone-200"
           )}
         />
-        {errors.title && (
-          <p className="mt-2 text-sm text-red-500">{errors.title}</p>
-        )}
+        {errors.title && <p className="mt-2 text-sm text-red-500">{errors.title}</p>}
       </div>
 
       <div className="flex items-center gap-3">
@@ -183,7 +196,10 @@ export const ScheduleForm = ({
 
       {calendars.length > 1 && (
         <div>
-          <label htmlFor="schedule-calendar" className="block text-sm font-medium text-stone-700 mb-2">
+          <label
+            htmlFor="schedule-calendar"
+            className="block text-sm font-medium text-stone-700 mb-2"
+          >
             カレンダー
           </label>
           <div className="flex flex-wrap gap-2">
@@ -211,7 +227,10 @@ export const ScheduleForm = ({
 
       {categories.length > 0 && (
         <div>
-          <label htmlFor="schedule-category" className="block text-sm font-medium text-stone-700 mb-2">
+          <label
+            htmlFor="schedule-category"
+            className="block text-sm font-medium text-stone-700 mb-2"
+          >
             カテゴリ
           </label>
           <div className="flex flex-wrap gap-2">
@@ -242,10 +261,7 @@ export const ScheduleForm = ({
                 )}
                 style={categoryId === cat.id ? { backgroundColor: cat.color } : undefined}
               >
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: cat.color }}
-                />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                 {cat.name}
               </button>
             ))}
@@ -257,7 +273,10 @@ export const ScheduleForm = ({
         {/* 開始日時 */}
         <div className={cn("grid gap-4", isAllDay ? "grid-cols-1" : "grid-cols-2")}>
           <div>
-            <label htmlFor="schedule-date" className="block text-sm font-medium text-stone-700 mb-2">
+            <label
+              htmlFor="schedule-date"
+              className="block text-sm font-medium text-stone-700 mb-2"
+            >
               {showEndTime ? "開始日" : "日付"}
             </label>
             <input
@@ -282,7 +301,10 @@ export const ScheduleForm = ({
           </div>
           {!isAllDay && (
             <div>
-              <label htmlFor="schedule-time" className="block text-sm font-medium text-stone-700 mb-2">
+              <label
+                htmlFor="schedule-time"
+                className="block text-sm font-medium text-stone-700 mb-2"
+              >
                 {showEndTime ? "開始時間" : "時間"}
               </label>
               <input
@@ -317,7 +339,10 @@ export const ScheduleForm = ({
             {/* 終了日時 */}
             <div className={cn("grid gap-4", isAllDay ? "grid-cols-1" : "grid-cols-2")}>
               <div>
-                <label htmlFor="schedule-end-date" className="block text-sm font-medium text-stone-700 mb-2">
+                <label
+                  htmlFor="schedule-end-date"
+                  className="block text-sm font-medium text-stone-700 mb-2"
+                >
                   終了日
                 </label>
                 <input
@@ -337,7 +362,10 @@ export const ScheduleForm = ({
               </div>
               {!isAllDay && (
                 <div>
-                  <label htmlFor="schedule-end-time" className="block text-sm font-medium text-stone-700 mb-2">
+                  <label
+                    htmlFor="schedule-end-time"
+                    className="block text-sm font-medium text-stone-700 mb-2"
+                  >
                     終了時間
                   </label>
                   <input
@@ -356,9 +384,7 @@ export const ScheduleForm = ({
                 </div>
               )}
             </div>
-            {errors.endAt && (
-              <p className="text-sm text-red-500">{errors.endAt}</p>
-            )}
+            {errors.endAt && <p className="text-sm text-red-500">{errors.endAt}</p>}
             <button
               type="button"
               onClick={() => setShowEndTime(false)}
@@ -399,17 +425,17 @@ export const ScheduleForm = ({
       )}
 
       <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading || isSimpleSaving}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading || isSimpleSaving}
+        >
           キャンセル
         </Button>
         {onSimpleSave && (
           <>
-            <Button
-              type="submit"
-              variant="ai"
-              isLoading={isLoading}
-              disabled={isSimpleSaving}
-            >
+            <Button type="submit" variant="ai" isLoading={isLoading} disabled={isSimpleSaving}>
               {submitLabel}
             </Button>
             <Button

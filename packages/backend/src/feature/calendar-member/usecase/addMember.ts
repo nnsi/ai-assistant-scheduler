@@ -1,20 +1,20 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { AddMemberInput, CalendarMemberResponse } from "@ai-scheduler/shared";
 import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import {
+  type CalendarRole,
+  type MemberRole,
   createCalendarMember,
   hasRequiredRole,
-  type MemberRole,
-  type CalendarRole,
 } from "../../../domain/model/calendar";
-import type { CalendarMemberResponse, AddMemberInput } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import {
-  createDatabaseError,
-  createNotFoundError,
-  createForbiddenError,
   createConflictError,
+  createDatabaseError,
+  createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createAddMemberUseCase = (
   calendarRepo: CalendarRepo,
@@ -64,7 +64,9 @@ export const createAddMemberUseCase = (
 
       // オーナー自身を追加しようとしている場合
       if (targetUser.id === calendar.ownerId) {
-        return err(createConflictError("カレンダーオーナーをメンバーとして追加することはできません"));
+        return err(
+          createConflictError("カレンダーオーナーをメンバーとして追加することはできません")
+        );
       }
 
       // 既にメンバーか確認

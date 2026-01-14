@@ -1,10 +1,10 @@
+import { CalendarProvider } from "@/contexts/CalendarContext";
+import type { CalendarResponse, ScheduleWithSupplement } from "@ai-scheduler/shared";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "@storybook/test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { ScheduleDetail } from "./ScheduleDetail";
-import { fn } from "@storybook/test";
-import type { CalendarResponse, ScheduleWithSupplement } from "@ai-scheduler/shared";
-import { CalendarProvider } from "@/contexts/CalendarContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Mock CalendarProvider for Storybook
 const mockCalendars: CalendarResponse[] = [

@@ -28,10 +28,7 @@ export function toAppError(error: unknown): AppError {
   // Errorオブジェクトの場合
   if (error instanceof Error) {
     // ネットワークエラーの判定
-    if (
-      error.name === "TypeError" &&
-      error.message.includes("fetch")
-    ) {
+    if (error.name === "TypeError" && error.message.includes("fetch")) {
       return {
         code: "NETWORK_ERROR",
         message: "ネットワークエラーが発生しました。接続を確認してください。",

@@ -1,20 +1,18 @@
-import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
+import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import {
-  createSupplement,
-  type Supplement,
   type SaveSupplementInput,
+  type Supplement,
+  createSupplement,
 } from "../../../domain/model/supplement";
-import { type Result, ok, err } from "../../../shared/result";
 import { createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createSaveSupplementUseCase = (
   supplementRepo: SupplementRepo,
   scheduleRepo: ScheduleRepo
 ) => {
-  return async (
-    input: SaveSupplementInput & { aiResult: string }
-  ): Promise<Result<Supplement>> => {
+  return async (input: SaveSupplementInput & { aiResult: string }): Promise<Result<Supplement>> => {
     // スケジュールの存在確認
     const schedule = await scheduleRepo.findById(input.scheduleId);
     if (!schedule) {

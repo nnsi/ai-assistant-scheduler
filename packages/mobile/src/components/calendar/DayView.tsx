@@ -1,18 +1,11 @@
+import type { CalendarResponse, Category, Schedule } from "@ai-scheduler/shared";
+import { format, getHours, getMinutes, isSameDay, parseISO } from "date-fns";
+import { useEffect, useMemo, useRef } from "react";
 /**
  * 日表示カレンダーコンポーネント
  * モバイル最適化：シンプルなヘッダー、見やすい予定カード
  */
-import { View, Text, Pressable, ScrollView } from "react-native";
-import { useMemo, useRef, useEffect } from "react";
-import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
-import {
-  format,
-  isSameDay,
-  parseISO,
-  getHours,
-  getMinutes,
-} from "date-fns";
-import { ja } from "date-fns/locale";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 interface DayViewProps {
   currentDate: Date;
@@ -48,9 +41,7 @@ export function DayView({
 
   // フィルタリングされたスケジュール
   const filteredSchedules = useMemo(() => {
-    return schedules.filter((s) =>
-      s.calendarId && selectedCalendarIds.includes(s.calendarId)
-    );
+    return schedules.filter((s) => s.calendarId && selectedCalendarIds.includes(s.calendarId));
   }, [schedules, selectedCalendarIds]);
 
   // カレンダーID→色のマップ（フォールバック用）
@@ -103,9 +94,7 @@ export function DayView({
 
     if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
-      endMinutes = endDate
-        ? getHours(endDate) * 60 + getMinutes(endDate)
-        : startMinutes + 60;
+      endMinutes = endDate ? getHours(endDate) * 60 + getMinutes(endDate) : startMinutes + 60;
     } else if (displayDateKey === startDateKey) {
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
       endMinutes = 24 * 60;
@@ -169,9 +158,7 @@ export function DayView({
                   className="rounded-lg px-3 py-2"
                   style={{ backgroundColor: color }}
                 >
-                  <Text className="text-white font-medium text-sm">
-                    {schedule.title}
-                  </Text>
+                  <Text className="text-white font-medium text-sm">{schedule.title}</Text>
                 </Pressable>
               );
             })}
@@ -185,10 +172,7 @@ export function DayView({
           {/* 時間列 */}
           <View className="w-12">
             {HOURS.map((hour) => (
-              <View
-                key={hour}
-                className="h-14 border-b border-gray-50 items-center justify-start"
-              >
+              <View key={hour} className="h-14 border-b border-gray-50 items-center justify-start">
                 <Text className="text-xs text-gray-400 mt-[-5px]">
                   {hour.toString().padStart(2, "0")}:00
                 </Text>
@@ -224,9 +208,7 @@ export function DayView({
                     backgroundColor: color,
                   }}
                 >
-                  <Text className="text-xs text-white/80">
-                    {getTimeDisplay(schedule)}
-                  </Text>
+                  <Text className="text-xs text-white/80">{getTimeDisplay(schedule)}</Text>
                   <Text className="text-white font-medium text-sm" numberOfLines={1}>
                     {schedule.title}
                   </Text>

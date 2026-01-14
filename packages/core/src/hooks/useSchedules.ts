@@ -1,9 +1,9 @@
+import type { CreateScheduleInput, Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "../api";
-import type { Schedule, CreateScheduleInput, UpdateScheduleInput } from "@ai-scheduler/shared";
-import { expandRecurringSchedules, type ScheduleOccurrence } from "../utils/recurrence";
-import { startOfMonth, endOfMonth, addMonths, subMonths } from "../utils/date";
+import { addMonths, endOfMonth, startOfMonth, subMonths } from "../utils/date";
+import { type ScheduleOccurrence, expandRecurringSchedules } from "../utils/recurrence";
 
 const SCHEDULES_QUERY_KEY = "schedules";
 
@@ -12,7 +12,12 @@ export const useSchedules = (year?: number, month?: number) => {
 
   const queryKey = [SCHEDULES_QUERY_KEY, year, month];
 
-  const { data: rawSchedules = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: rawSchedules = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey,
     queryFn: () => api.fetchSchedules(year, month),
   });
@@ -50,8 +55,9 @@ export const useSchedules = (year?: number, month?: number) => {
     mutationFn: ({ id, input }: { id: string; input: UpdateScheduleInput }) =>
       api.updateSchedule(id, input),
     onSuccess: (updatedSchedule) => {
-      queryClient.setQueryData<Schedule[]>(queryKey, (old) =>
-        old?.map((s) => (s.id === updatedSchedule.id ? updatedSchedule : s)) ?? []
+      queryClient.setQueryData<Schedule[]>(
+        queryKey,
+        (old) => old?.map((s) => (s.id === updatedSchedule.id ? updatedSchedule : s)) ?? []
       );
     },
   });
@@ -59,8 +65,9 @@ export const useSchedules = (year?: number, month?: number) => {
   const removeMutation = useMutation({
     mutationFn: (id: string) => api.deleteSchedule(id),
     onSuccess: (_, id) => {
-      queryClient.setQueryData<Schedule[]>(queryKey, (old) =>
-        old?.filter((s) => s.id !== id) ?? []
+      queryClient.setQueryData<Schedule[]>(
+        queryKey,
+        (old) => old?.filter((s) => s.id !== id) ?? []
       );
     },
   });

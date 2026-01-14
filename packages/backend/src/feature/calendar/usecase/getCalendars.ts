@@ -1,9 +1,9 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { CalendarResponse, CalendarRole } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
 import { createDatabaseError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createGetCalendarsUseCase = (
   calendarRepo: CalendarRepo,
@@ -16,10 +16,7 @@ export const createGetCalendarsUseCase = (
       const members = await calendarMemberRepo.findByUserId(userId);
 
       // ユーザー情報をキャッシュ
-      const userCache = new Map<
-        string,
-        { id: string; name: string; picture: string | null }
-      >();
+      const userCache = new Map<string, { id: string; name: string; picture: string | null }>();
 
       const responses: CalendarResponse[] = [];
 
@@ -52,9 +49,7 @@ export const createGetCalendarsUseCase = (
         }
 
         // メンバー数を取得（オーナー + メンバー）
-        const calendarMembers = await calendarMemberRepo.findByCalendarId(
-          calendar.id
-        );
+        const calendarMembers = await calendarMemberRepo.findByCalendarId(calendar.id);
         const memberCount = calendarMembers.length + 1; // +1 for owner
 
         responses.push({

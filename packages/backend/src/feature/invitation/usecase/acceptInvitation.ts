@@ -1,13 +1,13 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
 import type { CalendarInvitationRepo } from "../../../domain/infra/calendarInvitationRepo";
-import { createCalendarMember, type MemberRole } from "../../../domain/model/calendar";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import { type MemberRole, createCalendarMember } from "../../../domain/model/calendar";
 import {
+  createConflictError,
   createDatabaseError,
   createNotFoundError,
-  createConflictError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createAcceptInvitationUseCase = (
   calendarRepo: CalendarRepo,
@@ -19,7 +19,9 @@ export const createAcceptInvitationUseCase = (
       // 原子的にuse_countをインクリメント（レースコンディション対策）
       const invitation = await calendarInvitationRepo.incrementUseCount(token);
       if (!invitation) {
-        return err(createNotFoundError("招待リンクが無効、期限切れ、または使用回数上限に達しています"));
+        return err(
+          createNotFoundError("招待リンクが無効、期限切れ、または使用回数上限に達しています")
+        );
       }
 
       // カレンダーの存在確認

@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Modal } from "@/components/common/Modal";
-import { ScheduleDetail } from "./ScheduleDetail";
 import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
 import { SearchResults } from "@/components/AI/SearchResults";
-import { Loader2 } from "lucide-react";
+import { Modal } from "@/components/common/Modal";
+import { useAI } from "@/hooks/useAI";
 import * as api from "@/lib/api";
 import { logger } from "@/lib/logger";
-import { useAI } from "@/hooks/useAI";
 import type { Schedule, ScheduleWithSupplement, ShopList } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ScheduleDetail } from "./ScheduleDetail";
 
 type Step = "detail" | "keywords" | "results";
 
@@ -69,7 +69,11 @@ export const SchedulePopup = ({
       await onDelete(schedule.id);
       onClose();
     } catch (error) {
-      logger.error("Failed to delete schedule", { category: "api", scheduleId: schedule.id }, error);
+      logger.error(
+        "Failed to delete schedule",
+        { category: "api", scheduleId: schedule.id },
+        error
+      );
     } finally {
       setIsDeleting(false);
     }

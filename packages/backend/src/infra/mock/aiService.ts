@@ -28,7 +28,12 @@ export const createMockAiService = (): AiService => ({
         candidates.push("個室", "予約不要", "3000円以下", "コスパ");
         agentTypes.push("search");
       }
-    } else if (title.includes("レストラン") || title.includes("食事") || title.includes("ランチ") || title.includes("ディナー")) {
+    } else if (
+      title.includes("レストラン") ||
+      title.includes("食事") ||
+      title.includes("ランチ") ||
+      title.includes("ディナー")
+    ) {
       candidates = ["個室", "予約不要", "当日予約OK", "3000円以下", "コスパ", "駅近", "雰囲気"];
       agentTypes = ["search"];
     } else if (title.includes("子連れ") || title.includes("ベビー")) {

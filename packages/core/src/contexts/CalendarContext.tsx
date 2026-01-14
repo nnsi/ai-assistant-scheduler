@@ -1,12 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useRef,
-  type ReactNode,
-} from "react";
 import type { CalendarResponse } from "@ai-scheduler/shared";
+import { type ReactNode, createContext, useContext, useEffect, useRef, useState } from "react";
 import { useCalendars } from "../hooks/useCalendars";
 import type { Storage, SyncStorage } from "../storage";
 
@@ -78,17 +71,13 @@ export const CalendarProvider = ({
 
   const { data: calendars = [], isLoading } = useCalendars();
   // ローカルストレージから同期的に初期値を読み込む（タイミング問題を回避）
-  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(
-    getStoredSelectedIds
-  );
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(getStoredSelectedIds);
   const [defaultCalendarId, setDefaultCalendarIdState] = useState<string | null>(
     getStoredDefaultId
   );
   // 既知のカレンダーIDを追跡（新規追加の検出用）
   // ローカルストレージから復元して、リロード時に全て「新規」と判断されないようにする
-  const knownCalendarIdsRef = useRef<Set<string>>(
-    new Set(getStoredKnownIds())
-  );
+  const knownCalendarIdsRef = useRef<Set<string>>(new Set(getStoredKnownIds()));
 
   // カレンダー一覧が読み込まれたら、選択状態を検証・初期化
   useEffect(() => {
@@ -96,15 +85,11 @@ export const CalendarProvider = ({
 
     // 有効なカレンダーIDのみ保持
     const validIds = calendars.map((c) => c.id);
-    const validSelectedIds = selectedCalendarIds.filter((id) =>
-      validIds.includes(id)
-    );
+    const validSelectedIds = selectedCalendarIds.filter((id) => validIds.includes(id));
 
     // 新しく追加されたカレンダーを検出（招待受け入れ等）
     // knownCalendarIdsRefを使って、まだ見たことのないカレンダーのみを検出
-    const newCalendarIds = validIds.filter(
-      (id) => !knownCalendarIdsRef.current.has(id)
-    );
+    const newCalendarIds = validIds.filter((id) => !knownCalendarIdsRef.current.has(id));
 
     // 選択がない場合は全て選択（初回起動時や全削除後）
     if (validSelectedIds.length === 0) {
@@ -142,9 +127,7 @@ export const CalendarProvider = ({
       if (prev.includes(id) && prev.length === 1) {
         return prev;
       }
-      const newIds = prev.includes(id)
-        ? prev.filter((cid) => cid !== id)
-        : [...prev, id];
+      const newIds = prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id];
       storage.setSync(STORAGE_KEY_SELECTED, JSON.stringify(newIds));
       return newIds;
     });

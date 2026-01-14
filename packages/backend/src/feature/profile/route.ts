@@ -1,13 +1,13 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
 import { updateProfileConditionsSchema } from "@ai-scheduler/shared";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
 import { createDb } from "../../infra/drizzle/client";
 import { createProfileRepo } from "../../infra/drizzle/profileRepo";
-import { createGetProfileConditionsUseCase } from "./usecase/getProfileConditions";
-import { createUpdateProfileConditionsUseCase } from "./usecase/updateProfileConditions";
+import { authMiddleware } from "../../middleware/auth";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
-import { authMiddleware } from "../../middleware/auth";
+import { createGetProfileConditionsUseCase } from "./usecase/getProfileConditions";
+import { createUpdateProfileConditionsUseCase } from "./usecase/updateProfileConditions";
 
 type Bindings = {
   DB: D1Database;
@@ -16,9 +16,7 @@ type Bindings = {
 
 type Variables = {
   getProfileConditions: ReturnType<typeof createGetProfileConditionsUseCase>;
-  updateProfileConditions: ReturnType<
-    typeof createUpdateProfileConditionsUseCase
-  >;
+  updateProfileConditions: ReturnType<typeof createUpdateProfileConditionsUseCase>;
   userId: string;
   userEmail: string;
 };
@@ -37,10 +35,7 @@ app.use("*", async (c, next) => {
   const profileRepo = createProfileRepo(db);
 
   c.set("getProfileConditions", createGetProfileConditionsUseCase(profileRepo));
-  c.set(
-    "updateProfileConditions",
-    createUpdateProfileConditionsUseCase(profileRepo)
-  );
+  c.set("updateProfileConditions", createUpdateProfileConditionsUseCase(profileRepo));
 
   await next();
 });

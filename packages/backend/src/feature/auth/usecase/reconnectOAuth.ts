@@ -1,9 +1,9 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
+import type { User } from "@ai-scheduler/shared";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { OAuthProvider } from "../../../infra/auth/oauth";
+import type { AppError } from "../../../shared/errors";
 import { createConflictError, createNotFoundError } from "../../../shared/errors";
-import type { User } from "@ai-scheduler/shared";
+import type { Result } from "../../../shared/result";
 
 export type ReconnectOAuthUseCase = (
   userId: string,
@@ -12,10 +12,7 @@ export type ReconnectOAuthUseCase = (
 ) => Promise<Result<User, AppError>>;
 
 export const createReconnectOAuthUseCase =
-  (
-    userRepo: UserRepo,
-    oauthProvider: OAuthProvider
-  ): ReconnectOAuthUseCase =>
+  (userRepo: UserRepo, oauthProvider: OAuthProvider): ReconnectOAuthUseCase =>
   async (userId, code, redirectUri) => {
     // 1. 現在のユーザーを取得
     const user = await userRepo.findById(userId);
@@ -27,10 +24,7 @@ export const createReconnectOAuthUseCase =
     }
 
     // 2. 認証コードからアクセストークンを取得
-    const tokenResult = await oauthProvider.exchangeCodeForToken(
-      code,
-      redirectUri
-    );
+    const tokenResult = await oauthProvider.exchangeCodeForToken(code, redirectUri);
     if (!tokenResult.ok) {
       return tokenResult;
     }
@@ -44,10 +38,7 @@ export const createReconnectOAuthUseCase =
     const oauthUser = userInfoResult.value;
 
     // 4. 新しいアカウントが既に別のユーザーに紐づいていないか確認
-    const existingUser = await userRepo.findByProviderId(
-      oauthProvider.type,
-      oauthUser.id
-    );
+    const existingUser = await userRepo.findByProviderId(oauthProvider.type, oauthUser.id);
     if (existingUser && existingUser.id !== userId) {
       return {
         ok: false,

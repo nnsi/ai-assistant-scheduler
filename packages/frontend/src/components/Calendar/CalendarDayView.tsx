@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { cn } from "@/lib/cn";
 import {
   formatDate,
   formatDateString,
-  isSameDay,
-  parseISO,
   getHours,
   getMinutes,
+  isSameDay,
+  parseISO,
 } from "@/lib/date";
-import { cn } from "@/lib/cn";
 import type { Schedule } from "@ai-scheduler/shared";
+import { useMemo } from "react";
 
 type CalendarDayViewProps = {
   currentDate: Date;
@@ -129,9 +129,7 @@ export const CalendarDayView = ({
     if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
       // 同日の予定
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
-      endMinutes = endDate
-        ? getHours(endDate) * 60 + getMinutes(endDate)
-        : startMinutes + 60;
+      endMinutes = endDate ? getHours(endDate) * 60 + getMinutes(endDate) : startMinutes + 60;
     } else if (displayDateKey === startDateKey) {
       // 開始日（終了日は別の日）
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
@@ -166,31 +164,32 @@ export const CalendarDayView = ({
       let display = formatDateString(schedule.startAt, "HH:mm");
       if (schedule.endAt) display += ` - ${formatDateString(schedule.endAt, "HH:mm")}`;
       return display;
-    }if (isStartDay) {
+    }
+    if (isStartDay) {
       return `${formatDateString(schedule.startAt, "HH:mm")} →`;
-    }if (isEndDay && schedule.endAt) {
+    }
+    if (isEndDay && schedule.endAt) {
       return `→ ${formatDateString(schedule.endAt, "HH:mm")}`;
     }
-      return "終日";
+    return "終日";
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-soft border border-stone-200/50 overflow-hidden flex-1 flex flex-col min-h-0">
       {/* ヘッダー */}
-      <div className={cn(
-        "border-b border-stone-100 px-5 py-4 sticky top-0 z-10",
-        isToday ? "bg-accent-light/30" : "bg-stone-50/80"
-      )}>
+      <div
+        className={cn(
+          "border-b border-stone-100 px-5 py-4 sticky top-0 z-10",
+          isToday ? "bg-accent-light/30" : "bg-stone-50/80"
+        )}
+      >
         <div className="text-center">
-          <div className={cn(
-            "text-xl font-display",
-            isToday ? "text-accent-dark" : "text-stone-900"
-          )}>
+          <div
+            className={cn("text-xl font-display", isToday ? "text-accent-dark" : "text-stone-900")}
+          >
             {formatDate(currentDate, "yyyy年M月d日")}
           </div>
-          <div className="text-sm text-stone-500 mt-0.5">
-            {formatDate(currentDate, "EEEE")}
-          </div>
+          <div className="text-sm text-stone-500 mt-0.5">{formatDate(currentDate, "EEEE")}</div>
         </div>
       </div>
 
@@ -208,12 +207,17 @@ export const CalendarDayView = ({
                   className={cn(
                     "w-full text-left rounded-xl px-4 py-2.5",
                     "font-medium transition-all duration-200",
-                    !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20 hover:shadow-sm"
+                    !categoryColor &&
+                      "bg-accent/10 text-accent-dark hover:bg-accent/20 hover:shadow-sm"
                   )}
-                  style={categoryColor ? {
-                    backgroundColor: `${categoryColor}20`,
-                    color: categoryColor,
-                  } : undefined}
+                  style={
+                    categoryColor
+                      ? {
+                          backgroundColor: `${categoryColor}20`,
+                          color: categoryColor,
+                        }
+                      : undefined
+                  }
                 >
                   {schedule.title}
                 </button>
@@ -283,9 +287,7 @@ export const CalendarDayView = ({
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="opacity-80 text-sm">
-                        {getTimeDisplay(schedule)}
-                      </span>
+                      <span className="opacity-80 text-sm">{getTimeDisplay(schedule)}</span>
                     </div>
                     <div className="truncate">{schedule.title}</div>
                   </button>

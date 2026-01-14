@@ -1,5 +1,5 @@
-import type { Config } from "tailwindcss";
 import typography from "@tailwindcss/typography";
+import type { Config } from "tailwindcss";
 
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -39,35 +39,37 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"DM Serif Display"', 'serif'],
-        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        display: ['"DM Serif Display"', "serif"],
+        sans: ['"DM Sans"', "system-ui", "sans-serif"],
       },
       borderRadius: {
-        '2xl': '1rem',
-        '3xl': '1.5rem',
+        "2xl": "1rem",
+        "3xl": "1.5rem",
       },
       boxShadow: {
-        soft: '0 1px 2px rgb(41 37 36 / 0.02), 0 4px 8px rgb(41 37 36 / 0.04), 0 8px 16px rgb(41 37 36 / 0.02)',
-        medium: '0 2px 4px rgb(41 37 36 / 0.02), 0 8px 16px rgb(41 37 36 / 0.06), 0 16px 32px rgb(41 37 36 / 0.04)',
-        strong: '0 4px 8px rgb(41 37 36 / 0.04), 0 12px 24px rgb(41 37 36 / 0.08), 0 24px 48px rgb(41 37 36 / 0.06)',
+        soft: "0 1px 2px rgb(41 37 36 / 0.02), 0 4px 8px rgb(41 37 36 / 0.04), 0 8px 16px rgb(41 37 36 / 0.02)",
+        medium:
+          "0 2px 4px rgb(41 37 36 / 0.02), 0 8px 16px rgb(41 37 36 / 0.06), 0 16px 32px rgb(41 37 36 / 0.04)",
+        strong:
+          "0 4px 8px rgb(41 37 36 / 0.04), 0 12px 24px rgb(41 37 36 / 0.08), 0 24px 48px rgb(41 37 36 / 0.06)",
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-up": "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        "scale-in": "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       },
       keyframes: {
         fadeIn: {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
+          from: { opacity: "0" },
+          to: { opacity: "1" },
         },
         slideUp: {
-          from: { opacity: '0', transform: 'translateY(16px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
+          from: { opacity: "0", transform: "translateY(16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
         scaleIn: {
-          from: { opacity: '0', transform: 'scale(0.95)' },
-          to: { opacity: '1', transform: 'scale(1)' },
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
         },
       },
     },

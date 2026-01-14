@@ -1,9 +1,9 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
+import type { UpdateProfileConditionsRequest } from "@ai-scheduler/shared";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import type { ProfileEntity } from "../../../domain/model/profile";
 import { createProfile, updateProfile } from "../../../domain/model/profile";
-import type { UpdateProfileConditionsRequest } from "@ai-scheduler/shared";
+import type { AppError } from "../../../shared/errors";
+import type { Result } from "../../../shared/result";
 
 export type UpdateProfileConditionsUseCase = (
   userId: string,

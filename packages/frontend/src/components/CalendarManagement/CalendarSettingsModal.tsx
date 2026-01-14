@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCalendar, useUpdateCalendar, useDeleteCalendar } from "../../hooks/useCalendars";
+import { useCalendar, useDeleteCalendar, useUpdateCalendar } from "../../hooks/useCalendars";
 import { Modal } from "../common/Modal";
 
 interface CalendarSettingsModalProps {
@@ -89,9 +89,7 @@ const CalendarSettingsForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          カレンダー名
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">カレンダー名</label>
         <input
           type="text"
           value={name}
@@ -104,9 +102,7 @@ const CalendarSettingsForm = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          カラー
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">カラー</label>
         <div className="flex gap-2 flex-wrap">
           {PRESET_COLORS.map((presetColor) => (
             <button
@@ -126,15 +122,9 @@ const CalendarSettingsForm = ({
       </div>
 
       <div className="border-t border-gray-200 pt-4 space-y-2">
-        <div className="text-sm text-gray-600">
-          オーナー: {calendar.owner.name}
-        </div>
-        <div className="text-sm text-gray-600">
-          メンバー: {calendar.memberCount}人
-        </div>
-        <div className="text-sm text-gray-600">
-          あなたの権限: {calendar.role}
-        </div>
+        <div className="text-sm text-gray-600">オーナー: {calendar.owner.name}</div>
+        <div className="text-sm text-gray-600">メンバー: {calendar.memberCount}人</div>
+        <div className="text-sm text-gray-600">あなたの権限: {calendar.role}</div>
       </div>
 
       {(onMembersClick || onInvitationsClick) && canEdit && (
@@ -209,9 +199,7 @@ export const CalendarSettingsModal = ({
       {isLoading ? (
         <div className="py-4 text-center text-gray-500">読み込み中...</div>
       ) : !calendar ? (
-        <div className="py-4 text-center text-red-500">
-          カレンダーが見つかりません
-        </div>
+        <div className="py-4 text-center text-red-500">カレンダーが見つかりません</div>
       ) : (
         <CalendarSettingsForm
           key={calendar.id}

@@ -1,23 +1,20 @@
+import type { Schedule } from "@ai-scheduler/shared";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import {
+  type CreateScheduleInput,
   createSchedule as createScheduleEntity,
   toPublicSchedule,
-  type CreateScheduleInput,
 } from "../../../domain/model/schedule";
-import type { Schedule } from "@ai-scheduler/shared";
 import { createSupplement, createSupplementForMemo } from "../../../domain/model/supplement";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createCreateScheduleUseCase = (
   scheduleRepo: ScheduleRepo,
   supplementRepo: SupplementRepo
 ) => {
-  return async (
-    input: CreateScheduleInput,
-    userId: string
-  ): Promise<Result<Schedule>> => {
+  return async (input: CreateScheduleInput, userId: string): Promise<Result<Schedule>> => {
     try {
       const schedule = createScheduleEntity(input, userId);
       await scheduleRepo.save(schedule);

@@ -1,18 +1,15 @@
+import type { Category } from "@ai-scheduler/shared";
 import type { CategoryRepo } from "../../../domain/infra/categoryRepo";
 import {
+  type CreateCategoryInput,
   createCategory as createCategoryEntity,
   toPublicCategory,
-  type CreateCategoryInput,
 } from "../../../domain/model/category";
-import type { Category } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createCreateCategoryUseCase = (categoryRepo: CategoryRepo) => {
-  return async (
-    input: CreateCategoryInput,
-    userId: string
-  ): Promise<Result<Category>> => {
+  return async (input: CreateCategoryInput, userId: string): Promise<Result<Category>> => {
     try {
       const category = createCategoryEntity(input, userId);
       await categoryRepo.save(category);

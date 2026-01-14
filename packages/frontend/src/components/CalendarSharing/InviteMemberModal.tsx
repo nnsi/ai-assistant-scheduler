@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Modal } from "../common/Modal";
-import { useAddCalendarMember } from "../../hooks/useCalendarMembers";
 import type { MemberRole } from "@ai-scheduler/shared";
+import { useState } from "react";
+import { useAddCalendarMember } from "../../hooks/useCalendarMembers";
+import { Modal } from "../common/Modal";
 
 interface InviteMemberModalProps {
   calendarId: string | null;
@@ -27,11 +27,7 @@ const ROLE_OPTIONS: { value: MemberRole; label: string; description: string }[] 
   },
 ];
 
-export const InviteMemberModal = ({
-  calendarId,
-  isOpen,
-  onClose,
-}: InviteMemberModalProps) => {
+export const InviteMemberModal = ({ calendarId, isOpen, onClose }: InviteMemberModalProps) => {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MemberRole>("editor");
   const [error, setError] = useState<string | null>(null);
@@ -77,9 +73,7 @@ export const InviteMemberModal = ({
     <Modal isOpen={isOpen} onClose={handleClose} title="メンバーを招待">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            メールアドレス
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
           <input
             type="email"
             value={email}
@@ -88,15 +82,11 @@ export const InviteMemberModal = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
-          <p className="mt-1 text-xs text-gray-500">
-            既に登録済みのユーザーのみ招待できます
-          </p>
+          <p className="mt-1 text-xs text-gray-500">既に登録済みのユーザーのみ招待できます</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            権限
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">権限</label>
           <div className="space-y-2">
             {ROLE_OPTIONS.map((option) => (
               <label
@@ -117,20 +107,14 @@ export const InviteMemberModal = ({
                 />
                 <div className="ml-3">
                   <div className="text-sm font-medium">{option.label}</div>
-                  <div className="text-xs text-gray-500">
-                    {option.description}
-                  </div>
+                  <div className="text-xs text-gray-500">{option.description}</div>
                 </div>
               </label>
             ))}
           </div>
         </div>
 
-        {error && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-            {error}
-          </div>
-        )}
+        {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

@@ -1,27 +1,32 @@
+import {
+  type AgentType,
+  searchAndSaveInputSchema,
+  searchInputSchema,
+  suggestKeywordsInputSchema,
+} from "@ai-scheduler/shared";
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { zValidator } from "@hono/zod-validator";
-import { suggestKeywordsInputSchema, searchInputSchema, searchAndSaveInputSchema, type AgentType } from "@ai-scheduler/shared";
 import type { StreamEvent } from "../../domain/infra/aiService";
-import {
-  createKeywordAgent,
-  createSearchAgent,
-  createPlanAgent,
-  createAreaInfoAgent,
-} from "../../infra/mastra/agents";
-import { createAiService } from "../../infra/mastra/aiService";
-import { createMockAiService } from "../../infra/mock/aiService";
 import { createDb } from "../../infra/drizzle/client";
 import { createProfileRepo } from "../../infra/drizzle/profileRepo";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
-import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
-import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
-import { createSaveSupplementUseCase } from "./usecase/saveSupplement";
-import { createSearchAndSaveUseCase } from "./usecase/searchAndSave";
-import { createValidationError } from "../../shared/errors";
-import { getStatusCode } from "../../shared/http";
+import {
+  createAreaInfoAgent,
+  createKeywordAgent,
+  createPlanAgent,
+  createSearchAgent,
+} from "../../infra/mastra/agents";
+import { createAiService } from "../../infra/mastra/aiService";
+import { createMockAiService } from "../../infra/mock/aiService";
 import { authMiddleware } from "../../middleware/auth";
 import { aiRateLimitMiddleware } from "../../middleware/rateLimit";
+import { createValidationError } from "../../shared/errors";
+import { getStatusCode } from "../../shared/http";
+import { createSaveSupplementUseCase } from "./usecase/saveSupplement";
+import { createSearchAndSaveUseCase } from "./usecase/searchAndSave";
+import { createSearchWithKeywordsUseCase } from "./usecase/searchWithKeywords";
+import { createSuggestKeywordsUseCase } from "./usecase/suggestKeywords";
 
 type Bindings = {
   DB: D1Database;
@@ -91,20 +96,23 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, excludeKeywords, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
-      const scheduleContext = (endAt || userMemo || recurrenceSummary)
-        ? { endAt, userMemo, recurrenceSummary }
-        : undefined;
-      const result = await c.get("suggestKeywords")(userId, title, startAt, excludeKeywords, scheduleContext);
+      const { title, startAt, excludeKeywords, endAt, userMemo, recurrenceSummary } =
+        c.req.valid("json");
+      const scheduleContext =
+        endAt || userMemo || recurrenceSummary ? { endAt, userMemo, recurrenceSummary } : undefined;
+      const result = await c.get("suggestKeywords")(
+        userId,
+        title,
+        startAt,
+        excludeKeywords,
+        scheduleContext
+      );
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json(
-        { keywords: result.value.keywords, agentTypes: result.value.agentTypes },
-        200
-      );
+      return c.json({ keywords: result.value.keywords, agentTypes: result.value.agentTypes }, 200);
     }
   )
   // POST /ai/search
@@ -117,10 +125,10 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
-      const scheduleContext = (endAt || userMemo || recurrenceSummary)
-        ? { endAt, userMemo, recurrenceSummary }
-        : undefined;
+      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } =
+        c.req.valid("json");
+      const scheduleContext =
+        endAt || userMemo || recurrenceSummary ? { endAt, userMemo, recurrenceSummary } : undefined;
       const result = await c.get("searchWithKeywords")(
         userId,
         title,
@@ -134,10 +142,13 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({
-        result: result.value.result,
-        shopCandidates: result.value.shopCandidates,
-      }, 200);
+      return c.json(
+        {
+          result: result.value.result,
+          shopCandidates: result.value.shopCandidates,
+        },
+        200
+      );
     }
   )
   // POST /ai/search-and-save
@@ -150,10 +161,18 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { scheduleId, title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
-      const scheduleContext = (endAt || userMemo || recurrenceSummary)
-        ? { endAt, userMemo, recurrenceSummary }
-        : undefined;
+      const {
+        scheduleId,
+        title,
+        startAt,
+        keywords,
+        agentTypes,
+        endAt,
+        userMemo,
+        recurrenceSummary,
+      } = c.req.valid("json");
+      const scheduleContext =
+        endAt || userMemo || recurrenceSummary ? { endAt, userMemo, recurrenceSummary } : undefined;
       const result = await c.get("searchAndSave")(
         userId,
         scheduleId,
@@ -168,10 +187,13 @@ export const aiRoute = app
         return c.json(result.error, getStatusCode(result.error.code));
       }
 
-      return c.json({
-        result: result.value.result,
-        shopCandidates: result.value.shopCandidates,
-      }, 200);
+      return c.json(
+        {
+          result: result.value.result,
+          shopCandidates: result.value.shopCandidates,
+        },
+        200
+      );
     }
   )
   // POST /ai/search/stream - SSEストリーミング
@@ -184,7 +206,8 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
+      const { title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } =
+        c.req.valid("json");
       const aiService = c.get("aiService");
       const profileRepo = c.get("profileRepo");
 
@@ -203,9 +226,8 @@ export const aiRoute = app
           }
         : undefined;
 
-      const scheduleContext = (endAt || userMemo || recurrenceSummary)
-        ? { endAt, userMemo, recurrenceSummary }
-        : undefined;
+      const scheduleContext =
+        endAt || userMemo || recurrenceSummary ? { endAt, userMemo, recurrenceSummary } : undefined;
 
       return streamSSE(c, async (stream) => {
         let eventId = 0;
@@ -249,7 +271,16 @@ export const aiRoute = app
     }),
     async (c) => {
       const userId = c.get("userId");
-      const { scheduleId, title, startAt, keywords, agentTypes, endAt, userMemo, recurrenceSummary } = c.req.valid("json");
+      const {
+        scheduleId,
+        title,
+        startAt,
+        keywords,
+        agentTypes,
+        endAt,
+        userMemo,
+        recurrenceSummary,
+      } = c.req.valid("json");
       const aiService = c.get("aiService");
       const profileRepo = c.get("profileRepo");
 
@@ -268,9 +299,8 @@ export const aiRoute = app
           }
         : undefined;
 
-      const scheduleContext = (endAt || userMemo || recurrenceSummary)
-        ? { endAt, userMemo, recurrenceSummary }
-        : undefined;
+      const scheduleContext =
+        endAt || userMemo || recurrenceSummary ? { endAt, userMemo, recurrenceSummary } : undefined;
 
       // 保存用の依存関係を準備
       const db = createDb(c.env.DB);

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
-import { createCreateScheduleUseCase } from "./createSchedule";
+import { describe, expect, it, vi } from "vitest";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
+import { createCreateScheduleUseCase } from "./createSchedule";
 
 describe("createScheduleUseCase", () => {
   const createMockScheduleRepo = (): ScheduleRepo => ({

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
-import { createUserRepo } from "./userRepo";
-import { createTestDb, resetDatabase, type TestDb } from "../../test/helpers";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { UserEntity } from "../../domain/model/user";
+import { type TestDb, createTestDb, resetDatabase } from "../../test/helpers";
+import { createUserRepo } from "./userRepo";
 
 describe("userRepo", () => {
   let db: TestDb;

@@ -66,10 +66,14 @@ export const CalendarDay = ({
                 "hover:scale-[1.02]",
                 !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20"
               )}
-              style={categoryColor ? {
-                backgroundColor: `${categoryColor}20`,
-                color: categoryColor,
-              } : undefined}
+              style={
+                categoryColor
+                  ? {
+                      backgroundColor: `${categoryColor}20`,
+                      color: categoryColor,
+                    }
+                  : undefined
+              }
               onMouseEnter={(e) => {
                 if (categoryColor) {
                   e.currentTarget.style.backgroundColor = `${categoryColor}35`;

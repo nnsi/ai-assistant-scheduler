@@ -1,5 +1,5 @@
-import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
+import { forwardRef } from "react";
 
 type CheckboxProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label?: string;
@@ -23,10 +23,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {...props}
         />
         {label && (
-          <label
-            htmlFor={checkboxId}
-            className="text-sm font-medium text-stone-700 cursor-pointer"
-          >
+          <label htmlFor={checkboxId} className="text-sm font-medium text-stone-700 cursor-pointer">
             {label}
           </label>
         )}

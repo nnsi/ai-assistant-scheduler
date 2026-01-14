@@ -1,8 +1,8 @@
-import { eq, and } from "drizzle-orm";
-import type { Database } from "./client";
-import { calendarMembers, users, type CalendarMemberRow } from "./schema";
+import { and, eq } from "drizzle-orm";
 import type { CalendarMemberRepo } from "../../domain/infra/calendarMemberRepo";
 import type { CalendarMemberEntity, MemberRole } from "../../domain/model/calendar";
+import type { Database } from "./client";
+import { type CalendarMemberRow, calendarMembers, users } from "./schema";
 
 export const createCalendarMemberRepo = (db: Database): CalendarMemberRepo => ({
   create: async (member) => {
@@ -34,20 +34,12 @@ export const createCalendarMemberRepo = (db: Database): CalendarMemberRepo => ({
     const rows = await db
       .select()
       .from(calendarMembers)
-      .where(
-        and(
-          eq(calendarMembers.userId, userId),
-          eq(calendarMembers.calendarId, calendarId)
-        )
-      );
+      .where(and(eq(calendarMembers.userId, userId), eq(calendarMembers.calendarId, calendarId)));
     return rows[0] ? toMember(rows[0]) : null;
   },
 
   findByUserId: async (userId) => {
-    const rows = await db
-      .select()
-      .from(calendarMembers)
-      .where(eq(calendarMembers.userId, userId));
+    const rows = await db.select().from(calendarMembers).where(eq(calendarMembers.userId, userId));
     return rows.map(toMember);
   },
 
@@ -66,12 +58,7 @@ export const createCalendarMemberRepo = (db: Database): CalendarMemberRepo => ({
   deleteByUserIdAndCalendarId: async (userId, calendarId) => {
     await db
       .delete(calendarMembers)
-      .where(
-        and(
-          eq(calendarMembers.userId, userId),
-          eq(calendarMembers.calendarId, calendarId)
-        )
-      );
+      .where(and(eq(calendarMembers.userId, userId), eq(calendarMembers.calendarId, calendarId)));
   },
 });
 

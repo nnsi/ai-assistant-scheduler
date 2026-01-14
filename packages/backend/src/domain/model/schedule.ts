@@ -1,9 +1,9 @@
 import {
-  type Schedule,
-  type CreateScheduleInput,
-  type UpdateScheduleInput,
   type Category,
+  type CreateScheduleInput,
   type RecurrenceRule,
+  type Schedule,
+  type UpdateScheduleInput,
 } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 

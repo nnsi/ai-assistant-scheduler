@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { Button } from "./Button";
-import { Trash2, Edit, Plus } from "lucide-react";
 
 const meta = {
   title: "Common/Button",
@@ -110,27 +110,51 @@ export const AllVariants: Story = {
     <div className="flex flex-col gap-4">
       <div className="flex gap-2 items-center">
         <span className="w-20 text-sm text-gray-500">Primary</span>
-        <Button variant="primary" size="sm">Small</Button>
-        <Button variant="primary" size="md">Medium</Button>
-        <Button variant="primary" size="lg">Large</Button>
+        <Button variant="primary" size="sm">
+          Small
+        </Button>
+        <Button variant="primary" size="md">
+          Medium
+        </Button>
+        <Button variant="primary" size="lg">
+          Large
+        </Button>
       </div>
       <div className="flex gap-2 items-center">
         <span className="w-20 text-sm text-gray-500">Secondary</span>
-        <Button variant="secondary" size="sm">Small</Button>
-        <Button variant="secondary" size="md">Medium</Button>
-        <Button variant="secondary" size="lg">Large</Button>
+        <Button variant="secondary" size="sm">
+          Small
+        </Button>
+        <Button variant="secondary" size="md">
+          Medium
+        </Button>
+        <Button variant="secondary" size="lg">
+          Large
+        </Button>
       </div>
       <div className="flex gap-2 items-center">
         <span className="w-20 text-sm text-gray-500">Danger</span>
-        <Button variant="danger" size="sm">Small</Button>
-        <Button variant="danger" size="md">Medium</Button>
-        <Button variant="danger" size="lg">Large</Button>
+        <Button variant="danger" size="sm">
+          Small
+        </Button>
+        <Button variant="danger" size="md">
+          Medium
+        </Button>
+        <Button variant="danger" size="lg">
+          Large
+        </Button>
       </div>
       <div className="flex gap-2 items-center">
         <span className="w-20 text-sm text-gray-500">Ghost</span>
-        <Button variant="ghost" size="sm">Small</Button>
-        <Button variant="ghost" size="md">Medium</Button>
-        <Button variant="ghost" size="lg">Large</Button>
+        <Button variant="ghost" size="sm">
+          Small
+        </Button>
+        <Button variant="ghost" size="md">
+          Medium
+        </Button>
+        <Button variant="ghost" size="lg">
+          Large
+        </Button>
       </div>
     </div>
   ),

@@ -1,5 +1,5 @@
-import type { CategoryRepo } from "../../../domain/infra/categoryRepo";
 import type { Category } from "@ai-scheduler/shared";
+import type { CategoryRepo } from "../../../domain/infra/categoryRepo";
 import { toPublicCategory } from "../../../domain/model/category";
 import { type Result, ok } from "../../../shared/result";
 

@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useRef, useState } from "react";
 import { OAUTH_RECONNECT_STATE_KEY } from "./ProfileSettingsModal";
 
 const REDIRECT_URI = `${window.location.origin}/auth/reconnect-callback`;

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
-import { createGetCurrentUserUseCase } from "./getCurrentUser";
+import { describe, expect, it, vi } from "vitest";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { UserEntity } from "../../../domain/model/user";
+import { createGetCurrentUserUseCase } from "./getCurrentUser";
 
 describe("getCurrentUserUseCase", () => {
   const mockUser: UserEntity = {

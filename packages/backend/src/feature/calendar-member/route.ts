@@ -1,23 +1,23 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
 import {
   addMemberInputSchema,
-  updateMemberRoleInputSchema,
   transferOwnershipInputSchema,
+  updateMemberRoleInputSchema,
 } from "@ai-scheduler/shared";
-import { createDb } from "../../infra/drizzle/client";
-import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
 import { createCalendarMemberRepo } from "../../infra/drizzle/calendarMemberRepo";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
-import { createGetMembersUseCase } from "./usecase/getMembers";
-import { createAddMemberUseCase } from "./usecase/addMember";
-import { createUpdateMemberRoleUseCase } from "./usecase/updateMemberRole";
-import { createRemoveMemberUseCase } from "./usecase/removeMember";
-import { createLeaveCalendarUseCase } from "./usecase/leaveCalendar";
-import { createTransferOwnershipUseCase } from "./usecase/transferOwnership";
+import { authMiddleware } from "../../middleware/auth";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
-import { authMiddleware } from "../../middleware/auth";
+import { createAddMemberUseCase } from "./usecase/addMember";
+import { createGetMembersUseCase } from "./usecase/getMembers";
+import { createLeaveCalendarUseCase } from "./usecase/leaveCalendar";
+import { createRemoveMemberUseCase } from "./usecase/removeMember";
+import { createTransferOwnershipUseCase } from "./usecase/transferOwnership";
+import { createUpdateMemberRoleUseCase } from "./usecase/updateMemberRole";
 
 type Bindings = {
   DB: D1Database;
@@ -50,24 +50,12 @@ app.use("*", async (c, next) => {
   const calendarMemberRepo = createCalendarMemberRepo(db);
   const userRepo = createUserRepo(db);
 
-  c.set(
-    "getMembers",
-    createGetMembersUseCase(calendarRepo, calendarMemberRepo, userRepo)
-  );
-  c.set(
-    "addMember",
-    createAddMemberUseCase(calendarRepo, calendarMemberRepo, userRepo)
-  );
-  c.set(
-    "updateMemberRole",
-    createUpdateMemberRoleUseCase(calendarRepo, calendarMemberRepo)
-  );
+  c.set("getMembers", createGetMembersUseCase(calendarRepo, calendarMemberRepo, userRepo));
+  c.set("addMember", createAddMemberUseCase(calendarRepo, calendarMemberRepo, userRepo));
+  c.set("updateMemberRole", createUpdateMemberRoleUseCase(calendarRepo, calendarMemberRepo));
   c.set("removeMember", createRemoveMemberUseCase(calendarRepo, calendarMemberRepo));
   c.set("leaveCalendar", createLeaveCalendarUseCase(calendarRepo, calendarMemberRepo));
-  c.set(
-    "transferOwnership",
-    createTransferOwnershipUseCase(calendarRepo, calendarMemberRepo)
-  );
+  c.set("transferOwnership", createTransferOwnershipUseCase(calendarRepo, calendarMemberRepo));
 
   await next();
 });
@@ -119,12 +107,7 @@ export const calendarMemberRoute = app
       const targetUserId = c.req.param("targetUserId");
       const operatorId = c.get("userId");
       const input = c.req.valid("json");
-      const result = await c.get("updateMemberRole")(
-        calendarId,
-        targetUserId,
-        operatorId,
-        input
-      );
+      const result = await c.get("updateMemberRole")(calendarId, targetUserId, operatorId, input);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));
@@ -170,11 +153,7 @@ export const calendarMemberRoute = app
       const calendarId = c.req.param("id");
       const currentOwnerId = c.get("userId");
       const input = c.req.valid("json");
-      const result = await c.get("transferOwnership")(
-        calendarId,
-        currentOwnerId,
-        input
-      );
+      const result = await c.get("transferOwnership")(calendarId, currentOwnerId, input);
 
       if (!result.ok) {
         return c.json(result.error, getStatusCode(result.error.code));

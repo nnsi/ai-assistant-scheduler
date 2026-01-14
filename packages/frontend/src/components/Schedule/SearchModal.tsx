@@ -1,8 +1,8 @@
-import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { cn } from "@/lib/cn";
-import { useSearchModal } from "@ai-scheduler/core/hooks";
 import { formatDateString } from "@/lib/date";
+import { useSearchModal } from "@ai-scheduler/core/hooks";
 import type { Schedule } from "@ai-scheduler/shared";
 
 type SearchModalProps = {
@@ -11,11 +11,7 @@ type SearchModalProps = {
   onScheduleClick: (schedule: Schedule) => void;
 };
 
-export const SearchModal = ({
-  isOpen,
-  onClose,
-  onScheduleClick,
-}: SearchModalProps) => {
+export const SearchModal = ({ isOpen, onClose, onScheduleClick }: SearchModalProps) => {
   const {
     // フィルター状態
     query,
@@ -46,10 +42,7 @@ export const SearchModal = ({
       <div className="space-y-4">
         {/* 検索フォーム */}
         <div>
-          <label
-            htmlFor="search-query"
-            className="block text-sm font-medium text-stone-700 mb-2"
-          >
+          <label htmlFor="search-query" className="block text-sm font-medium text-stone-700 mb-2">
             キーワード
           </label>
           <input
@@ -75,10 +68,7 @@ export const SearchModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="search-start"
-              className="block text-sm font-medium text-stone-700 mb-2"
-            >
+            <label htmlFor="search-start" className="block text-sm font-medium text-stone-700 mb-2">
               開始日
             </label>
             <input
@@ -96,10 +86,7 @@ export const SearchModal = ({
             />
           </div>
           <div>
-            <label
-              htmlFor="search-end"
-              className="block text-sm font-medium text-stone-700 mb-2"
-            >
+            <label htmlFor="search-end" className="block text-sm font-medium text-stone-700 mb-2">
               終了日
             </label>
             <input
@@ -120,9 +107,7 @@ export const SearchModal = ({
 
         {categories.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
-              カテゴリ
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-2">カテゴリ</label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -147,11 +132,7 @@ export const SearchModal = ({
                       ? "text-white"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                   )}
-                  style={
-                    categoryId === cat.id
-                      ? { backgroundColor: cat.color }
-                      : undefined
-                  }
+                  style={categoryId === cat.id ? { backgroundColor: cat.color } : undefined}
                 >
                   <span
                     className="w-2.5 h-2.5 rounded-full"
@@ -225,9 +206,7 @@ export const SearchModal = ({
                             {formatDateString(schedule.startAt, "HH:mm")}
                           </span>
                         )}
-                        {schedule.isAllDay && (
-                          <span className="ml-1"> (終日)</span>
-                        )}
+                        {schedule.isAllDay && <span className="ml-1"> (終日)</span>}
                       </div>
                     </button>
                   );

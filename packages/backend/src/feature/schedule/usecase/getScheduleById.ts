@@ -1,11 +1,11 @@
+import type { Schedule } from "@ai-scheduler/shared";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import { toPublicSchedule } from "../../../domain/model/schedule";
-import type { Schedule } from "@ai-scheduler/shared";
 import type { Supplement } from "../../../domain/model/supplement";
-import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
+import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export type ScheduleWithSupplement = Schedule & {
   supplement: Supplement | null;
@@ -26,10 +26,7 @@ export const createGetScheduleByIdUseCase = (
   supplementRepo: SupplementRepo,
   calendarRepo: CalendarRepo
 ) => {
-  return async (
-    id: string,
-    userId: string
-  ): Promise<Result<ScheduleWithSupplement>> => {
+  return async (id: string, userId: string): Promise<Result<ScheduleWithSupplement>> => {
     try {
       // ユーザーがアクセスできる全てのカレンダーを取得
       const calendars = await calendarRepo.findByUserId(userId);
@@ -76,7 +73,13 @@ export const createGetScheduleByIdUseCase = (
       if (occurrenceDate) {
         const originalDate = new Date(publicSchedule.startAt);
         const [year, month, day] = occurrenceDate.split("-").map(Number);
-        const newStartAt = new Date(year, month - 1, day, originalDate.getHours(), originalDate.getMinutes());
+        const newStartAt = new Date(
+          year,
+          month - 1,
+          day,
+          originalDate.getHours(),
+          originalDate.getMinutes()
+        );
 
         // endAtも同様に調整
         let newEndAt: Date | null = null;

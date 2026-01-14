@@ -1,22 +1,20 @@
+import type { CalendarResponse, Category, Schedule } from "@ai-scheduler/shared";
+import {
+  eachDayOfInterval,
+  endOfWeek,
+  format,
+  getHours,
+  getMinutes,
+  isToday,
+  parseISO,
+  startOfWeek,
+} from "date-fns";
+import { useEffect, useMemo, useRef } from "react";
 /**
  * 週表示カレンダーコンポーネント
  * モバイル最適化：コンパクトなヘッダー、見やすい時間軸
  */
-import { View, Text, Pressable, ScrollView } from "react-native";
-import { useMemo, useRef, useEffect } from "react";
-import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
-import {
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  format,
-  isSameDay,
-  isToday,
-  parseISO,
-  getHours,
-  getMinutes,
-} from "date-fns";
-import { ja } from "date-fns/locale";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 interface WeekViewProps {
   currentDate: Date;
@@ -57,9 +55,7 @@ export function WeekView({
 
   // フィルタリングされたスケジュール
   const filteredSchedules = useMemo(() => {
-    return schedules.filter((s) =>
-      s.calendarId && selectedCalendarIds.includes(s.calendarId)
-    );
+    return schedules.filter((s) => s.calendarId && selectedCalendarIds.includes(s.calendarId));
   }, [schedules, selectedCalendarIds]);
 
   // カレンダーID→色のマップ（フォールバック用）
@@ -109,9 +105,7 @@ export function WeekView({
 
     if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
-      endMinutes = endDate
-        ? getHours(endDate) * 60 + getMinutes(endDate)
-        : startMinutes + 60;
+      endMinutes = endDate ? getHours(endDate) * 60 + getMinutes(endDate) : startMinutes + 60;
     } else if (displayDateKey === startDateKey) {
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
       endMinutes = 24 * 60;
@@ -150,9 +144,7 @@ export function WeekView({
           return (
             <View
               key={date.toISOString()}
-              className={`flex-1 py-1.5 items-center ${
-                isTodayDate ? "bg-primary-50" : ""
-              }`}
+              className={`flex-1 py-1.5 items-center ${isTodayDate ? "bg-primary-50" : ""}`}
             >
               <Text
                 className={`text-[10px] font-medium ${
@@ -188,10 +180,7 @@ export function WeekView({
           {days.map((date) => {
             const daySchedules = getSchedulesForDate(date).filter((s) => s.isAllDay);
             return (
-              <View
-                key={date.toISOString()}
-                className="flex-1 py-1 px-0.5 min-h-[24px]"
-              >
+              <View key={date.toISOString()} className="flex-1 py-1 px-0.5 min-h-[24px]">
                 {daySchedules.slice(0, 1).map((schedule) => (
                   <Pressable
                     key={schedule.id}
@@ -207,7 +196,9 @@ export function WeekView({
                   </Pressable>
                 ))}
                 {daySchedules.length > 1 && (
-                  <Text className="text-[9px] text-gray-400 text-center">+{daySchedules.length - 1}</Text>
+                  <Text className="text-[9px] text-gray-400 text-center">
+                    +{daySchedules.length - 1}
+                  </Text>
                 )}
               </View>
             );
@@ -221,10 +212,7 @@ export function WeekView({
           {/* 時間列 */}
           <View className="w-10">
             {HOURS.map((hour) => (
-              <View
-                key={hour}
-                className="h-12 border-b border-gray-50 items-center justify-start"
-              >
+              <View key={hour} className="h-12 border-b border-gray-50 items-center justify-start">
                 <Text className="text-[10px] text-gray-400 mt-[-5px]">
                   {hour.toString().padStart(2, "0")}
                 </Text>

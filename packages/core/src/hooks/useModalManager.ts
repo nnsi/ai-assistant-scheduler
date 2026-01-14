@@ -1,5 +1,5 @@
-import { useReducer, useCallback } from "react";
 import type { Schedule } from "@ai-scheduler/shared";
+import { useCallback, useReducer } from "react";
 
 // モーダルの種類を定義
 type ModalType =
@@ -165,16 +165,10 @@ export function useModalManager() {
   const [state, dispatch] = useReducer(modalReducer, initialState);
 
   // モーダルの開閉状態を取得
-  const isOpen = useCallback(
-    (modal: ModalType) => state.openModals.has(modal),
-    [state.openModals]
-  );
+  const isOpen = useCallback((modal: ModalType) => state.openModals.has(modal), [state.openModals]);
 
   // 基本的なモーダル操作
-  const openModal = useCallback(
-    (modal: ModalType) => dispatch({ type: "OPEN_MODAL", modal }),
-    []
-  );
+  const openModal = useCallback((modal: ModalType) => dispatch({ type: "OPEN_MODAL", modal }), []);
   const closeModal = useCallback(
     (modal: ModalType) => dispatch({ type: "CLOSE_MODAL", modal }),
     []
@@ -201,8 +195,7 @@ export function useModalManager() {
 
   // カレンダー設定モーダルを開く
   const openCalendarSettings = useCallback(
-    (calendarId: string) =>
-      dispatch({ type: "OPEN_CALENDAR_SETTINGS", calendarId }),
+    (calendarId: string) => dispatch({ type: "OPEN_CALENDAR_SETTINGS", calendarId }),
     []
   );
 

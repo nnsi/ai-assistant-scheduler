@@ -1,15 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { createSuggestKeywordsUseCase } from "./suggestKeywords";
+import { describe, expect, it, vi } from "vitest";
 import type { AiService } from "../../../domain/infra/aiService";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
+import { createSuggestKeywordsUseCase } from "./suggestKeywords";
 
 describe("suggestKeywordsUseCase", () => {
   const createMockAiService = (): AiService => ({
-    suggestKeywords: vi.fn().mockResolvedValue([
-      "3000円前後",
-      "家族利用",
-      "イタリアン",
-    ]),
+    suggestKeywords: vi.fn().mockResolvedValue(["3000円前後", "家族利用", "イタリアン"]),
     searchWithKeywords: vi.fn(),
   });
 
@@ -40,16 +36,14 @@ describe("suggestKeywordsUseCase", () => {
       "2025-01-10T12:00:00+09:00",
       undefined,
       undefined, // excludeKeywords
-      undefined  // scheduleContext
+      undefined // scheduleContext
     );
   });
 
   it("should return error when AI fails", async () => {
     const mockAiService = createMockAiService();
     const mockProfileRepo = createMockProfileRepo();
-    vi.mocked(mockAiService.suggestKeywords).mockRejectedValue(
-      new Error("AI service error")
-    );
+    vi.mocked(mockAiService.suggestKeywords).mockRejectedValue(new Error("AI service error"));
 
     const suggestKeywords = createSuggestKeywordsUseCase(mockAiService, mockProfileRepo);
 

@@ -1,9 +1,17 @@
-import { eq, and, gte, lt, lte, like, or, inArray, isNull } from "drizzle-orm";
-import type { Database } from "./client";
-import { schedules, categories, scheduleSupplements, recurrenceRules, type ScheduleRow, type CategoryRow, type RecurrenceRuleRow } from "./schema";
+import type { DayOfWeek, EndType, Frequency } from "@ai-scheduler/shared";
+import { and, eq, gte, inArray, isNull, like, lt, lte, or } from "drizzle-orm";
 import type { ScheduleRepo } from "../../domain/infra/scheduleRepo";
 import type { ScheduleEntity } from "../../domain/model/schedule";
-import type { DayOfWeek, Frequency, EndType } from "@ai-scheduler/shared";
+import type { Database } from "./client";
+import {
+  type CategoryRow,
+  type RecurrenceRuleRow,
+  type ScheduleRow,
+  categories,
+  recurrenceRules,
+  scheduleSupplements,
+  schedules,
+} from "./schema";
 
 type ScheduleWithCategoryAndRecurrence = {
   schedules: ScheduleRow;
@@ -61,7 +69,12 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
     return rows.map(toScheduleWithCategoryAndRecurrence);
   },
 
-  findByMonthAndCalendarIdsOrUserId: async (year: number, month: number, calendarIds: string[], userId: string) => {
+  findByMonthAndCalendarIdsOrUserId: async (
+    year: number,
+    month: number,
+    calendarIds: string[],
+    userId: string
+  ) => {
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 1).toISOString();
 
@@ -155,13 +168,15 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
         endAt: row.schedules.endAt,
         isAllDay: row.schedules.isAllDay,
         categoryId: row.schedules.categoryId,
-        category: row.categories ? {
-          id: row.categories.id,
-          name: row.categories.name,
-          color: row.categories.color,
-          createdAt: row.categories.createdAt,
-          updatedAt: row.categories.updatedAt,
-        } : null,
+        category: row.categories
+          ? {
+              id: row.categories.id,
+              name: row.categories.name,
+              color: row.categories.color,
+              createdAt: row.categories.createdAt,
+              updatedAt: row.categories.updatedAt,
+            }
+          : null,
         recurrence: null, // 検索ではrecurrenceをJOINしていない
         createdAt: row.schedules.createdAt,
         updatedAt: row.schedules.updatedAt,
@@ -185,10 +200,7 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
   },
 
   update: async (schedule) => {
-    await db
-      .update(schedules)
-      .set(toRow(schedule))
-      .where(eq(schedules.id, schedule.id));
+    await db.update(schedules).set(toRow(schedule)).where(eq(schedules.id, schedule.id));
   },
 
   delete: async (id) => {
@@ -197,7 +209,9 @@ export const createScheduleRepo = (db: Database): ScheduleRepo => ({
 });
 
 // Row with Category and Recurrence → Entity 変換
-const toScheduleWithCategoryAndRecurrence = (row: ScheduleWithCategoryAndRecurrence): ScheduleEntity => ({
+const toScheduleWithCategoryAndRecurrence = (
+  row: ScheduleWithCategoryAndRecurrence
+): ScheduleEntity => ({
   id: row.schedules.id,
   userId: row.schedules.userId,
   calendarId: row.schedules.calendarId,
@@ -207,27 +221,33 @@ const toScheduleWithCategoryAndRecurrence = (row: ScheduleWithCategoryAndRecurre
   endAt: row.schedules.endAt,
   isAllDay: row.schedules.isAllDay,
   categoryId: row.schedules.categoryId,
-  category: row.categories ? {
-    id: row.categories.id,
-    name: row.categories.name,
-    color: row.categories.color,
-    createdAt: row.categories.createdAt,
-    updatedAt: row.categories.updatedAt,
-  } : null,
-  recurrence: row.recurrence_rules ? {
-    id: row.recurrence_rules.id,
-    scheduleId: row.recurrence_rules.scheduleId,
-    frequency: row.recurrence_rules.frequency as Frequency,
-    interval: row.recurrence_rules.intervalValue,
-    daysOfWeek: row.recurrence_rules.daysOfWeek ? JSON.parse(row.recurrence_rules.daysOfWeek) as DayOfWeek[] : null,
-    dayOfMonth: row.recurrence_rules.dayOfMonth,
-    weekOfMonth: row.recurrence_rules.weekOfMonth,
-    endType: row.recurrence_rules.endType as EndType,
-    endDate: row.recurrence_rules.endDate,
-    endCount: row.recurrence_rules.endCount,
-    createdAt: row.recurrence_rules.createdAt,
-    updatedAt: row.recurrence_rules.updatedAt,
-  } : null,
+  category: row.categories
+    ? {
+        id: row.categories.id,
+        name: row.categories.name,
+        color: row.categories.color,
+        createdAt: row.categories.createdAt,
+        updatedAt: row.categories.updatedAt,
+      }
+    : null,
+  recurrence: row.recurrence_rules
+    ? {
+        id: row.recurrence_rules.id,
+        scheduleId: row.recurrence_rules.scheduleId,
+        frequency: row.recurrence_rules.frequency as Frequency,
+        interval: row.recurrence_rules.intervalValue,
+        daysOfWeek: row.recurrence_rules.daysOfWeek
+          ? (JSON.parse(row.recurrence_rules.daysOfWeek) as DayOfWeek[])
+          : null,
+        dayOfMonth: row.recurrence_rules.dayOfMonth,
+        weekOfMonth: row.recurrence_rules.weekOfMonth,
+        endType: row.recurrence_rules.endType as EndType,
+        endDate: row.recurrence_rules.endDate,
+        endCount: row.recurrence_rules.endCount,
+        createdAt: row.recurrence_rules.createdAt,
+        updatedAt: row.recurrence_rules.updatedAt,
+      }
+    : null,
   createdAt: row.schedules.createdAt,
   updatedAt: row.schedules.updatedAt,
 });

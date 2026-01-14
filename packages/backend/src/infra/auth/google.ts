@@ -1,7 +1,7 @@
-import type { OAuthProvider, OAuthUserInfo } from "./oauth";
-import type { Result } from "../../shared/result";
-import { createInternalError, type AppError } from "../../shared/errors";
+import { type AppError, createInternalError } from "../../shared/errors";
 import { logger } from "../../shared/logger";
+import type { Result } from "../../shared/result";
+import type { OAuthProvider, OAuthUserInfo } from "./oauth";
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -18,10 +18,7 @@ type GoogleUserInfoResponse = {
   picture?: string;
 };
 
-export const createGoogleAuthService = (
-  clientId: string,
-  clientSecret: string
-): OAuthProvider => ({
+export const createGoogleAuthService = (clientId: string, clientSecret: string): OAuthProvider => ({
   type: "google",
 
   // 認証コードからアクセストークンを取得
@@ -46,7 +43,10 @@ export const createGoogleAuthService = (
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error("Google token exchange failed", { category: "oauth", responseBody: errorText });
+        logger.error("Google token exchange failed", {
+          category: "oauth",
+          responseBody: errorText,
+        });
         return {
           ok: false,
           error: createInternalError("Googleトークン取得に失敗しました"),
@@ -65,22 +65,20 @@ export const createGoogleAuthService = (
   },
 
   // アクセストークンからユーザー情報を取得
-  getUserInfo: async (
-    accessToken: string
-  ): Promise<Result<OAuthUserInfo, AppError>> => {
+  getUserInfo: async (accessToken: string): Promise<Result<OAuthUserInfo, AppError>> => {
     try {
-      const response = await fetch(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error("Google user info fetch failed", { category: "oauth", responseBody: errorText });
+        logger.error("Google user info fetch failed", {
+          category: "oauth",
+          responseBody: errorText,
+        });
         return {
           ok: false,
           error: createInternalError("Googleユーザー情報の取得に失敗しました"),
@@ -110,9 +108,7 @@ export const createGoogleAuthService = (
       logger.error("Google user info error", { category: "oauth" }, error);
       return {
         ok: false,
-        error: createInternalError(
-          "Googleユーザー情報取得中にエラーが発生しました"
-        ),
+        error: createInternalError("Googleユーザー情報取得中にエラーが発生しました"),
       };
     }
   },

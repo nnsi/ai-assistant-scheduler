@@ -1,19 +1,19 @@
-import { useState, useCallback } from "react";
 import type {
-  Schedule,
-  CreateScheduleInput,
-  ShopList,
   CreateRecurrenceRuleInput,
+  CreateScheduleInput,
+  Schedule,
+  ShopList,
 } from "@ai-scheduler/shared";
 import { DAY_OF_WEEK_LABELS, FREQUENCY_LABELS } from "@ai-scheduler/shared";
+import { useCallback, useState } from "react";
 import type { ScheduleContext } from "../api";
-import { useAI } from "./useAI";
-import { useProfile } from "./useProfile";
-import { useCategories } from "./useCategories";
-import { useSchedules } from "./useSchedules";
-import { useRecurrence } from "./useRecurrence";
-import { useSupplements } from "./useSupplements";
 import type { Logger } from "../utils/logger";
+import { useAI } from "./useAI";
+import { useCategories } from "./useCategories";
+import { useProfile } from "./useProfile";
+import { useRecurrence } from "./useRecurrence";
+import { useSchedules } from "./useSchedules";
+import { useSupplements } from "./useSupplements";
 
 /**
  * 繰り返しルールから人間が読める説明を生成
@@ -23,16 +23,8 @@ const buildRecurrenceSummary = (
 ): string | undefined => {
   if (!recurrence) return undefined;
 
-  const {
-    frequency,
-    interval,
-    daysOfWeek,
-    dayOfMonth,
-    weekOfMonth,
-    endType,
-    endDate,
-    endCount,
-  } = recurrence;
+  const { frequency, interval, daysOfWeek, dayOfMonth, weekOfMonth, endType, endDate, endCount } =
+    recurrence;
   const parts: string[] = [];
 
   // 頻度とインターバル
@@ -59,12 +51,7 @@ const buildRecurrenceSummary = (
 
   // 日付（monthly の場合）
   if (frequency === "monthly") {
-    if (
-      weekOfMonth !== undefined &&
-      weekOfMonth !== null &&
-      daysOfWeek &&
-      daysOfWeek.length > 0
-    ) {
+    if (weekOfMonth !== undefined && weekOfMonth !== null && daysOfWeek && daysOfWeek.length > 0) {
       const weekLabel = weekOfMonth === -1 ? "最終" : `第${weekOfMonth}`;
       const dayName = DAY_OF_WEEK_LABELS[daysOfWeek[0]];
       parts.push(`（${weekLabel}${dayName}曜日）`);
@@ -164,12 +151,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
         // スケジュールを即座に保存し、キーワード提案を並行取得
         const [schedule] = await Promise.all([
           createSchedule(scheduleData),
-          ai.suggestKeywords(
-            scheduleData.title,
-            scheduleData.startAt,
-            undefined,
-            scheduleContext
-          ),
+          ai.suggestKeywords(scheduleData.title, scheduleData.startAt, undefined, scheduleContext),
         ]);
 
         // 繰り返しルールがあれば作成
@@ -227,11 +209,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
         onScheduleCreated(schedule);
         onClose();
       } catch (error) {
-        logger.error(
-          "Failed to create schedule",
-          { category: "api", title: data.title },
-          error
-        );
+        logger.error("Failed to create schedule", { category: "api", title: data.title }, error);
       } finally {
         setIsSimpleSaving(false);
       }
@@ -278,11 +256,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
 
     setIsRegenerating(true);
     try {
-      await ai.regenerateKeywords(
-        formData.title,
-        formData.startAt,
-        scheduleContext
-      );
+      await ai.regenerateKeywords(formData.title, formData.startAt, scheduleContext);
     } catch (error) {
       logger.error(
         "Failed to regenerate keywords",
@@ -311,11 +285,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
       try {
         await selectShops(createdSchedule.id, shops);
       } catch (error) {
-        logger.error(
-          "Failed to select shops",
-          { category: "api", count: shops.length },
-          error
-        );
+        logger.error("Failed to select shops", { category: "api", count: shops.length }, error);
       }
     },
     [createdSchedule, selectShops, logger]

@@ -1,24 +1,24 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import {
   createScheduleInputSchema,
-  updateScheduleInputSchema,
   searchScheduleInputSchema,
+  updateScheduleInputSchema,
 } from "@ai-scheduler/shared";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { z } from "zod";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
 import { createDb } from "../../infra/drizzle/client";
 import { createScheduleRepo } from "../../infra/drizzle/scheduleRepo";
 import { createSupplementRepo } from "../../infra/drizzle/supplementRepo";
-import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
-import { createCreateScheduleUseCase } from "./usecase/createSchedule";
-import { createGetSchedulesUseCase } from "./usecase/getSchedules";
-import { createGetScheduleByIdUseCase } from "./usecase/getScheduleById";
-import { createUpdateScheduleUseCase } from "./usecase/updateSchedule";
-import { createDeleteScheduleUseCase } from "./usecase/deleteSchedule";
-import { createSearchSchedulesUseCase } from "./usecase/searchSchedules";
+import { authMiddleware } from "../../middleware/auth";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
-import { authMiddleware } from "../../middleware/auth";
+import { createCreateScheduleUseCase } from "./usecase/createSchedule";
+import { createDeleteScheduleUseCase } from "./usecase/deleteSchedule";
+import { createGetScheduleByIdUseCase } from "./usecase/getScheduleById";
+import { createGetSchedulesUseCase } from "./usecase/getSchedules";
+import { createSearchSchedulesUseCase } from "./usecase/searchSchedules";
+import { createUpdateScheduleUseCase } from "./usecase/updateSchedule";
 
 type Bindings = {
   DB: D1Database;
@@ -91,16 +91,17 @@ export const scheduleRoute = app
       }
     }),
     async (c) => {
-    const { year, month } = c.req.valid("query");
-    const userId = c.get("userId");
-    const result = await c.get("getSchedules")(userId, year, month);
+      const { year, month } = c.req.valid("query");
+      const userId = c.get("userId");
+      const result = await c.get("getSchedules")(userId, year, month);
 
-    if (!result.ok) {
-      return c.json(result.error, getStatusCode(result.error.code));
+      if (!result.ok) {
+        return c.json(result.error, getStatusCode(result.error.code));
+      }
+
+      return c.json(result.value, 200);
     }
-
-    return c.json(result.value, 200);
-  })
+  )
   // GET /schedules/search
   .get(
     "/search",

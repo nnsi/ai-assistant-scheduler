@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { useProfile } from "@/hooks/useProfile";
 import type { UpdateProfileConditionsRequest } from "@ai-scheduler/shared";
+import { useState } from "react";
 
 type ConditionsModalProps = {
   isOpen: boolean;
@@ -108,11 +108,7 @@ const ConditionsFormContent = ({
         onChange={setSubjectiveConditions}
       />
 
-      {saveError && (
-        <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
-          {saveError}
-        </div>
-      )}
+      {saveError && <div className="text-sm text-red-600 bg-red-50 p-3 rounded">{saveError}</div>}
 
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button variant="secondary" onClick={onClose}>

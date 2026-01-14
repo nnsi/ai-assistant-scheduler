@@ -1,13 +1,13 @@
+import { acceptInvitation, fetchInvitationInfo, useAuth } from "@ai-scheduler/core";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 /**
  * 招待受諾画面
  * Deep Link: ai-scheduler://invite/{token}
  */
-import { useState, useEffect, useCallback } from "react";
-import { View, Text, ActivityIndicator, Alert } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth, fetchInvitationInfo, acceptInvitation } from "@ai-scheduler/core";
 import { Button, ErrorMessage } from "../../src/components/ui";
 
 interface InvitationInfo {
@@ -63,16 +63,12 @@ export default function InviteAcceptScreen() {
     setIsAccepting(true);
     try {
       await acceptInvitation(token);
-      Alert.alert(
-        "招待を受諾しました",
-        `「${invitation?.calendarName}」カレンダーに参加しました`,
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(app)/(tabs)"),
-          },
-        ]
-      );
+      Alert.alert("招待を受諾しました", `「${invitation?.calendarName}」カレンダーに参加しました`, [
+        {
+          text: "OK",
+          onPress: () => router.replace("/(app)/(tabs)"),
+        },
+      ]);
     } catch (err) {
       console.error("Failed to accept invitation:", err);
       Alert.alert("エラー", "招待の受諾に失敗しました。再度お試しください。");
@@ -103,13 +99,7 @@ export default function InviteAcceptScreen() {
 
   // エラー
   if (error) {
-    return (
-      <ErrorMessage
-        fullScreen
-        message={error}
-        onRetry={() => router.back()}
-      />
-    );
+    return <ErrorMessage fullScreen message={error} onRetry={() => router.back()} />;
   }
 
   // 未認証
@@ -118,18 +108,14 @@ export default function InviteAcceptScreen() {
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 items-center justify-center px-8">
           <MaterialIcons name="login" size={64} color="#3b82f6" />
-          <Text className="mt-4 text-xl font-bold text-gray-900">
-            ログインが必要です
-          </Text>
+          <Text className="mt-4 text-xl font-bold text-gray-900">ログインが必要です</Text>
           <Text className="mt-2 text-center text-gray-600">
             招待を受諾するには、先にログインしてください
           </Text>
 
           {invitation && (
             <View className="mt-6 w-full rounded-xl bg-gray-50 p-4">
-              <Text className="text-center text-sm text-gray-500">
-                招待されているカレンダー
-              </Text>
+              <Text className="text-center text-sm text-gray-500">招待されているカレンダー</Text>
               <Text className="mt-1 text-center text-lg font-semibold text-gray-900">
                 {invitation.calendarName}
               </Text>
@@ -139,11 +125,7 @@ export default function InviteAcceptScreen() {
           <Button onPress={handleLogin} className="mt-8 w-full">
             ログインする
           </Button>
-          <Button
-            onPress={handleCancel}
-            variant="ghost"
-            className="mt-3 w-full"
-          >
+          <Button onPress={handleCancel} variant="ghost" className="mt-3 w-full">
             キャンセル
           </Button>
         </View>
@@ -162,9 +144,7 @@ export default function InviteAcceptScreen() {
           <MaterialIcons name="event" size={48} color="#ffffff" />
         </View>
 
-        <Text className="mt-6 text-2xl font-bold text-gray-900">
-          カレンダーへの招待
-        </Text>
+        <Text className="mt-6 text-2xl font-bold text-gray-900">カレンダーへの招待</Text>
 
         <Text className="mt-2 text-center text-gray-600">
           {invitation?.ownerName || "ユーザー"}さんからの招待です
@@ -193,12 +173,7 @@ export default function InviteAcceptScreen() {
           </View>
         </View>
 
-        <Button
-          onPress={handleAccept}
-          loading={isAccepting}
-          className="mt-8 w-full"
-          size="lg"
-        >
+        <Button onPress={handleAccept} loading={isAccepting} className="mt-8 w-full" size="lg">
           招待を受諾する
         </Button>
         <Button

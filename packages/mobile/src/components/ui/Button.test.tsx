@@ -1,20 +1,16 @@
+import { fireEvent, render } from "@testing-library/react-native";
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
 import { Button } from "./Button";
 
 describe("Button", () => {
   test("renders with text children", () => {
-    const { getByText } = render(
-      <Button onPress={() => {}}>Click me</Button>
-    );
+    const { getByText } = render(<Button onPress={() => {}}>Click me</Button>);
     expect(getByText("Click me")).toBeTruthy();
   });
 
   test("calls onPress when pressed", () => {
     const onPress = jest.fn();
-    const { getByText } = render(
-      <Button onPress={onPress}>Press me</Button>
-    );
+    const { getByText } = render(<Button onPress={onPress}>Press me</Button>);
     fireEvent.press(getByText("Press me"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
@@ -55,11 +51,9 @@ describe("Button", () => {
   });
 
   test("renders with custom children (JSX)", () => {
-    const { getByTestId } = render(
+    render(
       <Button onPress={() => {}}>
-        <React.Fragment>
-          <></>
-        </React.Fragment>
+        <React.Fragment key="fragment">Custom</React.Fragment>
       </Button>
     );
     // Just verify it renders without error

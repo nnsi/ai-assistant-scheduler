@@ -1,21 +1,15 @@
+import type { CalendarResponse } from "@ai-scheduler/shared";
 import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import {
-  createCalendar as createCalendarEntity,
   type CreateCalendarInput,
+  createCalendar as createCalendarEntity,
 } from "../../../domain/model/calendar";
-import type { CalendarResponse } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
-export const createCreateCalendarUseCase = (
-  calendarRepo: CalendarRepo,
-  userRepo: UserRepo
-) => {
-  return async (
-    input: CreateCalendarInput,
-    userId: string
-  ): Promise<Result<CalendarResponse>> => {
+export const createCreateCalendarUseCase = (calendarRepo: CalendarRepo, userRepo: UserRepo) => {
+  return async (input: CreateCalendarInput, userId: string): Promise<Result<CalendarResponse>> => {
     try {
       const user = await userRepo.findById(userId);
       if (!user) {

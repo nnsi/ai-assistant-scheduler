@@ -1,8 +1,8 @@
 import {
-  type RecurrenceRule,
   type CreateRecurrenceRuleInput,
-  type UpdateRecurrenceRuleInput,
   type DayOfWeek,
+  type RecurrenceRule,
+  type UpdateRecurrenceRuleInput,
 } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 

@@ -1,16 +1,16 @@
-import { useMemo } from "react";
+import { cn } from "@/lib/cn";
 import {
-  getWeekDays,
-  getWeekDayLabels,
-  isSameDay,
   formatDate,
   formatDateString,
-  parseISO,
   getHours,
   getMinutes,
+  getWeekDayLabels,
+  getWeekDays,
+  isSameDay,
+  parseISO,
 } from "@/lib/date";
-import { cn } from "@/lib/cn";
 import type { Schedule } from "@ai-scheduler/shared";
+import { useMemo } from "react";
 
 type CalendarWeekViewProps = {
   currentDate: Date;
@@ -132,9 +132,7 @@ export const CalendarWeekView = ({
     if (displayDateKey === startDateKey && displayDateKey === endDateKey) {
       // 同日の予定
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
-      endMinutes = endDate
-        ? getHours(endDate) * 60 + getMinutes(endDate)
-        : startMinutes + 60;
+      endMinutes = endDate ? getHours(endDate) * 60 + getMinutes(endDate) : startMinutes + 60;
     } else if (displayDateKey === startDateKey) {
       // 開始日（終了日は別の日）
       startMinutes = getHours(startDate) * 60 + getMinutes(startDate);
@@ -208,11 +206,11 @@ export const CalendarWeekView = ({
 
           {/* 終日イベントエリア */}
           <div className="grid grid-cols-[50px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-t border-stone-100">
-            <div className="py-1 sm:py-1.5 text-center text-[10px] sm:text-xs text-stone-500 font-medium">終日</div>
+            <div className="py-1 sm:py-1.5 text-center text-[10px] sm:text-xs text-stone-500 font-medium">
+              終日
+            </div>
             {days.map((date) => {
-              const daySchedules = getSchedulesForDate(date).filter(
-                (s) => s.isAllDay
-              );
+              const daySchedules = getSchedulesForDate(date).filter((s) => s.isAllDay);
               return (
                 <div
                   key={date.toISOString()}
@@ -229,10 +227,14 @@ export const CalendarWeekView = ({
                           "font-medium transition-all duration-200",
                           !categoryColor && "bg-accent/10 text-accent-dark hover:bg-accent/20"
                         )}
-                        style={categoryColor ? {
-                          backgroundColor: `${categoryColor}20`,
-                          color: categoryColor,
-                        } : undefined}
+                        style={
+                          categoryColor
+                            ? {
+                                backgroundColor: `${categoryColor}20`,
+                                color: categoryColor,
+                              }
+                            : undefined
+                        }
                       >
                         {schedule.title}
                       </button>
@@ -260,9 +262,7 @@ export const CalendarWeekView = ({
 
           {/* 日ごとの列 */}
           {days.map((date) => {
-            const daySchedules = getSchedulesForDate(date).filter(
-              (s) => !s.isAllDay
-            );
+            const daySchedules = getSchedulesForDate(date).filter((s) => !s.isAllDay);
             const layoutSchedules = calculateOverlapLayout(daySchedules, date, getSchedulePosition);
 
             return (
@@ -276,62 +276,67 @@ export const CalendarWeekView = ({
                 ))}
 
                 {/* スケジュール表示 */}
-                {layoutSchedules.map(({ schedule, startMinutes, endMinutes, column, totalColumns }) => {
-                  const categoryColor = schedule.category?.color;
-                  // パーセンテージベースで位置と高さを計算
-                  const topPercent = (startMinutes / (24 * 60)) * 100;
-                  const heightPercent = ((endMinutes - startMinutes) / (24 * 60)) * 100;
+                {layoutSchedules.map(
+                  ({ schedule, startMinutes, endMinutes, column, totalColumns }) => {
+                    const categoryColor = schedule.category?.color;
+                    // パーセンテージベースで位置と高さを計算
+                    const topPercent = (startMinutes / (24 * 60)) * 100;
+                    const heightPercent = ((endMinutes - startMinutes) / (24 * 60)) * 100;
 
-                  // 横位置と幅を計算（重なり対応）
-                  const widthPercent = 100 / totalColumns;
-                  const leftPercent = column * widthPercent;
+                    // 横位置と幅を計算（重なり対応）
+                    const widthPercent = 100 / totalColumns;
+                    const leftPercent = column * widthPercent;
 
-                  // 表示日に応じた時間表示を計算
-                  const displayDateKey = formatDate(date, "yyyy-MM-dd");
-                  const startDateKey = schedule.startAt.split("T")[0];
-                  const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
-                  const isStartDay = displayDateKey === startDateKey;
-                  const isEndDay = displayDateKey === endDateKey;
+                    // 表示日に応じた時間表示を計算
+                    const displayDateKey = formatDate(date, "yyyy-MM-dd");
+                    const startDateKey = schedule.startAt.split("T")[0];
+                    const endDateKey = schedule.endAt?.split("T")[0] || startDateKey;
+                    const isStartDay = displayDateKey === startDateKey;
+                    const isEndDay = displayDateKey === endDateKey;
 
-                  let timeDisplay = "";
-                  if (isStartDay && isEndDay) {
-                    timeDisplay = formatDateString(schedule.startAt, "HH:mm");
-                    if (schedule.endAt) timeDisplay += `-${formatDateString(schedule.endAt, "HH:mm")}`;
-                  } else if (isStartDay) {
-                    timeDisplay = `${formatDateString(schedule.startAt, "HH:mm")}→`;
-                  } else if (isEndDay && schedule.endAt) {
-                    timeDisplay = `→${formatDateString(schedule.endAt, "HH:mm")}`;
-                  } else {
-                    timeDisplay = "終日";
+                    let timeDisplay = "";
+                    if (isStartDay && isEndDay) {
+                      timeDisplay = formatDateString(schedule.startAt, "HH:mm");
+                      if (schedule.endAt)
+                        timeDisplay += `-${formatDateString(schedule.endAt, "HH:mm")}`;
+                    } else if (isStartDay) {
+                      timeDisplay = `${formatDateString(schedule.startAt, "HH:mm")}→`;
+                    } else if (isEndDay && schedule.endAt) {
+                      timeDisplay = `→${formatDateString(schedule.endAt, "HH:mm")}`;
+                    } else {
+                      timeDisplay = "終日";
+                    }
+
+                    return (
+                      <button
+                        key={schedule.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleClick(schedule);
+                        }}
+                        className={cn(
+                          "absolute rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 text-left overflow-hidden",
+                          "text-[10px] sm:text-xs font-medium transition-all duration-200",
+                          "shadow-sm hover:shadow-md hover:z-10",
+                          !categoryColor && "bg-accent text-white"
+                        )}
+                        style={{
+                          top: `${topPercent}%`,
+                          height: `${Math.max(1.5, heightPercent)}%`,
+                          minHeight: "18px",
+                          left: `${leftPercent}%`,
+                          width: `${widthPercent}%`,
+                          ...(categoryColor
+                            ? { backgroundColor: categoryColor, color: "white" }
+                            : {}),
+                        }}
+                      >
+                        <span className="opacity-80 hidden sm:inline">{timeDisplay}</span>
+                        <span className="sm:ml-1 truncate block">{schedule.title}</span>
+                      </button>
+                    );
                   }
-
-                  return (
-                    <button
-                      key={schedule.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onScheduleClick(schedule);
-                      }}
-                      className={cn(
-                        "absolute rounded sm:rounded-lg px-0.5 sm:px-1.5 py-0.5 sm:py-1 text-left overflow-hidden",
-                        "text-[10px] sm:text-xs font-medium transition-all duration-200",
-                        "shadow-sm hover:shadow-md hover:z-10",
-                        !categoryColor && "bg-accent text-white"
-                      )}
-                      style={{
-                        top: `${topPercent}%`,
-                        height: `${Math.max(1.5, heightPercent)}%`,
-                        minHeight: "18px",
-                        left: `${leftPercent}%`,
-                        width: `${widthPercent}%`,
-                        ...(categoryColor ? { backgroundColor: categoryColor, color: "white" } : {}),
-                      }}
-                    >
-                      <span className="opacity-80 hidden sm:inline">{timeDisplay}</span>
-                      <span className="sm:ml-1 truncate block">{schedule.title}</span>
-                    </button>
-                  );
-                })}
+                )}
               </div>
             );
           })}

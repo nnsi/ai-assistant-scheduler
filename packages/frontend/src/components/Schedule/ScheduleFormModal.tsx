@@ -1,11 +1,11 @@
-import { Modal } from "@/components/common/Modal";
-import { ScheduleForm } from "./ScheduleForm";
 import { KeywordSuggestions } from "@/components/AI/KeywordSuggestions";
 import { SearchResults } from "@/components/AI/SearchResults";
-import { useScheduleFormModal } from "@ai-scheduler/core/hooks";
+import { Modal } from "@/components/common/Modal";
 import { useCalendarContext } from "@/contexts/CalendarContext";
 import { logger } from "@/lib/logger";
+import { useScheduleFormModal } from "@ai-scheduler/core/hooks";
 import type { Schedule } from "@ai-scheduler/shared";
+import { ScheduleForm } from "./ScheduleForm";
 
 type ScheduleFormModalProps = {
   isOpen: boolean;

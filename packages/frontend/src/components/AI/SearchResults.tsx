@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
-import { Loader2, Check, MapPin, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import type { Shop, ShopList } from "@ai-scheduler/shared";
+import { Check, Clock, ExternalLink, Loader2, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type SearchResultsProps = {
   result: string;
@@ -31,9 +31,7 @@ const ShopCard = ({
   return (
     <div
       className={`border rounded-lg p-3 sm:p-4 transition-all ${
-        isSelected
-          ? "border-violet-500 bg-violet-50"
-          : "border-gray-200 hover:border-gray-300"
+        isSelected ? "border-violet-500 bg-violet-50" : "border-gray-200 hover:border-gray-300"
       }`}
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3">
@@ -47,7 +45,9 @@ const ShopCard = ({
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span className="truncate">{shop.businessHours}</span>
-                {shop.closedDays && <span className="text-gray-400 hidden sm:inline">（{shop.closedDays}）</span>}
+                {shop.closedDays && (
+                  <span className="text-gray-400 hidden sm:inline">（{shop.closedDays}）</span>
+                )}
               </div>
             )}
             {shop.address && (
@@ -147,7 +147,7 @@ export const SearchResults = ({
 
   const handleSaveSelection = async () => {
     if (onSelectShops && shopCandidates) {
-      const selected = shopCandidates.filter(s => selectedShopNames.has(s.name));
+      const selected = shopCandidates.filter((s) => selectedShopNames.has(s.name));
       await onSelectShops(selected);
     }
   };
@@ -218,20 +218,14 @@ export const SearchResults = ({
           </div>
           {selectedShopNames.size > 0 && (
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-              <span className="text-sm text-gray-600">
-                {selectedShopNames.size}件選択中
-              </span>
+              <span className="text-sm text-gray-600">{selectedShopNames.size}件選択中</span>
               <Button
                 variant="ai"
                 size="sm"
                 onClick={handleSaveSelection}
                 disabled={isSelectingShops}
               >
-                {isSelectingShops ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "選択を保存"
-                )}
+                {isSelectingShops ? <Loader2 className="w-4 h-4 animate-spin" /> : "選択を保存"}
               </Button>
             </div>
           )}
@@ -241,9 +235,7 @@ export const SearchResults = ({
       {/* ストリーミング完了後: 検索結果が0件の場合 */}
       {!isStreaming && (!shopCandidates || shopCandidates.length === 0) && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-800 font-medium mb-1">
-            お店候補が見つかりませんでした
-          </p>
+          <p className="text-sm text-amber-800 font-medium mb-1">お店候補が見つかりませんでした</p>
           <p className="text-xs text-amber-600">
             AIによる検索支援が難しい予定のようです。ご自身で情報を調べていただくか、予定の内容を変更してお試しください。
           </p>
@@ -265,17 +257,13 @@ export const SearchResults = ({
       <div className="flex justify-end gap-2 pt-4">
         {/* 0件の場合は「終了する」ボタンのみ（戻って検索し直しても同じ結果になる可能性が高い） */}
         {!isStreaming && (!shopCandidates || shopCandidates.length === 0) ? (
-          <Button onClick={onClose}>
-            終了する
-          </Button>
+          <Button onClick={onClose}>終了する</Button>
         ) : (
           <>
             <Button variant="secondary" onClick={onBack} disabled={isStreaming}>
               戻る
             </Button>
-            <Button onClick={onClose}>
-              {isStreaming ? "中断して閉じる" : "閉じる"}
-            </Button>
+            <Button onClick={onClose}>{isStreaming ? "中断して閉じる" : "閉じる"}</Button>
           </>
         )}
       </div>

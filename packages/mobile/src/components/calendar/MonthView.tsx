@@ -1,20 +1,20 @@
+import type { CalendarResponse, Category, Schedule } from "@ai-scheduler/shared";
+import {
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { useMemo } from "react";
 /**
  * 月表示カレンダーコンポーネント
  * モバイル最適化：コンパクトなセル、見やすい予定表示
  */
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
-import { useMemo } from "react";
-import type { Schedule, CalendarResponse, Category } from "@ai-scheduler/shared";
-import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  format,
-  isSameMonth,
-  isToday,
-} from "date-fns";
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -57,8 +57,8 @@ export function MonthView({
   const schedulesByDate = useMemo(() => {
     const map = new Map<string, Schedule[]>();
 
-    const filteredSchedules = schedules.filter((s) =>
-      s.calendarId && selectedCalendarIds.includes(s.calendarId)
+    const filteredSchedules = schedules.filter(
+      (s) => s.calendarId && selectedCalendarIds.includes(s.calendarId)
     );
 
     for (const schedule of filteredSchedules) {
@@ -176,10 +176,7 @@ export function MonthView({
                         backgroundColor: getScheduleColor(schedule),
                       }}
                     >
-                      <Text
-                        className="text-[11px] text-white font-medium"
-                        numberOfLines={1}
-                      >
+                      <Text className="text-[11px] text-white font-medium" numberOfLines={1}>
                         {schedule.title}
                       </Text>
                     </Pressable>

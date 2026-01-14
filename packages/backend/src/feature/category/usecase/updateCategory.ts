@@ -1,12 +1,12 @@
+import type { Category } from "@ai-scheduler/shared";
 import type { CategoryRepo } from "../../../domain/infra/categoryRepo";
 import {
-  updateCategory as updateCategoryEntity,
-  toPublicCategory,
   type UpdateCategoryInput,
+  toPublicCategory,
+  updateCategory as updateCategoryEntity,
 } from "../../../domain/model/category";
-import type { Category } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
+import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createUpdateCategoryUseCase = (categoryRepo: CategoryRepo) => {
   return async (

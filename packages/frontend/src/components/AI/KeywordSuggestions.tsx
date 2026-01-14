@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Check, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { cn } from "@/lib/cn";
+import { Check, Loader2, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 type KeywordSuggestionsProps = {
   keywords: string[];
@@ -24,9 +24,7 @@ export const KeywordSuggestions = ({
   onSkip,
   onRegenerate,
 }: KeywordSuggestionsProps) => {
-  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
-    new Set()
-  );
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
 
   const toggleKeyword = (keyword: string) => {
     const newSet = new Set(selectedKeywords);
@@ -54,9 +52,7 @@ export const KeywordSuggestions = ({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">
-          調べたいことを選択してください
-        </h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">調べたいことを選択してください</h3>
         <p className="text-xs text-gray-500 mb-4">
           AIが予定に関連するキーワードを提案しました。気になる項目を選択してください。
         </p>
@@ -106,11 +102,7 @@ export const KeywordSuggestions = ({
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button
-          variant="secondary"
-          onClick={onSkip}
-          disabled={isSearching || isRegenerating}
-        >
+        <Button variant="secondary" onClick={onSkip} disabled={isSearching || isRegenerating}>
           スキップ
         </Button>
         <Button

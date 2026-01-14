@@ -1,11 +1,11 @@
+import { MaterialIcons } from "@expo/vector-icons";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
 /**
  * カレンダーヘッダー
  * モバイル最適化：コンパクトなナビゲーション、アイコンのみのツールバー
  */
-import { View, Text, Pressable } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
+import { Pressable, Text, View } from "react-native";
 
 export type CalendarViewMode = "month" | "week" | "day";
 
@@ -32,9 +32,9 @@ const getLabel = (date: Date, viewMode: CalendarViewMode): string => {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       if (weekStart.getMonth() === weekEnd.getMonth()) {
-        return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "d", { locale: ja });
+        return `${format(weekStart, "M/d", { locale: ja })}〜${format(weekEnd, "d", { locale: ja })}`;
       }
-      return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "M/d", { locale: ja });
+      return `${format(weekStart, "M/d", { locale: ja })}〜${format(weekEnd, "M/d", { locale: ja })}`;
     }
     case "day":
       return format(date, "M/d(E)", { locale: ja });
@@ -71,10 +71,7 @@ export const CalendarHeader = ({
           >
             <MaterialIcons name="chevron-left" size={28} color="#374151" />
           </Pressable>
-          <Pressable
-            onPress={onToday}
-            className="px-2 py-1 active:bg-gray-100 rounded-lg"
-          >
+          <Pressable onPress={onToday} className="px-2 py-1 active:bg-gray-100 rounded-lg">
             <Text className="text-base font-bold text-gray-900">
               {getLabel(currentDate, viewMode)}
             </Text>

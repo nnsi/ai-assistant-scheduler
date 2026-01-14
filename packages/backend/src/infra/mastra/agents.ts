@@ -1,5 +1,5 @@
-import { Agent } from "@mastra/core/agent";
 import { createOpenAI } from "@ai-sdk/openai";
+import { Agent } from "@mastra/core/agent";
 
 // OpenRouter経由でGeminiを使用するためのカスタムプロバイダー設定
 const createOpenRouterProvider = (apiKey: string) => {

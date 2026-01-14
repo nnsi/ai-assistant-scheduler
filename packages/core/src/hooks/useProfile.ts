@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { UpdateProfileConditionsRequest, UserProfile } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "../api";
-import type { UserProfile, UpdateProfileConditionsRequest } from "@ai-scheduler/shared";
 
 const PROFILE_QUERY_KEY = ["profile", "conditions"];
 
@@ -12,15 +12,19 @@ export const useProfile = (options: UseProfileOptions = {}) => {
   const { enabled = true } = options;
   const queryClient = useQueryClient();
 
-  const { data: profile = null, isLoading, error, refetch } = useQuery({
+  const {
+    data: profile = null,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: PROFILE_QUERY_KEY,
     queryFn: api.fetchProfileConditions,
     enabled,
   });
 
   const updateMutation = useMutation({
-    mutationFn: (updates: UpdateProfileConditionsRequest) =>
-      api.updateProfileConditions(updates),
+    mutationFn: (updates: UpdateProfileConditionsRequest) => api.updateProfileConditions(updates),
     onSuccess: (updated) => {
       queryClient.setQueryData<UserProfile>(PROFILE_QUERY_KEY, updated);
     },

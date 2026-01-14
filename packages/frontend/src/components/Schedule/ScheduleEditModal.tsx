@@ -1,10 +1,14 @@
-import { useState } from "react";
 import { Modal } from "@/components/common/Modal";
-import { ScheduleForm } from "./ScheduleForm";
 import { useCategories } from "@/hooks/useCategories";
 import { useRecurrence } from "@/hooks/useRecurrence";
 import { logger } from "@/lib/logger";
-import type { Schedule, UpdateScheduleInput, CreateRecurrenceRuleInput } from "@ai-scheduler/shared";
+import type {
+  CreateRecurrenceRuleInput,
+  Schedule,
+  UpdateScheduleInput,
+} from "@ai-scheduler/shared";
+import { useState } from "react";
+import { ScheduleForm } from "./ScheduleForm";
 
 type ScheduleEditModalProps = {
   schedule: Schedule | null;
@@ -30,7 +34,11 @@ export const ScheduleEditModal = ({
 }: ScheduleEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { categories } = useCategories();
-  const { recurrence, create: createRecurrence, remove: removeRecurrence } = useRecurrence(schedule?.id ?? null);
+  const {
+    recurrence,
+    create: createRecurrence,
+    remove: removeRecurrence,
+  } = useRecurrence(schedule?.id ?? null);
 
   const handleSubmit = async (data: FormData) => {
     if (!schedule) return;
@@ -52,14 +60,22 @@ export const ScheduleEditModal = ({
         try {
           await createRecurrence(schedule.id, data.recurrence);
         } catch (error) {
-          logger.error("Failed to create/update recurrence", { category: "api", scheduleId: schedule.id }, error);
+          logger.error(
+            "Failed to create/update recurrence",
+            { category: "api", scheduleId: schedule.id },
+            error
+          );
         }
       } else if (recurrence) {
         // 繰り返しルールが無効化された場合は削除
         try {
           await removeRecurrence(schedule.id);
         } catch (error) {
-          logger.error("Failed to delete recurrence", { category: "api", scheduleId: schedule.id }, error);
+          logger.error(
+            "Failed to delete recurrence",
+            { category: "api", scheduleId: schedule.id },
+            error
+          );
         }
       }
 

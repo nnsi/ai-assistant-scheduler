@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { useAI } from "./useAI";
 import * as api from "@ai-scheduler/core/api";
-import type { SuggestKeywordsResult, SearchResult } from "@ai-scheduler/core/api";
+import type { SearchResult, SuggestKeywordsResult } from "@ai-scheduler/core/api";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useAI } from "./useAI";
 
 // api モジュールをモック
 vi.mock("@ai-scheduler/core/api", () => ({
@@ -108,11 +108,10 @@ describe("useAI", () => {
 
       let returnedResult: SearchResult | null = null;
       await act(async () => {
-        returnedResult = await result.current.search(
-          "会議タイトル",
-          "2025-01-15T10:00:00",
-          ["キーワード1", "キーワード2"]
-        );
+        returnedResult = await result.current.search("会議タイトル", "2025-01-15T10:00:00", [
+          "キーワード1",
+          "キーワード2",
+        ]);
       });
 
       expect(api.searchWithKeywords).toHaveBeenCalledWith(
@@ -135,11 +134,9 @@ describe("useAI", () => {
 
       let returnedResult: SearchResult | null = null;
       await act(async () => {
-        returnedResult = await result.current.search(
-          "会議タイトル",
-          "2025-01-15T10:00:00",
-          ["キーワード"]
-        );
+        returnedResult = await result.current.search("会議タイトル", "2025-01-15T10:00:00", [
+          "キーワード",
+        ]);
       });
 
       expect(returnedResult).toBeNull();

@@ -7,17 +7,12 @@
 import { type ZodType } from "zod";
 import { logger } from "./logger";
 
-export type ParseResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type ParseResult<T> = { success: true; data: T } | { success: false; error: string };
 
 /**
  * JSON配列を括弧のバランスを追跡して抽出する
  */
-export const extractJsonArray = (
-  text: string,
-  startIndex: number
-): string | undefined => {
+export const extractJsonArray = (text: string, startIndex: number): string | undefined => {
   if (text[startIndex] !== "[") return undefined;
 
   let depth = 0;
@@ -60,10 +55,7 @@ export const extractJsonArray = (
 /**
  * JSONオブジェクトを括弧のバランスを追跡して抽出する
  */
-export const extractJsonObject = (
-  text: string,
-  startIndex: number
-): string | undefined => {
+export const extractJsonObject = (text: string, startIndex: number): string | undefined => {
   if (text[startIndex] !== "{") return undefined;
 
   let depth = 0;
@@ -296,10 +288,7 @@ function tryParseAndValidate<T>(
 /**
  * Markdown出力からJSONブロックを除去する
  */
-export function removeJsonBlocks(
-  text: string,
-  options?: { codeBlockLabel?: string }
-): string {
+export function removeJsonBlocks(text: string, options?: { codeBlockLabel?: string }): string {
   let result = text;
   const label = options?.codeBlockLabel;
 
@@ -316,9 +305,7 @@ export function removeJsonBlocks(
     if (endMatch !== -1) {
       const blockContent = result.slice(contentStart, contentStart + endMatch).trim();
       if (blockContent.startsWith("[") || blockContent.startsWith("{")) {
-        result =
-          result.slice(0, jsonBlockMatch.index) +
-          result.slice(contentStart + endMatch + 3);
+        result = result.slice(0, jsonBlockMatch.index) + result.slice(contentStart + endMatch + 3);
       }
     }
   }

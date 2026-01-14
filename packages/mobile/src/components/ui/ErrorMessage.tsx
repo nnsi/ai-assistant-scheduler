@@ -1,8 +1,8 @@
+import { MaterialIcons } from "@expo/vector-icons";
 /**
  * エラーメッセージコンポーネント
  */
-import { View, Text, Pressable } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Pressable, Text, View } from "react-native";
 
 interface ErrorMessageProps {
   message: string;
@@ -50,18 +50,10 @@ export function ErrorMessage({
   );
 
   if (fullScreen) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50 p-4">
-        {content}
-      </View>
-    );
+    return <View className="flex-1 items-center justify-center bg-gray-50 p-4">{content}</View>;
   }
 
-  return (
-    <View className="items-center justify-center p-4">
-      {content}
-    </View>
-  );
+  return <View className="items-center justify-center p-4">{content}</View>;
 }
 
 export default ErrorMessage;

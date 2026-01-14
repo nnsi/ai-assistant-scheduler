@@ -1,13 +1,17 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import { hasRequiredRole, type CalendarRole, type MemberRole } from "../../../domain/model/calendar";
 import type { UpdateMemberRoleInput } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import {
+  type CalendarRole,
+  type MemberRole,
+  hasRequiredRole,
+} from "../../../domain/model/calendar";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createUpdateMemberRoleUseCase = (
   calendarRepo: CalendarRepo,

@@ -1,15 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { CreateCalendarInput, UpdateCalendarInput } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchCalendars,
-  fetchCalendarById,
   createCalendar,
-  updateCalendar,
   deleteCalendar,
+  fetchCalendarById,
+  fetchCalendars,
+  updateCalendar,
 } from "../api";
-import type {
-  CreateCalendarInput,
-  UpdateCalendarInput,
-} from "@ai-scheduler/shared";
 
 export const calendarQueryKeys = {
   all: ["calendars"] as const,

@@ -1,18 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchRecurrence,
-  createRecurrence,
-  updateRecurrence,
-  deleteRecurrence,
-} from "../api";
 import type { CreateRecurrenceRuleInput, UpdateRecurrenceRuleInput } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createRecurrence, deleteRecurrence, fetchRecurrence, updateRecurrence } from "../api";
 
 export const useRecurrence = (scheduleId: string | null) => {
   const queryClient = useQueryClient();
 
   const queryKey = ["recurrence", scheduleId];
 
-  const { data: recurrence, isLoading, error } = useQuery({
+  const {
+    data: recurrence,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey,
     queryFn: () => (scheduleId ? fetchRecurrence(scheduleId) : null),
     enabled: !!scheduleId,

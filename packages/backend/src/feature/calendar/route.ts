@@ -1,21 +1,18 @@
-import { Hono } from "hono";
+import { createCalendarInputSchema, updateCalendarInputSchema } from "@ai-scheduler/shared";
 import { zValidator } from "@hono/zod-validator";
-import {
-  createCalendarInputSchema,
-  updateCalendarInputSchema,
-} from "@ai-scheduler/shared";
-import { createDb } from "../../infra/drizzle/client";
-import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { Hono } from "hono";
 import { createCalendarMemberRepo } from "../../infra/drizzle/calendarMemberRepo";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { createDb } from "../../infra/drizzle/client";
 import { createUserRepo } from "../../infra/drizzle/userRepo";
-import { createCreateCalendarUseCase } from "./usecase/createCalendar";
-import { createGetCalendarsUseCase } from "./usecase/getCalendars";
-import { createGetCalendarDetailUseCase } from "./usecase/getCalendarDetail";
-import { createUpdateCalendarUseCase } from "./usecase/updateCalendar";
-import { createDeleteCalendarUseCase } from "./usecase/deleteCalendar";
+import { authMiddleware } from "../../middleware/auth";
 import { createValidationError } from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
-import { authMiddleware } from "../../middleware/auth";
+import { createCreateCalendarUseCase } from "./usecase/createCalendar";
+import { createDeleteCalendarUseCase } from "./usecase/deleteCalendar";
+import { createGetCalendarDetailUseCase } from "./usecase/getCalendarDetail";
+import { createGetCalendarsUseCase } from "./usecase/getCalendars";
+import { createUpdateCalendarUseCase } from "./usecase/updateCalendar";
 
 type Bindings = {
   DB: D1Database;
@@ -48,18 +45,12 @@ app.use("*", async (c, next) => {
   const userRepo = createUserRepo(db);
 
   c.set("createCalendar", createCreateCalendarUseCase(calendarRepo, userRepo));
-  c.set(
-    "getCalendars",
-    createGetCalendarsUseCase(calendarRepo, calendarMemberRepo, userRepo)
-  );
+  c.set("getCalendars", createGetCalendarsUseCase(calendarRepo, calendarMemberRepo, userRepo));
   c.set(
     "getCalendarDetail",
     createGetCalendarDetailUseCase(calendarRepo, calendarMemberRepo, userRepo)
   );
-  c.set(
-    "updateCalendar",
-    createUpdateCalendarUseCase(calendarRepo, calendarMemberRepo, userRepo)
-  );
+  c.set("updateCalendar", createUpdateCalendarUseCase(calendarRepo, calendarMemberRepo, userRepo));
   c.set("deleteCalendar", createDeleteCalendarUseCase(calendarRepo));
 
   await next();

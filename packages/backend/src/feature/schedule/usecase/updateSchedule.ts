@@ -1,12 +1,12 @@
+import type { Schedule } from "@ai-scheduler/shared";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import {
-  updateSchedule as updateScheduleEntity,
-  toPublicSchedule,
   type UpdateScheduleInput,
+  toPublicSchedule,
+  updateSchedule as updateScheduleEntity,
 } from "../../../domain/model/schedule";
-import type { Schedule } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
+import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createUpdateScheduleUseCase = (repo: ScheduleRepo) => {
   return async (

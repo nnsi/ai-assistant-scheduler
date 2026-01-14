@@ -1,8 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  useInvitationInfo,
-  useAcceptInvitation,
-} from "../../hooks/useCalendarInvitations";
+import { useAcceptInvitation, useInvitationInfo } from "../../hooks/useCalendarInvitations";
 import { CalendarColorDot } from "../CalendarManagement/CalendarColorDot";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -32,12 +29,8 @@ export const InvitationAcceptPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-          <h1 className="text-xl font-bold text-red-600 mb-4">
-            無効な招待リンク
-          </h1>
-          <p className="text-gray-600 mb-4">
-            招待リンクが正しくありません。
-          </p>
+          <h1 className="text-xl font-bold text-red-600 mb-4">無効な招待リンク</h1>
+          <p className="text-gray-600 mb-4">招待リンクが正しくありません。</p>
           <button
             onClick={() => navigateTo("/")}
             className="w-full py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md"
@@ -85,12 +78,8 @@ export const InvitationAcceptPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-          <h1 className="text-xl font-bold text-red-600 mb-4">
-            招待リンクが見つかりません
-          </h1>
-          <p className="text-gray-600 mb-4">
-            この招待リンクは無効になっているか、期限切れです。
-          </p>
+          <h1 className="text-xl font-bold text-red-600 mb-4">招待リンクが見つかりません</h1>
+          <p className="text-gray-600 mb-4">この招待リンクは無効になっているか、期限切れです。</p>
           <button
             onClick={() => navigateTo("/")}
             className="w-full py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md"
@@ -107,9 +96,7 @@ export const InvitationAcceptPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md text-center">
           <div className="text-green-500 text-5xl mb-4">✓</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
-            カレンダーに参加しました
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">カレンダーに参加しました</h1>
           <p className="text-gray-600 mb-6">
             「{info.calendarName}」の{ROLE_LABELS[info.role]}
             として参加しました。
@@ -129,24 +116,16 @@ export const InvitationAcceptPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
         <div className="text-center mb-6">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
-            カレンダーへの招待
-          </h1>
-          <p className="text-sm text-gray-500">
-            {info.ownerName}さんからの招待です
-          </p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">カレンダーへの招待</h1>
+          <p className="text-sm text-gray-500">{info.ownerName}さんからの招待です</p>
         </div>
 
         <div className="p-4 bg-gray-50 rounded-lg mb-6">
           <div className="flex items-center gap-3 mb-3">
             <CalendarColorDot color={info.calendarColor} size="lg" />
             <div>
-              <div className="font-medium text-gray-900">
-                {info.calendarName}
-              </div>
-              <div className="text-sm text-gray-500">
-                {ROLE_LABELS[info.role]}として参加
-              </div>
+              <div className="font-medium text-gray-900">{info.calendarName}</div>
+              <div className="text-sm text-gray-500">{ROLE_LABELS[info.role]}として参加</div>
             </div>
           </div>
           <div className="text-xs text-gray-400">
@@ -155,9 +134,7 @@ export const InvitationAcceptPage = () => {
         </div>
 
         {acceptError && (
-          <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 rounded-md">
-            {acceptError}
-          </div>
+          <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 rounded-md">{acceptError}</div>
         )}
 
         <div className="space-y-2">

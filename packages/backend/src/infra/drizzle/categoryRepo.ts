@@ -1,8 +1,8 @@
-import { eq, and } from "drizzle-orm";
-import type { Database } from "./client";
-import { categories, type CategoryRow } from "./schema";
+import { and, eq } from "drizzle-orm";
 import type { CategoryRepo } from "../../domain/infra/categoryRepo";
 import type { CategoryEntity } from "../../domain/model/category";
+import type { Database } from "./client";
+import { type CategoryRow, categories } from "./schema";
 
 export const createCategoryRepo = (db: Database): CategoryRepo => ({
   findAllByUserId: async (userId) => {
@@ -32,10 +32,7 @@ export const createCategoryRepo = (db: Database): CategoryRepo => ({
   },
 
   update: async (category) => {
-    await db
-      .update(categories)
-      .set(toRow(category))
-      .where(eq(categories.id, category.id));
+    await db.update(categories).set(toRow(category)).where(eq(categories.id, category.id));
   },
 
   delete: async (id) => {

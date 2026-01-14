@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createOAuthAuthUseCase } from "./oauthAuth";
-import type { UserRepo } from "../../../domain/infra/userRepo";
-import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { OAuthProvider } from "../../../infra/auth/oauth";
-import type { JwtService } from "../../../infra/auth/jwt";
+import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { UserEntity } from "../../../domain/model/user";
+import type { JwtService } from "../../../infra/auth/jwt";
+import type { OAuthProvider } from "../../../infra/auth/oauth";
+import { createOAuthAuthUseCase } from "./oauthAuth";
 
 describe("oauthAuthUseCase", () => {
   const mockUser: UserEntity = {

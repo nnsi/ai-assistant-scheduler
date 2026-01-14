@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from "react";
-import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { X } from "lucide-react";
+import { useCallback, useEffect } from "react";
 
 type ModalProps = {
   isOpen: boolean;
@@ -10,13 +10,7 @@ type ModalProps = {
   size?: "sm" | "md" | "lg";
 };
 
-export const Modal = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = "md",
-}: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalProps) => {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -68,10 +62,7 @@ export const Modal = ({
           {/* Header */}
           {title && (
             <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-stone-100">
-              <h2
-                id="modal-title"
-                className="text-lg sm:text-xl font-display text-stone-900"
-              >
+              <h2 id="modal-title" className="text-lg sm:text-xl font-display text-stone-900">
                 {title}
               </h2>
               <button

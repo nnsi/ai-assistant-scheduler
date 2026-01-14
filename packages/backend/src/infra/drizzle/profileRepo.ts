@@ -1,15 +1,12 @@
 import { eq } from "drizzle-orm";
-import type { Database } from "./client";
-import { userProfiles, type UserProfileRow } from "./schema";
 import type { ProfileRepo } from "../../domain/infra/profileRepo";
 import type { ProfileEntity } from "../../domain/model/profile";
+import type { Database } from "./client";
+import { type UserProfileRow, userProfiles } from "./schema";
 
 export const createProfileRepo = (db: Database): ProfileRepo => ({
   findByUserId: async (userId) => {
-    const rows = await db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userId));
+    const rows = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
     return rows[0] ? toEntity(rows[0]) : null;
   },
 
@@ -18,10 +15,7 @@ export const createProfileRepo = (db: Database): ProfileRepo => ({
   },
 
   update: async (profile) => {
-    await db
-      .update(userProfiles)
-      .set(toRow(profile))
-      .where(eq(userProfiles.id, profile.id));
+    await db.update(userProfiles).set(toRow(profile)).where(eq(userProfiles.id, profile.id));
   },
 });
 

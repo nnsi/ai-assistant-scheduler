@@ -19,17 +19,12 @@ export const FormField = ({
 }: FormFieldProps) => {
   return (
     <div className={cn("space-y-2", className)}>
-      <label
-        htmlFor={htmlFor}
-        className="block text-sm font-medium text-stone-700"
-      >
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-stone-700">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       {children}
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 };

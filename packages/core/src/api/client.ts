@@ -1,46 +1,46 @@
-import { hc } from "hono/client";
 import type { ApiRoutes } from "@ai-scheduler/backend/client";
 import {
-  scheduleSchema,
-  scheduleWithSupplementSchema,
-  apiErrorSchema,
-  profileResponseSchema,
-  shopListSchema,
-  categorySchema,
-  recurrenceRuleSchema,
-  calendarResponseSchema,
-  calendarMemberResponseSchema,
-  invitationListItemResponseSchema,
-  createInvitationResponseSchema,
-  invitationInfoResponseSchema,
-  agentTypeSchema,
-  type Schedule,
-  type ScheduleWithSupplement,
-  type CreateScheduleInput,
-  type UpdateScheduleInput,
-  type SearchScheduleInput,
-  type UserProfile,
-  type UpdateProfileConditionsRequest,
-  type ShopList,
-  type Category,
-  type CreateCategoryInput,
-  type UpdateCategoryInput,
-  type RecurrenceRule,
-  type CreateRecurrenceRuleInput,
-  type UpdateRecurrenceRuleInput,
-  type CalendarResponse,
-  type CreateCalendarInput,
-  type UpdateCalendarInput,
-  type CalendarMemberResponse,
   type AddMemberInput,
-  type UpdateMemberRoleInput,
+  type AgentType,
+  type CalendarMemberResponse,
+  type CalendarResponse,
+  type Category,
+  type CreateCalendarInput,
+  type CreateCategoryInput,
   type CreateInvitationInput,
   type CreateInvitationResponse,
-  type InvitationListItemResponse,
+  type CreateRecurrenceRuleInput,
+  type CreateScheduleInput,
   type InvitationInfoResponse,
+  type InvitationListItemResponse,
+  type RecurrenceRule,
+  type Schedule,
+  type ScheduleWithSupplement,
+  type SearchScheduleInput,
+  type ShopList,
   type TransferOwnershipInput,
-  type AgentType,
+  type UpdateCalendarInput,
+  type UpdateCategoryInput,
+  type UpdateMemberRoleInput,
+  type UpdateProfileConditionsRequest,
+  type UpdateRecurrenceRuleInput,
+  type UpdateScheduleInput,
+  type UserProfile,
+  agentTypeSchema,
+  apiErrorSchema,
+  calendarMemberResponseSchema,
+  calendarResponseSchema,
+  categorySchema,
+  createInvitationResponseSchema,
+  invitationInfoResponseSchema,
+  invitationListItemResponseSchema,
+  profileResponseSchema,
+  recurrenceRuleSchema,
+  scheduleSchema,
+  scheduleWithSupplementSchema,
+  shopListSchema,
 } from "@ai-scheduler/shared";
+import { hc } from "hono/client";
 import { z } from "zod";
 
 /**
@@ -86,9 +86,7 @@ export const setApiAccessToken = (token: string | null) => {
 };
 
 // AuthContextからリフレッシュコールバックを設定
-export const setTokenRefreshCallback = (
-  callback: (() => Promise<string | null>) | null
-) => {
+export const setTokenRefreshCallback = (callback: (() => Promise<string | null>) | null) => {
   tokenRefreshCallback = callback;
 };
 
@@ -126,9 +124,10 @@ const fetchWithAuth: typeof fetch = async (input, init) => {
 };
 
 // Hono RPC Client with auth（動的に生成）
-const getClient = () => hc<ApiRoutes>(apiConfig.baseUrl, {
-  fetch: fetchWithAuth,
-});
+const getClient = () =>
+  hc<ApiRoutes>(apiConfig.baseUrl, {
+    fetch: fetchWithAuth,
+  });
 
 // レスポンススキーマ
 const scheduleArraySchema = z.array(scheduleSchema);
@@ -148,8 +147,15 @@ const searchResponseSchema = z.object({
   shopCandidates: shopListSchema.optional(),
 });
 
+type ResponseLike = {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  json: () => Promise<unknown>;
+};
+
 // エラーレスポンスをパースしてスロー
-async function handleErrorResponse(res: Response): Promise<never> {
+async function handleErrorResponse(res: ResponseLike): Promise<never> {
   try {
     const json: unknown = await res.json();
     const errorResult = apiErrorSchema.safeParse(json);
@@ -176,10 +182,7 @@ async function handleErrorResponse(res: Response): Promise<never> {
 }
 
 // レスポンスを処理してエラーならthrow、成功ならデータを返す
-async function handleResponse<T>(
-  res: Response,
-  schema: z.ZodType<T>
-): Promise<T> {
+async function handleResponse<T>(res: ResponseLike, schema: z.ZodType<T>): Promise<T> {
   if (!res.ok) {
     await handleErrorResponse(res);
   }
@@ -194,17 +197,14 @@ async function handleResponse<T>(
 }
 
 // voidレスポンス用ハンドラ（204 No Contentなど）
-async function handleVoidResponse(res: Response): Promise<void> {
+async function handleVoidResponse(res: ResponseLike): Promise<void> {
   if (!res.ok) {
     await handleErrorResponse(res);
   }
 }
 
 // Schedule API
-export const fetchSchedules = async (
-  year?: number,
-  month?: number
-): Promise<Schedule[]> => {
+export const fetchSchedules = async (year?: number, month?: number): Promise<Schedule[]> => {
   const client = getClient();
   const res = await client.schedules.$get({
     query: {
@@ -216,9 +216,7 @@ export const fetchSchedules = async (
   return handleResponse(res, scheduleArraySchema);
 };
 
-export const fetchScheduleById = async (
-  id: string
-): Promise<ScheduleWithSupplement> => {
+export const fetchScheduleById = async (id: string): Promise<ScheduleWithSupplement> => {
   const client = getClient();
   const res = await client.schedules[":id"].$get({
     param: { id },
@@ -227,9 +225,7 @@ export const fetchScheduleById = async (
   return handleResponse(res, scheduleWithSupplementSchema);
 };
 
-export const createSchedule = async (
-  input: CreateScheduleInput
-): Promise<Schedule> => {
+export const createSchedule = async (input: CreateScheduleInput): Promise<Schedule> => {
   const client = getClient();
   const res = await client.schedules.$post({
     json: input,
@@ -238,10 +234,7 @@ export const createSchedule = async (
   return handleResponse(res, scheduleSchema);
 };
 
-export const updateSchedule = async (
-  id: string,
-  input: UpdateScheduleInput
-): Promise<Schedule> => {
+export const updateSchedule = async (id: string, input: UpdateScheduleInput): Promise<Schedule> => {
   const client = getClient();
   const res = await client.schedules[":id"].$put({
     param: { id },
@@ -260,9 +253,7 @@ export const deleteSchedule = async (id: string): Promise<void> => {
   await handleVoidResponse(res);
 };
 
-export const searchSchedules = async (
-  params: SearchScheduleInput
-): Promise<Schedule[]> => {
+export const searchSchedules = async (params: SearchScheduleInput): Promise<Schedule[]> => {
   const client = getClient();
   const res = await client.schedules.search.$get({
     query: params,
@@ -479,10 +470,7 @@ const streamRequest = async (
 };
 
 // お店選択API（複数対応）
-export const selectShops = async (
-  scheduleId: string,
-  shops: ShopList
-): Promise<void> => {
+export const selectShops = async (scheduleId: string, shops: ShopList): Promise<void> => {
   const client = getClient();
   const res = await client.supplements[":scheduleId"]["selected-shops"].$put({
     param: { scheduleId },
@@ -493,10 +481,7 @@ export const selectShops = async (
 };
 
 // Supplement API
-export const updateMemo = async (
-  scheduleId: string,
-  userMemo: string
-): Promise<void> => {
+export const updateMemo = async (scheduleId: string, userMemo: string): Promise<void> => {
   const client = getClient();
   const res = await client.supplements[":scheduleId"].memo.$put({
     param: { scheduleId },
@@ -534,9 +519,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
   return handleResponse(res, categoryArraySchema);
 };
 
-export const createCategory = async (
-  input: CreateCategoryInput
-): Promise<Category> => {
+export const createCategory = async (input: CreateCategoryInput): Promise<Category> => {
   const client = getClient();
   const res = await client.categories.$post({
     json: input,
@@ -544,10 +527,7 @@ export const createCategory = async (
   return handleResponse(res, categorySchema);
 };
 
-export const updateCategory = async (
-  id: string,
-  input: UpdateCategoryInput
-): Promise<Category> => {
+export const updateCategory = async (id: string, input: UpdateCategoryInput): Promise<Category> => {
   const client = getClient();
   const res = await client.categories[":id"].$put({
     param: { id },
@@ -567,9 +547,7 @@ export const deleteCategory = async (id: string): Promise<void> => {
 // Recurrence API
 const nullableRecurrenceRuleSchema = recurrenceRuleSchema.nullable();
 
-export const fetchRecurrence = async (
-  scheduleId: string
-): Promise<RecurrenceRule | null> => {
+export const fetchRecurrence = async (scheduleId: string): Promise<RecurrenceRule | null> => {
   const client = getClient();
   const res = await client.recurrence[":scheduleId"].$get({
     param: { scheduleId },
@@ -616,9 +594,7 @@ export const fetchCalendars = async (): Promise<CalendarResponse[]> => {
   return handleResponse(res, calendarArraySchema);
 };
 
-export const fetchCalendarById = async (
-  id: string
-): Promise<CalendarResponse> => {
+export const fetchCalendarById = async (id: string): Promise<CalendarResponse> => {
   const client = getClient();
   const res = await client.calendars[":id"].$get({
     param: { id },
@@ -626,9 +602,7 @@ export const fetchCalendarById = async (
   return handleResponse(res, calendarResponseSchema);
 };
 
-export const createCalendar = async (
-  input: CreateCalendarInput
-): Promise<CalendarResponse> => {
+export const createCalendar = async (input: CreateCalendarInput): Promise<CalendarResponse> => {
   const client = getClient();
   const res = await client.calendars.$post({
     json: input,
@@ -758,18 +732,14 @@ export const revokeCalendarInvitation = async (
 };
 
 // Invitation Token API (直接fetchを使用 - Hono RPC型推論の制約回避)
-export const fetchInvitationInfo = async (
-  token: string
-): Promise<InvitationInfoResponse> => {
+export const fetchInvitationInfo = async (token: string): Promise<InvitationInfoResponse> => {
   const res = await fetchWithAuth(`${apiConfig.baseUrl}/invitations/${token}`);
   return handleResponse(res, invitationInfoResponseSchema);
 };
 
 const acceptInvitationResponseSchema = z.object({ calendarId: z.string() });
 
-export const acceptInvitation = async (
-  token: string
-): Promise<{ calendarId: string }> => {
+export const acceptInvitation = async (token: string): Promise<{ calendarId: string }> => {
   const res = await fetchWithAuth(`${apiConfig.baseUrl}/invitations/${token}/accept`, {
     method: "POST",
   });

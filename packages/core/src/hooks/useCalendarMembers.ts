@@ -1,17 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchCalendarMembers,
-  addCalendarMember,
-  updateCalendarMemberRole,
-  removeCalendarMember,
-  leaveCalendar,
-  transferCalendarOwnership,
-} from "../api";
 import type {
   AddMemberInput,
-  UpdateMemberRoleInput,
   TransferOwnershipInput,
+  UpdateMemberRoleInput,
 } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addCalendarMember,
+  fetchCalendarMembers,
+  leaveCalendar,
+  removeCalendarMember,
+  transferCalendarOwnership,
+  updateCalendarMemberRole,
+} from "../api";
 import { calendarQueryKeys } from "./useCalendars";
 
 export const memberQueryKeys = {

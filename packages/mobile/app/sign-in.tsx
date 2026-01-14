@@ -1,10 +1,10 @@
+import { useAuth } from "@ai-scheduler/core";
+import { MaterialIcons } from "@expo/vector-icons";
 /**
  * ログイン画面
  */
-import { View, Text, Pressable, ActivityIndicator, Image } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from "@ai-scheduler/core";
 import { useGoogleAuth } from "../src/lib/auth";
 import { config } from "../src/lib/config";
 
@@ -29,12 +29,8 @@ export default function SignInScreen() {
         {/* ロゴ・タイトル */}
         <View className="mb-12 items-center">
           <MaterialIcons name="event-note" size={80} color="#3b82f6" />
-          <Text className="mt-4 text-3xl font-bold text-gray-900">
-            AI Assistant
-          </Text>
-          <Text className="mt-1 text-3xl font-bold text-primary-500">
-            Scheduler
-          </Text>
+          <Text className="mt-4 text-3xl font-bold text-gray-900">AI Assistant</Text>
+          <Text className="mt-1 text-3xl font-bold text-primary-500">Scheduler</Text>
           <Text className="mt-4 text-center text-gray-600">
             AIがあなたのスケジュール管理を{"\n"}サポートします
           </Text>
@@ -60,9 +56,7 @@ export default function SignInScreen() {
                   }}
                   className="mr-3 h-6 w-6"
                 />
-                <Text className="text-lg font-medium text-gray-700">
-                  Googleでログイン
-                </Text>
+                <Text className="text-lg font-medium text-gray-700">Googleでログイン</Text>
               </>
             )}
           </Pressable>
@@ -77,9 +71,7 @@ export default function SignInScreen() {
               }`}
             >
               <MaterialIcons name="code" size={24} color="#6b7280" />
-              <Text className="ml-2 text-lg font-medium text-gray-600">
-                開発環境ログイン
-              </Text>
+              <Text className="ml-2 text-lg font-medium text-gray-600">開発環境ログイン</Text>
             </Pressable>
           )}
         </View>

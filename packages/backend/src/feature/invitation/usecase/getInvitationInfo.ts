@@ -1,12 +1,9 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarInvitationRepo } from "../../../domain/infra/calendarInvitationRepo";
-import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { InvitationInfoResponse } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
-import {
-  createDatabaseError,
-  createNotFoundError,
-} from "../../../shared/errors";
+import type { CalendarInvitationRepo } from "../../../domain/infra/calendarInvitationRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
+import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createGetInvitationInfoUseCase = (
   calendarRepo: CalendarRepo,
@@ -49,6 +46,4 @@ export const createGetInvitationInfoUseCase = (
   };
 };
 
-export type GetInvitationInfoUseCase = ReturnType<
-  typeof createGetInvitationInfoUseCase
->;
+export type GetInvitationInfoUseCase = ReturnType<typeof createGetInvitationInfoUseCase>;

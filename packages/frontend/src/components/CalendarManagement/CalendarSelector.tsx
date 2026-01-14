@@ -7,25 +7,13 @@ interface CalendarSelectorProps {
   onSettingsClick?: (calendarId: string) => void;
 }
 
-export const CalendarSelector = ({
-  onManageClick,
-  onSettingsClick,
-}: CalendarSelectorProps) => {
-  const {
-    calendars,
-    isLoading,
-    selectedCalendarIds,
-    toggleCalendar,
-    selectAllCalendars,
-  } = useCalendarContext();
+export const CalendarSelector = ({ onManageClick, onSettingsClick }: CalendarSelectorProps) => {
+  const { calendars, isLoading, selectedCalendarIds, toggleCalendar, selectAllCalendars } =
+    useCalendarContext();
   const [isOpen, setIsOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="p-4 text-sm text-gray-500">
-        カレンダーを読み込み中...
-      </div>
-    );
+    return <div className="p-4 text-sm text-gray-500">カレンダーを読み込み中...</div>;
   }
 
   return (

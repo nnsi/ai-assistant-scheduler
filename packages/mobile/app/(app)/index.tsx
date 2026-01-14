@@ -1,50 +1,54 @@
+import {
+  fetchScheduleById,
+  toAppError,
+  useAI,
+  useAuth,
+  useCalendarContext,
+  useCategories,
+  useCreateCalendar,
+  useProfile,
+  useSchedules,
+} from "@ai-scheduler/core";
+import type { SearchScheduleInput } from "@ai-scheduler/shared";
+import type { CreateScheduleInput, Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
+import {
+  addDays,
+  addHours,
+  addMonths,
+  addWeeks,
+  format,
+  getMonth,
+  getYear,
+  subDays,
+  subMonths,
+  subWeeks,
+} from "date-fns";
+import { ja } from "date-fns/locale";
 /**
  * メインアプリ画面
  * Web版と同じ1画面+モーダル構成
  */
-import { useState, useMemo, useCallback } from "react";
-import { View, Text, Pressable, Modal, Image, ActivityIndicator, ScrollView, Alert, TextInput, Linking } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
-import {
-  useSchedules,
-  useCalendarContext,
-  useAuth,
-  useCategories,
-  useAI,
-  useProfile,
-  useCreateCalendar,
-  useScheduleSearch,
-  toAppError,
-  fetchScheduleById,
-} from "@ai-scheduler/core";
-import { useQuery } from "@tanstack/react-query";
-import type { SearchScheduleInput } from "@ai-scheduler/shared";
-import {
-  format,
-  getYear,
-  getMonth,
-  addMonths,
-  subMonths,
-  addWeeks,
-  subWeeks,
-  addDays,
-  subDays,
-  addHours,
-} from "date-fns";
-import { ja } from "date-fns/locale";
-import type { Schedule, CreateScheduleInput, UpdateScheduleInput, ScheduleWithSupplement } from "@ai-scheduler/shared";
 
 // Components
-import {
-  CalendarHeader,
-  MonthView,
-  WeekView,
-  DayView,
-  type CalendarViewMode,
-} from "../../src/components/calendar";
+import { type CalendarViewMode, DayView, MonthView, WeekView } from "../../src/components/calendar";
 import { ScheduleForm } from "../../src/components/schedule/ScheduleForm";
-import { LoadingSpinner, ErrorMessage } from "../../src/components/ui";
+import { ErrorMessage, LoadingSpinner } from "../../src/components/ui";
 
 export default function MainApp() {
   const { user, logout, updateEmail } = useAuth();
@@ -103,8 +107,12 @@ export default function MainApp() {
 
   // こだわり条件設定 state
   const [conditionsRequired, setConditionsRequired] = useState(profile?.requiredConditions || "");
-  const [conditionsPreferred, setConditionsPreferred] = useState(profile?.preferredConditions || "");
-  const [conditionsImportant, setConditionsImportant] = useState(profile?.subjectiveConditions || "");
+  const [conditionsPreferred, setConditionsPreferred] = useState(
+    profile?.preferredConditions || ""
+  );
+  const [conditionsImportant, setConditionsImportant] = useState(
+    profile?.subjectiveConditions || ""
+  );
 
   // カテゴリ管理 state
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -135,7 +143,15 @@ export default function MainApp() {
   // 現在の月のスケジュールを取得
   const year = getYear(currentDate);
   const month = getMonth(currentDate) + 1;
-  const { schedules, isLoading: schedulesLoading, error, refetch, create, update, remove } = useSchedules(year, month);
+  const {
+    schedules,
+    isLoading: schedulesLoading,
+    error,
+    refetch,
+    create,
+    update,
+    remove,
+  } = useSchedules(year, month);
 
   // スケジュール詳細を取得（supplement含む）
   const { data: fullSchedule } = useQuery({
@@ -205,45 +221,50 @@ export default function MainApp() {
   }, []);
 
   // スケジュール作成/更新
-  const handleFormSubmit = useCallback(async (data: {
-    title: string;
-    startAt: Date;
-    endAt: Date;
-    isAllDay: boolean;
-    calendarId: string;
-    categoryId: string | null;
-    userMemo: string;
-    recurrenceRule: { frequency: "daily" | "weekly" | "monthly" | "yearly"; interval: number } | null;
-  }) => {
-    if (isEditMode && editingSchedule) {
-      const updateInput: UpdateScheduleInput = {
-        title: data.title,
-        startAt: data.startAt.toISOString(),
-        endAt: data.endAt.toISOString(),
-        isAllDay: data.isAllDay,
-        categoryId: data.categoryId || undefined,
-        userMemo: data.userMemo || undefined,
-        recurrenceRule: data.recurrenceRule || undefined,
-      };
-      await update(editingSchedule.id, updateInput);
-    } else {
-      const createInput: CreateScheduleInput = {
-        title: data.title,
-        startAt: data.startAt.toISOString(),
-        endAt: data.endAt.toISOString(),
-        isAllDay: data.isAllDay,
-        calendarId: data.calendarId,
-        categoryId: data.categoryId || undefined,
-        userMemo: data.userMemo || undefined,
-        recurrenceRule: data.recurrenceRule || undefined,
-      };
-      await create(createInput);
-    }
-    refetch();
-    setIsFormModalOpen(false);
-    setEditingSchedule(null);
-    setIsEditMode(false);
-  }, [isEditMode, editingSchedule, create, update, refetch]);
+  const handleFormSubmit = useCallback(
+    async (data: {
+      title: string;
+      startAt: Date;
+      endAt: Date;
+      isAllDay: boolean;
+      calendarId: string;
+      categoryId: string | null;
+      userMemo: string;
+      recurrenceRule: {
+        frequency: "daily" | "weekly" | "monthly" | "yearly";
+        interval: number;
+      } | null;
+    }) => {
+      if (isEditMode && editingSchedule) {
+        const updateInput: UpdateScheduleInput = {
+          title: data.title,
+          startAt: data.startAt.toISOString(),
+          endAt: data.endAt.toISOString(),
+          isAllDay: data.isAllDay,
+          categoryId: data.categoryId || undefined,
+        };
+        await update(editingSchedule.id, updateInput);
+        // TODO: recurrenceRuleの更新は別途APIで処理
+      } else {
+        const createInput: CreateScheduleInput = {
+          title: data.title,
+          startAt: data.startAt.toISOString(),
+          endAt: data.endAt.toISOString(),
+          isAllDay: data.isAllDay,
+          calendarId: data.calendarId,
+          categoryId: data.categoryId || undefined,
+          userMemo: data.userMemo || undefined,
+        };
+        const newSchedule = await create(createInput);
+        // TODO: recurrenceRuleの作成は別途APIで処理
+      }
+      refetch();
+      setIsFormModalOpen(false);
+      setEditingSchedule(null);
+      setIsEditMode(false);
+    },
+    [isEditMode, editingSchedule, create, update, refetch]
+  );
 
   // スケジュール編集
   const handleScheduleEdit = useCallback(() => {
@@ -258,23 +279,19 @@ export default function MainApp() {
   // スケジュール削除（確認ダイアログ付き）
   const handleScheduleDelete = useCallback(() => {
     if (selectedSchedule) {
-      Alert.alert(
-        "予定を削除",
-        `「${selectedSchedule.title}」を削除しますか？`,
-        [
-          { text: "キャンセル", style: "cancel" },
-          {
-            text: "削除",
-            style: "destructive",
-            onPress: async () => {
-              await remove(selectedSchedule.id);
-              refetch();
-              setIsPopupOpen(false);
-              setSelectedSchedule(null);
-            },
+      Alert.alert("予定を削除", `「${selectedSchedule.title}」を削除しますか？`, [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除",
+          style: "destructive",
+          onPress: async () => {
+            await remove(selectedSchedule.id);
+            refetch();
+            setIsPopupOpen(false);
+            setSelectedSchedule(null);
           },
-        ]
-      );
+        },
+      ]);
     }
   }, [selectedSchedule, remove, refetch]);
 
@@ -282,33 +299,24 @@ export default function MainApp() {
   const [showAIResult, setShowAIResult] = useState(false);
 
   // AI検索開始（フォームから呼ばれる）
-  const handleAISearch = useCallback(async (title: string, startAt: Date) => {
-    setAISearchTitle(title);
-    setAISearchStartAt(startAt);
-    setSelectedKeywords([]);
-    resetAI();
+  const handleAISearch = useCallback(
+    async (title: string, startAt: Date) => {
+      setAISearchTitle(title);
+      setAISearchStartAt(startAt);
+      setSelectedKeywords([]);
+      resetAI();
 
-    // こだわり条件のコンテキストを作成
-    const scheduleContext = profile ? {
-      requiredConditions: profile.requiredConditions || undefined,
-      preferredConditions: profile.preferredConditions || undefined,
-      subjectiveConditions: profile.subjectiveConditions || undefined,
-    } : undefined;
-
-    // キーワード提案を取得
-    await suggestKeywords(title, startAt.toISOString(), undefined, scheduleContext);
-    setIsKeywordModalOpen(true);
-  }, [profile, suggestKeywords, resetAI]);
+      // キーワード提案を取得（プロファイル条件はバックエンドで自動取得）
+      await suggestKeywords(title, startAt.toISOString());
+      setIsKeywordModalOpen(true);
+    },
+    [suggestKeywords, resetAI]
+  );
 
   // キーワード再生成
   const handleRegenerateKeywords = useCallback(async () => {
-    const scheduleContext = profile ? {
-      requiredConditions: profile.requiredConditions || undefined,
-      preferredConditions: profile.preferredConditions || undefined,
-      subjectiveConditions: profile.subjectiveConditions || undefined,
-    } : undefined;
-    await regenerateKeywords(aiSearchTitle, aiSearchStartAt.toISOString(), scheduleContext);
-  }, [profile, aiSearchTitle, aiSearchStartAt, regenerateKeywords]);
+    await regenerateKeywords(aiSearchTitle, aiSearchStartAt.toISOString());
+  }, [aiSearchTitle, aiSearchStartAt, regenerateKeywords]);
 
   // キーワード選択切り替え
   const toggleKeyword = useCallback((keyword: string) => {
@@ -341,23 +349,23 @@ export default function MainApp() {
       setIsKeywordModalOpen(false);
       setIsSearchResultModalOpen(true);
 
-      // こだわり条件のコンテキストを作成
-      const scheduleContext = profile ? {
-        requiredConditions: profile.requiredConditions || undefined,
-        preferredConditions: profile.preferredConditions || undefined,
-        subjectiveConditions: profile.subjectiveConditions || undefined,
-      } : undefined;
-
-      // ストリーミング検索実行
+      // ストリーミング検索実行（プロファイル条件はバックエンドで自動取得）
       await searchAndSaveStream(
         newSchedule.id,
         aiSearchTitle,
         aiSearchStartAt.toISOString(),
-        selectedKeywords,
-        scheduleContext
+        selectedKeywords
       );
     }
-  }, [aiSearchTitle, aiSearchStartAt, defaultCalendarId, calendars, create, profile, selectedKeywords, searchAndSaveStream]);
+  }, [
+    aiSearchTitle,
+    aiSearchStartAt,
+    defaultCalendarId,
+    calendars,
+    create,
+    selectedKeywords,
+    searchAndSaveStream,
+  ]);
 
   // AI検索をスキップ
   const handleSkipSearch = useCallback(async () => {
@@ -405,9 +413,9 @@ export default function MainApp() {
     setIsSavingConditions(true);
     try {
       await updateConditions({
-        requiredConditions: conditionsRequired || null,
-        preferredConditions: conditionsPreferred || null,
-        subjectiveConditions: conditionsImportant || null,
+        requiredConditions: conditionsRequired || undefined,
+        preferredConditions: conditionsPreferred || undefined,
+        subjectiveConditions: conditionsImportant || undefined,
       });
       setIsConditionsModalOpen(false);
     } catch (error) {
@@ -437,11 +445,9 @@ export default function MainApp() {
   }, [newCategoryName, newCategoryColor, createCategory]);
 
   // カテゴリ削除
-  const handleDeleteCategory = useCallback((categoryId: string, categoryName: string) => {
-    Alert.alert(
-      "カテゴリを削除",
-      `「${categoryName}」を削除しますか？`,
-      [
+  const handleDeleteCategory = useCallback(
+    (categoryId: string, categoryName: string) => {
+      Alert.alert("カテゴリを削除", `「${categoryName}」を削除しますか？`, [
         { text: "キャンセル", style: "cancel" },
         {
           text: "削除",
@@ -454,15 +460,25 @@ export default function MainApp() {
             }
           },
         },
-      ]
-    );
-  }, [removeCategory]);
+      ]);
+    },
+    [removeCategory]
+  );
 
   // カラーパレット
   const categoryColors = [
-    "#EF4444", "#F97316", "#F59E0B", "#84CC16",
-    "#22C55E", "#14B8A6", "#06B6D4", "#3B82F6",
-    "#6366F1", "#8B5CF6", "#A855F7", "#EC4899",
+    "#EF4444",
+    "#F97316",
+    "#F59E0B",
+    "#84CC16",
+    "#22C55E",
+    "#14B8A6",
+    "#06B6D4",
+    "#3B82F6",
+    "#6366F1",
+    "#8B5CF6",
+    "#A855F7",
+    "#EC4899",
   ];
 
   // カレンダー作成
@@ -505,10 +521,7 @@ export default function MainApp() {
         let matches = true;
         if (params.query) {
           const query = params.query.toLowerCase();
-          matches = matches && (
-            schedule.title.toLowerCase().includes(query) ||
-            (schedule.userMemo && schedule.userMemo.toLowerCase().includes(query))
-          );
+          matches = matches && schedule.title.toLowerCase().includes(query);
         }
         if (params.categoryId) {
           matches = matches && schedule.categoryId === params.categoryId;
@@ -517,7 +530,7 @@ export default function MainApp() {
           matches = matches && new Date(schedule.startAt) >= new Date(params.startDate);
         }
         if (params.endDate) {
-          matches = matches && new Date(schedule.startAt) <= new Date(params.endDate + "T23:59:59");
+          matches = matches && new Date(schedule.startAt) <= new Date(`${params.endDate}T23:59:59`);
         }
         return matches;
       });
@@ -551,9 +564,10 @@ export default function MainApp() {
     return (
       <ErrorMessage
         fullScreen
-        message={isAuthError
-          ? "セッションが切れました。再度ログインしてください。"
-          : "スケジュールの読み込みに失敗しました"
+        message={
+          isAuthError
+            ? "セッションが切れました。再度ログインしてください。"
+            : "スケジュールの読み込みに失敗しました"
         }
         isAuthError={isAuthError}
         onLogin={isAuthError ? logout : undefined}
@@ -575,22 +589,20 @@ export default function MainApp() {
             >
               <MaterialIcons name="chevron-left" size={26} color="#374151" />
             </Pressable>
-            <Pressable
-              onPress={handleToday}
-              className="px-1.5 py-1 active:bg-gray-100 rounded-lg"
-            >
+            <Pressable onPress={handleToday} className="px-1.5 py-1 active:bg-gray-100 rounded-lg">
               <Text className="text-base font-bold text-gray-900">
                 {viewMode === "month" && format(currentDate, "yyyy年M月", { locale: ja })}
-                {viewMode === "week" && (() => {
-                  const weekStart = new Date(currentDate);
-                  weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-                  const weekEnd = new Date(weekStart);
-                  weekEnd.setDate(weekStart.getDate() + 6);
-                  if (weekStart.getMonth() === weekEnd.getMonth()) {
-                    return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "d", { locale: ja });
-                  }
-                  return format(weekStart, "M/d", { locale: ja }) + "〜" + format(weekEnd, "M/d", { locale: ja });
-                })()}
+                {viewMode === "week" &&
+                  (() => {
+                    const weekStart = new Date(currentDate);
+                    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    if (weekStart.getMonth() === weekEnd.getMonth()) {
+                      return `${format(weekStart, "M/d", { locale: ja })}〜${format(weekEnd, "d", { locale: ja })}`;
+                    }
+                    return `${format(weekStart, "M/d", { locale: ja })}〜${format(weekEnd, "M/d", { locale: ja })}`;
+                  })()}
                 {viewMode === "day" && format(currentDate, "M/d(E)", { locale: ja })}
               </Text>
             </Pressable>
@@ -612,9 +624,7 @@ export default function MainApp() {
               <Pressable
                 key={mode}
                 onPress={() => setViewMode(mode)}
-                className={`px-3 py-1 rounded-md ${
-                  viewMode === mode ? "bg-white shadow-sm" : ""
-                }`}
+                className={`px-3 py-1 rounded-md ${viewMode === mode ? "bg-white shadow-sm" : ""}`}
               >
                 <Text
                   className={`text-sm font-semibold ${
@@ -647,10 +657,7 @@ export default function MainApp() {
                 className="w-9 h-9 items-center justify-center rounded-full active:bg-gray-100 ml-0.5"
               >
                 {user.picture ? (
-                  <Image
-                    source={{ uri: user.picture }}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <Image source={{ uri: user.picture }} className="w-8 h-8 rounded-full" />
                 ) : (
                   <View className="w-8 h-8 rounded-full bg-primary-100 items-center justify-center">
                     <Text className="text-xs font-bold text-primary-500">
@@ -671,7 +678,7 @@ export default function MainApp() {
             currentDate={currentDate}
             onDateSelect={handleDateSelect}
             onScheduleClick={handleScheduleClick}
-            schedules={filteredSchedules as any}
+            schedules={filteredSchedules}
             calendars={calendars}
             categories={categories}
             selectedCalendarIds={selectedCalendarIds}
@@ -682,7 +689,7 @@ export default function MainApp() {
             currentDate={currentDate}
             onTimeSlotClick={handleTimeSlotClick}
             onScheduleClick={handleScheduleClick}
-            schedules={filteredSchedules as any}
+            schedules={filteredSchedules}
             calendars={calendars}
             categories={categories}
             selectedCalendarIds={selectedCalendarIds}
@@ -693,7 +700,7 @@ export default function MainApp() {
             currentDate={currentDate}
             onTimeSlotClick={handleTimeSlotClick}
             onScheduleClick={handleScheduleClick}
-            schedules={filteredSchedules as any}
+            schedules={filteredSchedules}
             calendars={calendars}
             categories={categories}
             selectedCalendarIds={selectedCalendarIds}
@@ -771,17 +778,26 @@ export default function MainApp() {
           {/* ヘッダー */}
           <View className="flex-row items-center justify-between bg-white px-2 py-2">
             <Pressable
-              onPress={() => { setIsPopupOpen(false); setShowAIResult(false); }}
+              onPress={() => {
+                setIsPopupOpen(false);
+                setShowAIResult(false);
+              }}
               className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
             >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
             <Text className="text-base font-semibold text-gray-900">予定詳細</Text>
             <View className="flex-row">
-              <Pressable onPress={handleScheduleEdit} className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100">
+              <Pressable
+                onPress={handleScheduleEdit}
+                className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+              >
                 <MaterialIcons name="edit" size={22} color="#3b82f6" />
               </Pressable>
-              <Pressable onPress={handleScheduleDelete} className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100">
+              <Pressable
+                onPress={handleScheduleDelete}
+                className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-100"
+              >
                 <MaterialIcons name="delete" size={22} color="#ef4444" />
               </Pressable>
             </View>
@@ -792,21 +808,20 @@ export default function MainApp() {
               {/* タイトルカード */}
               <View className="bg-white px-4 py-4 border-b border-gray-100">
                 {/* カテゴリバッジ */}
-                {selectedSchedule.categoryId && (() => {
-                  const category = categories.find(c => c.id === selectedSchedule.categoryId);
-                  return category ? (
-                    <View
-                      className="self-start rounded-full px-2.5 py-1 mb-2"
-                      style={{ backgroundColor: category.color || "#3b82f6" }}
-                    >
-                      <Text className="text-xs text-white font-medium">{category.name}</Text>
-                    </View>
-                  ) : null;
-                })()}
+                {selectedSchedule.categoryId &&
+                  (() => {
+                    const category = categories.find((c) => c.id === selectedSchedule.categoryId);
+                    return category ? (
+                      <View
+                        className="self-start rounded-full px-2.5 py-1 mb-2"
+                        style={{ backgroundColor: category.color || "#3b82f6" }}
+                      >
+                        <Text className="text-xs text-white font-medium">{category.name}</Text>
+                      </View>
+                    ) : null;
+                  })()}
 
-                <Text className="text-xl font-bold text-gray-900">
-                  {selectedSchedule.title}
-                </Text>
+                <Text className="text-xl font-bold text-gray-900">{selectedSchedule.title}</Text>
               </View>
 
               {/* 日時情報カード */}
@@ -819,9 +834,15 @@ export default function MainApp() {
                     <Text className="text-sm text-gray-500">日時</Text>
                     <Text className="text-base text-gray-900 font-medium">
                       {selectedSchedule.isAllDay
-                        ? format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E)", { locale: ja }) + " 終日"
-                        : format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E) HH:mm", { locale: ja }) +
-                          (selectedSchedule.endAt ? ` 〜 ${format(new Date(selectedSchedule.endAt), "HH:mm")}` : "")}
+                        ? `${format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E)", {
+                            locale: ja,
+                          })} 終日`
+                        : format(new Date(selectedSchedule.startAt), "yyyy年M月d日(E) HH:mm", {
+                            locale: ja,
+                          }) +
+                          (selectedSchedule.endAt
+                            ? ` 〜 ${format(new Date(selectedSchedule.endAt), "HH:mm")}`
+                            : "")}
                     </Text>
                   </View>
                 </View>
@@ -845,40 +866,59 @@ export default function MainApp() {
                 )}
 
                 {/* カレンダー */}
-                {selectedSchedule.calendarId && (() => {
-                  const calendar = calendars.find(c => c.id === selectedSchedule.calendarId);
-                  return calendar ? (
-                    <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
-                      <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-                        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: calendar.color || "#3b82f6" }} />
+                {selectedSchedule.calendarId &&
+                  (() => {
+                    const calendar = calendars.find((c) => c.id === selectedSchedule.calendarId);
+                    return calendar ? (
+                      <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
+                        <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
+                          <View
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: calendar.color || "#3b82f6" }}
+                          />
+                        </View>
+                        <View className="ml-3 flex-1">
+                          <Text className="text-sm text-gray-500">カレンダー</Text>
+                          <Text className="text-base text-gray-900 font-medium">
+                            {calendar.name}
+                          </Text>
+                        </View>
                       </View>
-                      <View className="ml-3 flex-1">
-                        <Text className="text-sm text-gray-500">カレンダー</Text>
-                        <Text className="text-base text-gray-900 font-medium">{calendar.name}</Text>
-                      </View>
-                    </View>
-                  ) : null;
-                })()}
+                    ) : null;
+                  })()}
 
                 {/* カテゴリ */}
-                {selectedSchedule.categoryId && (() => {
-                  const category = categories.find(c => c.id === selectedSchedule.categoryId);
-                  return category ? (
-                    <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
-                      <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: `${category.color}20` || "#3b82f620" }}>
-                        <MaterialIcons name="label" size={20} color={category.color || "#3b82f6"} />
-                      </View>
-                      <View className="ml-3 flex-1">
-                        <Text className="text-sm text-gray-500">カテゴリ</Text>
-                        <View className="flex-row items-center mt-0.5">
-                          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: category.color || "#3b82f6" }}>
-                            <Text className="text-xs text-white font-medium">{category.name}</Text>
+                {selectedSchedule.categoryId &&
+                  (() => {
+                    const category = categories.find((c) => c.id === selectedSchedule.categoryId);
+                    return category ? (
+                      <View className="flex-row items-center mt-3 pt-3 border-t border-gray-100">
+                        <View
+                          className="w-10 h-10 rounded-full items-center justify-center"
+                          style={{ backgroundColor: `${category.color}20` || "#3b82f620" }}
+                        >
+                          <MaterialIcons
+                            name="label"
+                            size={20}
+                            color={category.color || "#3b82f6"}
+                          />
+                        </View>
+                        <View className="ml-3 flex-1">
+                          <Text className="text-sm text-gray-500">カテゴリ</Text>
+                          <View className="flex-row items-center mt-0.5">
+                            <View
+                              className="rounded-full px-2 py-0.5"
+                              style={{ backgroundColor: category.color || "#3b82f6" }}
+                            >
+                              <Text className="text-xs text-white font-medium">
+                                {category.name}
+                              </Text>
+                            </View>
                           </View>
                         </View>
                       </View>
-                    </View>
-                  ) : null;
-                })()}
+                    ) : null;
+                  })()}
               </View>
 
               {/* メモ */}
@@ -890,83 +930,96 @@ export default function MainApp() {
                     </View>
                     <View className="ml-3 flex-1">
                       <Text className="text-sm text-gray-500 mb-1">メモ</Text>
-                      <Text className="text-base text-gray-700 leading-6">{fullSchedule.supplement.userMemo}</Text>
+                      <Text className="text-base text-gray-700 leading-6">
+                        {fullSchedule.supplement.userMemo}
+                      </Text>
                     </View>
                   </View>
                 </View>
               )}
 
               {/* 選択した店舗 */}
-              {fullSchedule?.supplement?.selectedShops && fullSchedule.supplement.selectedShops.length > 0 && (
-                <View className="bg-white mt-2 px-4 py-3">
-                  <View className="flex-row items-center mb-3">
-                    <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center">
-                      <MaterialIcons name="store" size={20} color="#f43f5e" />
-                    </View>
-                    <View className="ml-3">
-                      <Text className="text-sm text-gray-500">選択した店舗</Text>
-                    </View>
-                  </View>
-                  <View className="gap-3">
-                    {fullSchedule.supplement.selectedShops.map((shop, index) => (
-                      <View key={index} className="bg-gray-50 rounded-xl p-3">
-                        <Text className="text-base font-semibold text-gray-900 mb-1">{shop.name}</Text>
-                        {shop.summary && (
-                          <Text className="text-sm text-gray-600 mb-2">{shop.summary}</Text>
-                        )}
-                        {shop.address && (
-                          <View className="flex-row items-center mb-1">
-                            <MaterialIcons name="place" size={14} color="#9ca3af" />
-                            <Text className="text-xs text-gray-500 ml-1 flex-1">{shop.address}</Text>
-                          </View>
-                        )}
-                        {shop.businessHours && (
-                          <View className="flex-row items-center mb-1">
-                            <MaterialIcons name="schedule" size={14} color="#9ca3af" />
-                            <Text className="text-xs text-gray-500 ml-1">{shop.businessHours}</Text>
-                          </View>
-                        )}
-                        {shop.urls && (
-                          <View className="flex-row flex-wrap gap-2 mt-2">
-                            {shop.urls.official && (
-                              <Pressable
-                                onPress={() => Linking.openURL(shop.urls!.official!)}
-                                className="bg-blue-100 px-2 py-1 rounded"
-                              >
-                                <Text className="text-xs text-blue-700 font-medium">公式サイト</Text>
-                              </Pressable>
-                            )}
-                            {shop.urls.reservation && (
-                              <Pressable
-                                onPress={() => Linking.openURL(shop.urls!.reservation!)}
-                                className="bg-green-100 px-2 py-1 rounded"
-                              >
-                                <Text className="text-xs text-green-700 font-medium">予約</Text>
-                              </Pressable>
-                            )}
-                            {shop.urls.tabelog && (
-                              <Pressable
-                                onPress={() => Linking.openURL(shop.urls!.tabelog!)}
-                                className="bg-orange-100 px-2 py-1 rounded"
-                              >
-                                <Text className="text-xs text-orange-700 font-medium">食べログ</Text>
-                              </Pressable>
-                            )}
-                            {shop.urls.googleMap && (
-                              <Pressable
-                                onPress={() => Linking.openURL(shop.urls!.googleMap!)}
-                                className="bg-red-100 px-2 py-1 rounded"
-                              >
-                                <Text className="text-xs text-red-700 font-medium">地図</Text>
-                              </Pressable>
-                            )}
-                          </View>
-                        )}
+              {fullSchedule?.supplement?.selectedShops &&
+                fullSchedule.supplement.selectedShops.length > 0 && (
+                  <View className="bg-white mt-2 px-4 py-3">
+                    <View className="flex-row items-center mb-3">
+                      <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center">
+                        <MaterialIcons name="store" size={20} color="#f43f5e" />
                       </View>
-                    ))}
+                      <View className="ml-3">
+                        <Text className="text-sm text-gray-500">選択した店舗</Text>
+                      </View>
+                    </View>
+                    <View className="gap-3">
+                      {fullSchedule.supplement.selectedShops.map((shop) => (
+                        <View key={shop.name} className="bg-gray-50 rounded-xl p-3">
+                          <Text className="text-base font-semibold text-gray-900 mb-1">
+                            {shop.name}
+                          </Text>
+                          {shop.summary && (
+                            <Text className="text-sm text-gray-600 mb-2">{shop.summary}</Text>
+                          )}
+                          {shop.address && (
+                            <View className="flex-row items-center mb-1">
+                              <MaterialIcons name="place" size={14} color="#9ca3af" />
+                              <Text className="text-xs text-gray-500 ml-1 flex-1">
+                                {shop.address}
+                              </Text>
+                            </View>
+                          )}
+                          {shop.businessHours && (
+                            <View className="flex-row items-center mb-1">
+                              <MaterialIcons name="schedule" size={14} color="#9ca3af" />
+                              <Text className="text-xs text-gray-500 ml-1">
+                                {shop.businessHours}
+                              </Text>
+                            </View>
+                          )}
+                          {shop.urls && (
+                            <View className="flex-row flex-wrap gap-2 mt-2">
+                              {shop.urls.official && (
+                                <Pressable
+                                  onPress={() => Linking.openURL(shop.urls!.official!)}
+                                  className="bg-blue-100 px-2 py-1 rounded"
+                                >
+                                  <Text className="text-xs text-blue-700 font-medium">
+                                    公式サイト
+                                  </Text>
+                                </Pressable>
+                              )}
+                              {shop.urls.reservation && (
+                                <Pressable
+                                  onPress={() => Linking.openURL(shop.urls!.reservation!)}
+                                  className="bg-green-100 px-2 py-1 rounded"
+                                >
+                                  <Text className="text-xs text-green-700 font-medium">予約</Text>
+                                </Pressable>
+                              )}
+                              {shop.urls.tabelog && (
+                                <Pressable
+                                  onPress={() => Linking.openURL(shop.urls!.tabelog!)}
+                                  className="bg-orange-100 px-2 py-1 rounded"
+                                >
+                                  <Text className="text-xs text-orange-700 font-medium">
+                                    食べログ
+                                  </Text>
+                                </Pressable>
+                              )}
+                              {shop.urls.googleMap && (
+                                <Pressable
+                                  onPress={() => Linking.openURL(shop.urls!.googleMap!)}
+                                  className="bg-red-100 px-2 py-1 rounded"
+                                >
+                                  <Text className="text-xs text-red-700 font-medium">地図</Text>
+                                </Pressable>
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                    </View>
                   </View>
-                </View>
-              )}
+                )}
 
               {/* AI検索結果 */}
               {fullSchedule?.supplement?.aiResult && (
@@ -980,7 +1033,9 @@ export default function MainApp() {
                     </View>
                     <View className="ml-3 flex-1">
                       <Text className="text-sm text-gray-500">AI検索結果</Text>
-                      <Text className="text-base text-gray-900 font-medium">タップして{showAIResult ? "閉じる" : "表示"}</Text>
+                      <Text className="text-base text-gray-900 font-medium">
+                        タップして{showAIResult ? "閉じる" : "表示"}
+                      </Text>
                     </View>
                     <MaterialIcons
                       name={showAIResult ? "expand-less" : "expand-more"}
@@ -1024,10 +1079,7 @@ export default function MainApp() {
             {user && (
               <View className="items-center mb-6">
                 {user.picture ? (
-                  <Image
-                    source={{ uri: user.picture }}
-                    className="w-20 h-20 rounded-full mb-3"
-                  />
+                  <Image source={{ uri: user.picture }} className="w-20 h-20 rounded-full mb-3" />
                 ) : (
                   <View className="w-20 h-20 rounded-full bg-primary-100 items-center justify-center mb-3">
                     <Text className="text-3xl font-bold text-primary-500">
@@ -1137,10 +1189,13 @@ export default function MainApp() {
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => {
-              setIsSearchModalOpen(false);
-              handleClearSearch();
-            }} className="p-2">
+            <Pressable
+              onPress={() => {
+                setIsSearchModalOpen(false);
+                handleClearSearch();
+              }}
+              className="p-2"
+            >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
             <Text className="text-lg font-semibold text-gray-900">予定を検索</Text>
@@ -1232,7 +1287,11 @@ export default function MainApp() {
                         ? "border-transparent"
                         : "bg-white border-gray-300"
                     }`}
-                    style={searchCategoryId === cat.id ? { backgroundColor: cat.color || "#3b82f6" } : undefined}
+                    style={
+                      searchCategoryId === cat.id
+                        ? { backgroundColor: cat.color || "#3b82f6" }
+                        : undefined
+                    }
                   >
                     <Text
                       className={`text-sm ${
@@ -1316,12 +1375,14 @@ export default function MainApp() {
             )}
 
             {/* 検索結果なし */}
-            {searchResults.length === 0 && (searchKeyword || searchStartDate || searchEndDate || searchCategoryId) && !isSearching && (
-              <View className="items-center py-8">
-                <MaterialIcons name="search-off" size={48} color="#d1d5db" />
-                <Text className="text-gray-500 mt-2">条件に一致する予定が見つかりません</Text>
-              </View>
-            )}
+            {searchResults.length === 0 &&
+              (searchKeyword || searchStartDate || searchEndDate || searchCategoryId) &&
+              !isSearching && (
+                <View className="items-center py-8">
+                  <MaterialIcons name="search-off" size={48} color="#d1d5db" />
+                  <Text className="text-gray-500 mt-2">条件に一致する予定が見つかりません</Text>
+                </View>
+              )}
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1338,7 +1399,13 @@ export default function MainApp() {
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => { setIsCategoryModalOpen(false); setShowCategoryForm(false); }} className="p-2">
+            <Pressable
+              onPress={() => {
+                setIsCategoryModalOpen(false);
+                setShowCategoryForm(false);
+              }}
+              className="p-2"
+            >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
             <Text className="text-lg font-semibold text-gray-900">カテゴリ管理</Text>
@@ -1421,7 +1488,9 @@ export default function MainApp() {
                     onPress={handleCreateCategory}
                     disabled={!newCategoryName.trim() || isSavingCategory}
                     className={`flex-1 rounded-xl py-3 ${
-                      newCategoryName.trim() ? "bg-primary-500 active:bg-primary-600" : "bg-gray-300"
+                      newCategoryName.trim()
+                        ? "bg-primary-500 active:bg-primary-600"
+                        : "bg-gray-300"
                     }`}
                   >
                     {isSavingCategory ? (
@@ -1445,7 +1514,10 @@ export default function MainApp() {
 
           <View className="border-t border-gray-200 bg-white p-4">
             <Pressable
-              onPress={() => { setIsCategoryModalOpen(false); setShowCategoryForm(false); }}
+              onPress={() => {
+                setIsCategoryModalOpen(false);
+                setShowCategoryForm(false);
+              }}
               className="rounded-xl py-3 bg-gray-200 active:bg-gray-300"
             >
               <Text className="text-center text-gray-700 font-medium">閉じる</Text>
@@ -1467,11 +1539,14 @@ export default function MainApp() {
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-            <Pressable onPress={() => {
-              setIsCalendarManagementOpen(false);
-              setShowCalendarForm(false);
-              setShowDefaultPicker(false);
-            }} className="p-2">
+            <Pressable
+              onPress={() => {
+                setIsCalendarManagementOpen(false);
+                setShowCalendarForm(false);
+                setShowDefaultPicker(false);
+              }}
+              className="p-2"
+            >
               <MaterialIcons name="close" size={24} color="#374151" />
             </Pressable>
             <Text className="text-lg font-semibold text-gray-900">カレンダー管理</Text>
@@ -1492,9 +1567,7 @@ export default function MainApp() {
                   <View className="flex-row items-center flex-1">
                     <View
                       className={`w-5 h-5 rounded mr-3 items-center justify-center ${
-                        selectedCalendarIds.includes(cal.id)
-                          ? "bg-primary-500"
-                          : "bg-gray-200"
+                        selectedCalendarIds.includes(cal.id) ? "bg-primary-500" : "bg-gray-200"
                       }`}
                     >
                       {selectedCalendarIds.includes(cal.id) && (
@@ -1529,7 +1602,9 @@ export default function MainApp() {
             {/* デフォルトカレンダー変更 */}
             {showDefaultPicker ? (
               <View className="bg-white rounded-xl p-4 mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-3">デフォルトカレンダーを選択</Text>
+                <Text className="text-sm font-medium text-gray-700 mb-3">
+                  デフォルトカレンダーを選択
+                </Text>
                 {calendars
                   .filter((c) => c.role === "owner" || c.role === "editor")
                   .map((cal) => (
@@ -1551,10 +1626,7 @@ export default function MainApp() {
                       )}
                     </Pressable>
                   ))}
-                <Pressable
-                  onPress={() => setShowDefaultPicker(false)}
-                  className="mt-3 py-2"
-                >
+                <Pressable onPress={() => setShowDefaultPicker(false)} className="mt-3 py-2">
                   <Text className="text-center text-gray-500">キャンセル</Text>
                 </Pressable>
               </View>
@@ -1593,7 +1665,9 @@ export default function MainApp() {
                     onPress={handleCreateCalendar}
                     disabled={!newCalendarName.trim() || isCreatingCalendar}
                     className={`flex-1 rounded-xl py-3 ${
-                      newCalendarName.trim() ? "bg-primary-500 active:bg-primary-600" : "bg-gray-300"
+                      newCalendarName.trim()
+                        ? "bg-primary-500 active:bg-primary-600"
+                        : "bg-gray-300"
                     }`}
                   >
                     {isCreatingCalendar ? (
@@ -1668,9 +1742,7 @@ export default function MainApp() {
             {/* 優先条件 */}
             <View className="bg-white rounded-xl p-4 mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">優先条件</Text>
-              <Text className="text-xs text-gray-500 mb-2">
-                該当する候補を優先して表示します
-              </Text>
+              <Text className="text-xs text-gray-500 mb-2">該当する候補を優先して表示します</Text>
               <TextInput
                 value={conditionsPreferred}
                 onChangeText={setConditionsPreferred}
@@ -1683,9 +1755,7 @@ export default function MainApp() {
             {/* 重視するポイント */}
             <View className="bg-white rounded-xl p-4 mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">重視するポイント</Text>
-              <Text className="text-xs text-gray-500 mb-2">
-                口コミを確認して評価します
-              </Text>
+              <Text className="text-xs text-gray-500 mb-2">口コミを確認して評価します</Text>
               <TextInput
                 value={conditionsImportant}
                 onChangeText={setConditionsImportant}
@@ -1822,9 +1892,7 @@ export default function MainApp() {
             <View className="w-10" />
             <View className="flex-row items-center">
               <Text className="text-lg font-semibold text-gray-900">検索結果</Text>
-              {isStreaming && (
-                <Text className="ml-2 text-sm text-gray-500">取得中...</Text>
-              )}
+              {isStreaming && <Text className="ml-2 text-sm text-gray-500">取得中...</Text>}
             </View>
             <Pressable onPress={handleCloseSearchResult} className="p-2">
               <MaterialIcons name="close" size={24} color="#374151" />

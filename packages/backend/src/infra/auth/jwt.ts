@@ -26,10 +26,7 @@ export const createJwtService = (secret: string) => {
     },
 
     // リフレッシュトークン生成 (jtiを外部から受け取る)
-    generateRefreshToken: async (
-      user: UserEntity,
-      jti: string
-    ): Promise<string> => {
+    generateRefreshToken: async (user: UserEntity, jti: string): Promise<string> => {
       const payload: JwtPayload = {
         sub: user.id,
         email: user.email,

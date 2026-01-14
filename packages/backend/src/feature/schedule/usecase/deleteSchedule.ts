@@ -1,6 +1,6 @@
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
-import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError, createDatabaseError } from "../../../shared/errors";
+import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createDeleteScheduleUseCase = (repo: ScheduleRepo) => {
   return async (id: string, userId: string): Promise<Result<void>> => {

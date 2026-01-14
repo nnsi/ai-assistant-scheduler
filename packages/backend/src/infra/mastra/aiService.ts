@@ -1,13 +1,15 @@
-import type { Agent } from "@mastra/core/agent";
 import type { AgentType, Shop } from "@ai-scheduler/shared";
 import { shopListSchema } from "@ai-scheduler/shared";
-import type { AiService, UserConditions, SearchResult, StreamEvent, ScheduleContext } from "../../domain/infra/aiService";
+import type { Agent } from "@mastra/core/agent";
+import type {
+  AiService,
+  ScheduleContext,
+  SearchResult,
+  StreamEvent,
+  UserConditions,
+} from "../../domain/infra/aiService";
+import { findPartialMatch, parseJsonArray, removeJsonBlocks } from "../../shared/aiOutputParser";
 import { logger } from "../../shared/logger";
-import {
-  parseJsonArray,
-  removeJsonBlocks,
-  findPartialMatch,
-} from "../../shared/aiOutputParser";
 
 // SearchAgentの出力からJSONブロックをパースする
 const parseShopCandidates = (text: string): Shop[] | undefined => {
@@ -39,9 +41,7 @@ const buildConditionsPrompt = (userConditions?: UserConditions): string => {
   const parts: string[] = [];
 
   if (userConditions.required.trim()) {
-    parts.push(
-      `【必須条件（口コミで違反が見つかれば絶対に除外）】: ${userConditions.required}`
-    );
+    parts.push(`【必須条件（口コミで違反が見つかれば絶対に除外）】: ${userConditions.required}`);
   }
 
   if (userConditions.preferred.trim()) {
@@ -137,9 +137,7 @@ const agentTypePriority: Record<AgentType, number> = {
 
 // 優先順位でソート
 const sortAgentTypes = (types: AgentType[]): AgentType[] => {
-  return [...types].sort(
-    (a, b) => agentTypePriority[a] - agentTypePriority[b]
-  );
+  return [...types].sort((a, b) => agentTypePriority[a] - agentTypePriority[b]);
 };
 
 type AgentMap = {
@@ -148,10 +146,7 @@ type AgentMap = {
   "area-info": Agent;
 };
 
-export const createAiService = (
-  keywordAgent: Agent,
-  agents: AgentMap
-): AiService => ({
+export const createAiService = (keywordAgent: Agent, agents: AgentMap): AiService => ({
   suggestKeywords: async (title, startAt, userConditions, excludeKeywords, scheduleContext) => {
     const exclusionPrompt = buildExclusionPrompt(userConditions, excludeKeywords);
     const contextPrompt = buildScheduleContextPrompt(scheduleContext);
@@ -173,9 +168,7 @@ export const createAiService = (
         if (
           Array.isArray(parsed.keywords) &&
           Array.isArray(parsed.agentTypes) &&
-          parsed.agentTypes.every((t: string) =>
-            ["search", "plan", "area-info"].includes(t)
-          )
+          parsed.agentTypes.every((t: string) => ["search", "plan", "area-info"].includes(t))
         ) {
           return {
             keywords: parsed.keywords,
@@ -220,7 +213,7 @@ export const createAiService = (
 
     // デフォルトは search
     const typesToUse =
-      agentTypes.length > 0 ? sortAgentTypes(agentTypes) : ["search"] as AgentType[];
+      agentTypes.length > 0 ? sortAgentTypes(agentTypes) : (["search"] as AgentType[]);
 
     // 各エージェントを順番に実行
     const results: { type: AgentType; content: string; shopCandidates?: Shop[] }[] = [];
@@ -287,7 +280,7 @@ export const createAiService = (
 
     // デフォルトは search
     const typesToUse =
-      agentTypes.length > 0 ? sortAgentTypes(agentTypes) : ["search"] as AgentType[];
+      agentTypes.length > 0 ? sortAgentTypes(agentTypes) : (["search"] as AgentType[]);
 
     let fullText = "";
     let allShopCandidates: Shop[] = [];

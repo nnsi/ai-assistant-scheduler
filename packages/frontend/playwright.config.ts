@@ -1,6 +1,6 @@
-import { defineConfig, devices } from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { defineConfig, devices } from "@playwright/test";
 
 // 既存のPlaywright Chromiumを探す
 const findChromiumPath = (): string | undefined => {

@@ -1,6 +1,6 @@
+import type { ShopList } from "@ai-scheduler/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { selectShops, updateMemo } from "../api";
-import type { ShopList } from "@ai-scheduler/shared";
 
 /**
  * スケジュール補足情報（お店選択、メモ）を管理するhook

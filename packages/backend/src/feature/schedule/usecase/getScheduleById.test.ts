@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
-import { createGetScheduleByIdUseCase } from "./getScheduleById";
+import { describe, expect, it, vi } from "vitest";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { ScheduleEntity } from "../../../domain/model/schedule";
 import type { Supplement } from "../../../domain/model/supplement";
+import { createGetScheduleByIdUseCase } from "./getScheduleById";
 
 describe("getScheduleByIdUseCase", () => {
   const testUserId = "test-user-id";
@@ -82,10 +82,7 @@ describe("getScheduleByIdUseCase", () => {
       expect(result.value.id).toBe("1");
       expect(result.value.title).toBe("テスト予定");
       expect(result.value.supplement).not.toBeNull();
-      expect(result.value.supplement?.keywords).toEqual([
-        "キーワード1",
-        "キーワード2",
-      ]);
+      expect(result.value.supplement?.keywords).toEqual(["キーワード1", "キーワード2"]);
     }
     expect(scheduleRepo.findById).toHaveBeenCalledWith("1");
   });

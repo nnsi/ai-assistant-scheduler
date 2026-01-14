@@ -1,8 +1,8 @@
+import { forwardRef } from "react";
 /**
  * 共通テキスト入力コンポーネント
  */
-import { TextInput, View, Text, type TextInputProps } from "react-native";
-import { forwardRef } from "react";
+import { Text, TextInput, type TextInputProps, View } from "react-native";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -14,11 +14,7 @@ export const Input = forwardRef<TextInput, InputProps>(
   ({ label, error, containerClassName = "", className = "", ...props }, ref) => {
     return (
       <View className={containerClassName}>
-        {label && (
-          <Text className="mb-1.5 text-sm font-medium text-gray-700">
-            {label}
-          </Text>
-        )}
+        {label && <Text className="mb-1.5 text-sm font-medium text-gray-700">{label}</Text>}
         <TextInput
           ref={ref}
           className={`rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 ${
@@ -27,9 +23,7 @@ export const Input = forwardRef<TextInput, InputProps>(
           placeholderTextColor="#9ca3af"
           {...props}
         />
-        {error && (
-          <Text className="mt-1 text-sm text-red-500">{error}</Text>
-        )}
+        {error && <Text className="mt-1 text-sm text-red-500">{error}</Text>}
       </View>
     );
   }

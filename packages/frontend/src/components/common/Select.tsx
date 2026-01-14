@@ -1,6 +1,6 @@
-import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "lucide-react";
+import { forwardRef } from "react";
 
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   error?: boolean;

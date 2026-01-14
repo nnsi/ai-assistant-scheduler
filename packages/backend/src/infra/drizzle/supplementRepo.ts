@@ -1,10 +1,15 @@
+import {
+  type AgentType,
+  type ShopList,
+  agentTypeSchema,
+  shopListSchema,
+} from "@ai-scheduler/shared";
 import { eq } from "drizzle-orm";
-import type { Database } from "./client";
-import { scheduleSupplements, type SupplementRow } from "./schema";
 import type { SupplementRepo } from "../../domain/infra/supplementRepo";
 import type { Supplement } from "../../domain/model/supplement";
-import { shopListSchema, agentTypeSchema, type ShopList, type AgentType } from "@ai-scheduler/shared";
 import { logger } from "../../shared/logger";
+import type { Database } from "./client";
+import { type SupplementRow, scheduleSupplements } from "./schema";
 
 export const createSupplementRepo = (db: Database): SupplementRepo => ({
   findByScheduleId: async (scheduleId) => {
@@ -27,9 +32,7 @@ export const createSupplementRepo = (db: Database): SupplementRepo => ({
   },
 
   delete: async (scheduleId) => {
-    await db
-      .delete(scheduleSupplements)
-      .where(eq(scheduleSupplements.scheduleId, scheduleId));
+    await db.delete(scheduleSupplements).where(eq(scheduleSupplements.scheduleId, scheduleId));
   },
 });
 
@@ -54,7 +57,10 @@ const parseShopCandidates = (jsonString: string | null): ShopList | null => {
     if (result.success) {
       return result.data;
     }
-    logger.warn("Failed to validate shop candidates", { category: "database", error: result.error.message });
+    logger.warn("Failed to validate shop candidates", {
+      category: "database",
+      error: result.error.message,
+    });
     return null;
   } catch {
     logger.warn("Failed to parse shop candidates JSON", { category: "database", jsonString });
@@ -71,7 +77,10 @@ const parseSelectedShops = (jsonString: string | null): ShopList | null => {
     if (result.success) {
       return result.data;
     }
-    logger.warn("Failed to validate selected shops", { category: "database", error: result.error.message });
+    logger.warn("Failed to validate selected shops", {
+      category: "database",
+      error: result.error.message,
+    });
     return null;
   } catch {
     logger.warn("Failed to parse selected shops JSON", { category: "database", jsonString });

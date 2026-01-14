@@ -53,7 +53,13 @@ const serializeError = (error: unknown): LogEntry["error"] | undefined => {
 /**
  * ログ出力
  */
-const log = (level: LogLevel, message: string, context?: LogContext, error?: unknown, isDev?: boolean): void => {
+const log = (
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  error?: unknown,
+  isDev?: boolean
+): void => {
   const entry: LogEntry = {
     level,
     message,

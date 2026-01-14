@@ -18,9 +18,7 @@ export const updateProfileConditionsSchema = z.object({
   subjectiveConditions: z.string().optional(),
 });
 
-export type UpdateProfileConditionsRequest = z.infer<
-  typeof updateProfileConditionsSchema
->;
+export type UpdateProfileConditionsRequest = z.infer<typeof updateProfileConditionsSchema>;
 
 // プロファイルレスポンス
 export const profileResponseSchema = z.object({

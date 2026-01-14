@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import * as api from "../api";
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as api from "../api";
 
 const CATEGORIES_QUERY_KEY = "categories";
 
@@ -9,7 +9,12 @@ export const useCategories = () => {
 
   const queryKey = [CATEGORIES_QUERY_KEY];
 
-  const { data: categories = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: categories = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey,
     queryFn: () => api.fetchCategories(),
   });
@@ -27,8 +32,9 @@ export const useCategories = () => {
     mutationFn: ({ id, input }: { id: string; input: UpdateCategoryInput }) =>
       api.updateCategory(id, input),
     onSuccess: (updatedCategory) => {
-      queryClient.setQueryData<Category[]>(queryKey, (old) =>
-        old?.map((c) => (c.id === updatedCategory.id ? updatedCategory : c)) ?? []
+      queryClient.setQueryData<Category[]>(
+        queryKey,
+        (old) => old?.map((c) => (c.id === updatedCategory.id ? updatedCategory : c)) ?? []
       );
     },
   });
@@ -36,8 +42,9 @@ export const useCategories = () => {
   const removeMutation = useMutation({
     mutationFn: (id: string) => api.deleteCategory(id),
     onSuccess: (_, id) => {
-      queryClient.setQueryData<Category[]>(queryKey, (old) =>
-        old?.filter((c) => c.id !== id) ?? []
+      queryClient.setQueryData<Category[]>(
+        queryKey,
+        (old) => old?.filter((c) => c.id !== id) ?? []
       );
     },
   });

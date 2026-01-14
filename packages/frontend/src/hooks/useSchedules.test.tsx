@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-import { useSchedules } from "./useSchedules";
 import * as api from "@ai-scheduler/core/api";
-import type { Schedule } from "@ai-scheduler/shared";
 import type { ScheduleOccurrence } from "@ai-scheduler/core/utils";
+import type { Schedule } from "@ai-scheduler/shared";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSchedules } from "./useSchedules";
 
 // api モジュールをモック
 vi.mock("@ai-scheduler/core/api", () => ({
@@ -98,8 +98,7 @@ describe("useSchedules", () => {
 
       const wrapper = createWrapper();
       const { result, rerender } = renderHook(
-        ({ year, month }: { year: number; month: number }) =>
-          useSchedules(year, month),
+        ({ year, month }: { year: number; month: number }) => useSchedules(year, month),
         { initialProps: { year: 2025, month: 1 }, wrapper }
       );
 

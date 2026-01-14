@@ -4,7 +4,7 @@
  * 互換性のため、既存の import パスを維持しています。
  * 新規コードでは @ai-scheduler/core/utils から直接インポートしてください。
  */
-import { createLogger, type Logger } from "@ai-scheduler/core/utils";
+import { type Logger, createLogger } from "@ai-scheduler/core/utils";
 
 export type { Logger };
 

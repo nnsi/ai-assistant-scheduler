@@ -1,17 +1,11 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
-import type { UserRepo } from "../../../domain/infra/userRepo";
-import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
-import {
-  type JwtService,
-  REFRESH_TOKEN_EXPIRY_SECONDS,
-} from "../../../infra/auth/jwt";
-import { createUnauthorizedError } from "../../../shared/errors";
-import {
-  createRefreshToken,
-  isTokenValid,
-} from "../../../domain/model/refreshToken";
 import type { TokenResponse } from "@ai-scheduler/shared";
+import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
+import { createRefreshToken, isTokenValid } from "../../../domain/model/refreshToken";
+import { type JwtService, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../../infra/auth/jwt";
+import type { AppError } from "../../../shared/errors";
+import { createUnauthorizedError } from "../../../shared/errors";
+import type { Result } from "../../../shared/result";
 
 export type RefreshTokenUseCase = (
   refreshToken: string
@@ -55,9 +49,7 @@ export const createRefreshTokenUseCase =
     await refreshTokenRepo.revoke(payload.jti);
 
     // 5. 新しいリフレッシュトークンをDBに保存
-    const expiresAt = new Date(
-      Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000
-    );
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000);
     const newTokenEntity = createRefreshToken(user.id, expiresAt);
     await refreshTokenRepo.save(newTokenEntity);
 

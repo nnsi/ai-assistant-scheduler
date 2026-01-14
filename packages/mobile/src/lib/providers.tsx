@@ -1,16 +1,16 @@
+import {
+  AuthProvider,
+  CalendarProvider,
+  configureApiClient,
+  createLogger,
+} from "@ai-scheduler/core";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 /**
  * アプリプロバイダー
  * 認証、カレンダー、クエリクライアントなどを提供
  */
 import { type ReactNode, useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  AuthProvider,
-  CalendarProvider,
-  createLogger,
-  configureApiClient,
-} from "@ai-scheduler/core";
-import { storage, initializeStorage } from "../storage";
+import { initializeStorage, storage } from "../storage";
 import { config } from "./config";
 
 // ロガー作成
@@ -69,9 +69,7 @@ export function AppProviders({ children }: AppProvidersProps) {
           useCredentials: false, // RNではCookieを使わない
         }}
       >
-        <CalendarProvider config={{ storage }}>
-          {children}
-        </CalendarProvider>
+        <CalendarProvider config={{ storage }}>{children}</CalendarProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

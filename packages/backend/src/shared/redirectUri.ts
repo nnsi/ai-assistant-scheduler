@@ -21,10 +21,7 @@ const DEV_ALLOWED_REDIRECT_URI_PATTERNS = [
  * @param allowedUris - 許可するURIリスト（環境変数から、カンマ区切り）
  * @returns 検証結果
  */
-export const validateRedirectUri = (
-  redirectUri: string,
-  allowedUris?: string
-): Result<true> => {
+export const validateRedirectUri = (redirectUri: string, allowedUris?: string): Result<true> => {
   // ALLOWED_REDIRECT_URIS が設定されている場合、完全一致のみ許可
   // これにより本番環境では明示的に許可されたURIのみ受け付ける
   if (allowedUris) {
@@ -35,27 +32,20 @@ export const validateRedirectUri = (
     // 設定されているが一致しない場合はエラー（パターンマッチにフォールバックしない）
     return {
       ok: false,
-      error: createInvalidRedirectUriError(
-        `リダイレクトURI "${redirectUri}" は許可されていません`
-      ),
+      error: createInvalidRedirectUriError(`リダイレクトURI "${redirectUri}" は許可されていません`),
     };
   }
 
   // ALLOWED_REDIRECT_URIS が未設定の場合、開発環境用パターンでチェック
   // 本番環境では必ず ALLOWED_REDIRECT_URIS を設定すること
-  const isAllowed = DEV_ALLOWED_REDIRECT_URI_PATTERNS.some((pattern) =>
-    pattern.test(redirectUri)
-  );
+  const isAllowed = DEV_ALLOWED_REDIRECT_URI_PATTERNS.some((pattern) => pattern.test(redirectUri));
 
   if (!isAllowed) {
     return {
       ok: false,
-      error: createInvalidRedirectUriError(
-        `リダイレクトURI "${redirectUri}" は許可されていません`
-      ),
+      error: createInvalidRedirectUriError(`リダイレクトURI "${redirectUri}" は許可されていません`),
     };
   }
 
   return { ok: true, value: true };
 };
-

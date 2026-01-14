@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchCalendarInvitations,
-  createCalendarInvitation,
-  revokeCalendarInvitation,
-  fetchInvitationInfo,
-  acceptInvitation,
-} from "../api";
 import type { CreateInvitationInput } from "@ai-scheduler/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  acceptInvitation,
+  createCalendarInvitation,
+  fetchCalendarInvitations,
+  fetchInvitationInfo,
+  revokeCalendarInvitation,
+} from "../api";
 import { calendarQueryKeys } from "./useCalendars";
 
 export const invitationQueryKeys = {

@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp } from "../../test/app";
 import {
+  type TestDb,
+  createTestCalendar,
   createTestDb,
   createTestSchedule,
   createTestSupplement,
   createTestUser,
-  createTestCalendar,
   resetDatabase,
-  type TestDb,
 } from "../../test/helpers";
 
 describe("Schedule API Integration Tests", () => {
@@ -39,8 +39,16 @@ describe("Schedule API Integration Tests", () => {
     });
 
     it("should return all schedules", async () => {
-      await createTestSchedule(db, testUserId, { id: "1", title: "予定1", calendarId: testCalendarId });
-      await createTestSchedule(db, testUserId, { id: "2", title: "予定2", calendarId: testCalendarId });
+      await createTestSchedule(db, testUserId, {
+        id: "1",
+        title: "予定1",
+        calendarId: testCalendarId,
+      });
+      await createTestSchedule(db, testUserId, {
+        id: "2",
+        title: "予定2",
+        calendarId: testCalendarId,
+      });
 
       const res = await app.request("/api/schedules");
       expect(res.status).toBe(200);
@@ -154,7 +162,10 @@ describe("Schedule API Integration Tests", () => {
 
   describe("GET /api/schedules/:id", () => {
     it("should return schedule with supplement", async () => {
-      const schedule = await createTestSchedule(db, testUserId, { id: "test-1", title: "詳細テスト" });
+      const schedule = await createTestSchedule(db, testUserId, {
+        id: "test-1",
+        title: "詳細テスト",
+      });
       await createTestSupplement(db, schedule.id, {
         keywords: ["キーワード1"],
         aiResult: "AI結果",
@@ -202,7 +213,10 @@ describe("Schedule API Integration Tests", () => {
 
   describe("PUT /api/schedules/:id", () => {
     it("should update schedule title", async () => {
-      const schedule = await createTestSchedule(db, testUserId, { id: "update-1", title: "元のタイトル" });
+      const schedule = await createTestSchedule(db, testUserId, {
+        id: "update-1",
+        title: "元のタイトル",
+      });
 
       const res = await app.request(`/api/schedules/${schedule.id}`, {
         method: "PUT",

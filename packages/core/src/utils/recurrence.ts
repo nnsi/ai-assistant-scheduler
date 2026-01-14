@@ -1,4 +1,4 @@
-import type { Schedule, RecurrenceRule, DayOfWeek } from "@ai-scheduler/shared";
+import type { DayOfWeek, RecurrenceRule, Schedule } from "@ai-scheduler/shared";
 import { addYears, isSameDay } from "./date";
 
 // 繰り返しイベントから表示用のオカレンスを生成
@@ -47,9 +47,10 @@ export const generateOccurrences = (
   let currentDate = new Date(baseDate);
 
   // 終了日の計算
-  const endDate = recurrence.endType === "date" && recurrence.endDate
-    ? new Date(recurrence.endDate)
-    : addYears(baseDate, 1); // 無期限の場合は1年後まで
+  const endDate =
+    recurrence.endType === "date" && recurrence.endDate
+      ? new Date(recurrence.endDate)
+      : addYears(baseDate, 1); // 無期限の場合は1年後まで
 
   while (currentDate <= rangeEnd && currentDate <= endDate && count < maxOccurrences) {
     // 範囲内かつ開始日以降の場合のみ追加
@@ -57,9 +58,7 @@ export const generateOccurrences = (
       // weeklyの場合は曜日チェック
       if (recurrence.frequency === "weekly" && recurrence.daysOfWeek) {
         const dayOfWeek = currentDate.getDay();
-        const matchingDays = recurrence.daysOfWeek.filter(
-          (d) => DAYS_OF_WEEK_MAP[d] === dayOfWeek
-        );
+        const matchingDays = recurrence.daysOfWeek.filter((d) => DAYS_OF_WEEK_MAP[d] === dayOfWeek);
         if (matchingDays.length > 0) {
           occurrences.push(createOccurrence(schedule, currentDate, count > 0));
           count++;
@@ -75,7 +74,8 @@ export const generateOccurrences = (
 
     // 無限ループ防止
     if (currentDate > rangeEnd || currentDate > endDate) break;
-    if (recurrence.endType === "count" && recurrence.endCount && count >= recurrence.endCount) break;
+    if (recurrence.endType === "count" && recurrence.endCount && count >= recurrence.endCount)
+      break;
   }
 
   return occurrences;
@@ -104,11 +104,7 @@ const createOccurrence = (
 };
 
 // 次の発生日を計算
-const getNextDate = (
-  current: Date,
-  rule: RecurrenceRule,
-  _baseDate: Date
-): Date => {
+const getNextDate = (current: Date, rule: RecurrenceRule, _baseDate: Date): Date => {
   const next = new Date(current);
   const interval = rule.interval;
 

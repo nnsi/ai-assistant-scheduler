@@ -1,10 +1,10 @@
+import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 /**
  * Google認証フック（React Native用）
  */
-import { useEffect, useCallback } from "react";
-import * as Google from "expo-auth-session/providers/google";
-import * as AuthSession from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect } from "react";
 import { config } from "./config";
 
 // WebBrowser セッションを登録（認証フロー完了時に自動でアプリに戻る）

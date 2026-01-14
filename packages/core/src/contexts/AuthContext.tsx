@@ -1,19 +1,19 @@
 import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  type ReactNode,
-} from "react";
-import { z } from "zod";
-import {
-  userSchema,
+  type User,
   meResponseSchema,
   updateProfileResponseSchema,
-  type User,
+  userSchema,
 } from "@ai-scheduler/shared";
+import {
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { z } from "zod";
 import { setApiAccessToken, setTokenRefreshCallback } from "../api";
 import type { Storage, SyncStorage } from "../storage";
 import type { Logger } from "../utils/logger";
@@ -189,47 +189,50 @@ export function AuthProvider({
     initializeAuth();
   }, []); // 初回のみ実行
 
-  const login = useCallback(async (code: string, redirectUri: string) => {
-    setIsLoading(true);
-    try {
-      const fetchOptions: RequestInit = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code, redirectUri }),
-      };
-      if (useCredentials) {
-        fetchOptions.credentials = "include";
-      }
+  const login = useCallback(
+    async (code: string, redirectUri: string) => {
+      setIsLoading(true);
+      try {
+        const fetchOptions: RequestInit = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code, redirectUri }),
+        };
+        if (useCredentials) {
+          fetchOptions.credentials = "include";
+        }
 
-      const res = await fetch(`${apiBaseUrl}/auth/google`, fetchOptions);
+        const res = await fetch(`${apiBaseUrl}/auth/google`, fetchOptions);
 
-      if (!res.ok) {
-        const errorJson: unknown = await res.json();
-        const errorMessage =
-          typeof errorJson === "object" &&
-          errorJson !== null &&
-          "message" in errorJson &&
-          typeof errorJson.message === "string"
-            ? errorJson.message
-            : "ログインに失敗しました";
-        throw new Error(errorMessage);
-      }
+        if (!res.ok) {
+          const errorJson: unknown = await res.json();
+          const errorMessage =
+            typeof errorJson === "object" &&
+            errorJson !== null &&
+            "message" in errorJson &&
+            typeof errorJson.message === "string"
+              ? errorJson.message
+              : "ログインに失敗しました";
+          throw new Error(errorMessage);
+        }
 
-      const json: unknown = await res.json();
-      const result = loginResponseSchema.safeParse(json);
-      if (!result.success) {
-        throw new Error("レスポンスの形式が不正です");
+        const json: unknown = await res.json();
+        const result = loginResponseSchema.safeParse(json);
+        if (!result.success) {
+          throw new Error("レスポンスの形式が不正です");
+        }
+        // アクセストークンはメモリのみ、リフレッシュトークンはHttpOnly Cookieで保存済み
+        setAccessToken(result.data.accessToken);
+        setUser(result.data.user);
+        await storage.set(USER_KEY, JSON.stringify(result.data.user));
+      } finally {
+        setIsLoading(false);
       }
-      // アクセストークンはメモリのみ、リフレッシュトークンはHttpOnly Cookieで保存済み
-      setAccessToken(result.data.accessToken);
-      setUser(result.data.user);
-      await storage.set(USER_KEY, JSON.stringify(result.data.user));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiBaseUrl, storage, useCredentials]);
+    },
+    [apiBaseUrl, storage, useCredentials]
+  );
 
   // 開発環境用ログイン（Google認証をバイパス）
   const devLogin = useCallback(async () => {
@@ -290,75 +293,81 @@ export function AuthProvider({
     }
   }, [apiBaseUrl, storage, logger, useCredentials]);
 
-  const updateEmail = useCallback(async (email: string) => {
-    if (!accessToken) {
-      throw new Error("認証が必要です");
-    }
+  const updateEmail = useCallback(
+    async (email: string) => {
+      if (!accessToken) {
+        throw new Error("認証が必要です");
+      }
 
-    const res = await fetch(`${apiBaseUrl}/auth/email`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ email }),
-    });
+      const res = await fetch(`${apiBaseUrl}/auth/email`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    if (!res.ok) {
-      const errorJson: unknown = await res.json();
-      const errorMessage =
-        typeof errorJson === "object" &&
-        errorJson !== null &&
-        "message" in errorJson &&
-        typeof errorJson.message === "string"
-          ? errorJson.message
-          : "メールアドレスの更新に失敗しました";
-      throw new Error(errorMessage);
-    }
+      if (!res.ok) {
+        const errorJson: unknown = await res.json();
+        const errorMessage =
+          typeof errorJson === "object" &&
+          errorJson !== null &&
+          "message" in errorJson &&
+          typeof errorJson.message === "string"
+            ? errorJson.message
+            : "メールアドレスの更新に失敗しました";
+        throw new Error(errorMessage);
+      }
 
-    const json: unknown = await res.json();
-    const result = updateProfileResponseSchema.safeParse(json);
-    if (!result.success) {
-      throw new Error("レスポンスの形式が不正です");
-    }
-    setUser(result.data.user);
-    await storage.set(USER_KEY, JSON.stringify(result.data.user));
-  }, [accessToken, apiBaseUrl, storage]);
+      const json: unknown = await res.json();
+      const result = updateProfileResponseSchema.safeParse(json);
+      if (!result.success) {
+        throw new Error("レスポンスの形式が不正です");
+      }
+      setUser(result.data.user);
+      await storage.set(USER_KEY, JSON.stringify(result.data.user));
+    },
+    [accessToken, apiBaseUrl, storage]
+  );
 
-  const reconnectGoogle = useCallback(async (code: string, redirectUri: string) => {
-    if (!accessToken) {
-      throw new Error("認証が必要です");
-    }
+  const reconnectGoogle = useCallback(
+    async (code: string, redirectUri: string) => {
+      if (!accessToken) {
+        throw new Error("認証が必要です");
+      }
 
-    const res = await fetch(`${apiBaseUrl}/auth/reconnect-google`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ code, redirectUri }),
-    });
+      const res = await fetch(`${apiBaseUrl}/auth/reconnect-google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ code, redirectUri }),
+      });
 
-    if (!res.ok) {
-      const errorJson: unknown = await res.json();
-      const errorMessage =
-        typeof errorJson === "object" &&
-        errorJson !== null &&
-        "message" in errorJson &&
-        typeof errorJson.message === "string"
-          ? errorJson.message
-          : "Googleアカウントの再設定に失敗しました";
-      throw new Error(errorMessage);
-    }
+      if (!res.ok) {
+        const errorJson: unknown = await res.json();
+        const errorMessage =
+          typeof errorJson === "object" &&
+          errorJson !== null &&
+          "message" in errorJson &&
+          typeof errorJson.message === "string"
+            ? errorJson.message
+            : "Googleアカウントの再設定に失敗しました";
+        throw new Error(errorMessage);
+      }
 
-    const json: unknown = await res.json();
-    const result = updateProfileResponseSchema.safeParse(json);
-    if (!result.success) {
-      throw new Error("レスポンスの形式が不正です");
-    }
-    setUser(result.data.user);
-    await storage.set(USER_KEY, JSON.stringify(result.data.user));
-  }, [accessToken, apiBaseUrl, storage]);
+      const json: unknown = await res.json();
+      const result = updateProfileResponseSchema.safeParse(json);
+      if (!result.success) {
+        throw new Error("レスポンスの形式が不正です");
+      }
+      setUser(result.data.user);
+      await storage.set(USER_KEY, JSON.stringify(result.data.user));
+    },
+    [accessToken, apiBaseUrl, storage]
+  );
 
   return (
     <AuthContext.Provider

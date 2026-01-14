@@ -1,15 +1,12 @@
 import { eq } from "drizzle-orm";
-import type { Database } from "./client";
-import { refreshTokens, type RefreshTokenRow } from "./schema";
 import type { RefreshTokenRepo } from "../../domain/infra/refreshTokenRepo";
 import type { RefreshTokenEntity } from "../../domain/model/refreshToken";
+import type { Database } from "./client";
+import { type RefreshTokenRow, refreshTokens } from "./schema";
 
 export const createRefreshTokenRepo = (db: Database): RefreshTokenRepo => ({
   findById: async (id) => {
-    const rows = await db
-      .select()
-      .from(refreshTokens)
-      .where(eq(refreshTokens.id, id));
+    const rows = await db.select().from(refreshTokens).where(eq(refreshTokens.id, id));
     return rows[0] ? toEntity(rows[0]) : null;
   },
 
@@ -19,18 +16,12 @@ export const createRefreshTokenRepo = (db: Database): RefreshTokenRepo => ({
 
   revoke: async (id) => {
     const now = new Date().toISOString();
-    await db
-      .update(refreshTokens)
-      .set({ revokedAt: now })
-      .where(eq(refreshTokens.id, id));
+    await db.update(refreshTokens).set({ revokedAt: now }).where(eq(refreshTokens.id, id));
   },
 
   revokeAllByUserId: async (userId) => {
     const now = new Date().toISOString();
-    await db
-      .update(refreshTokens)
-      .set({ revokedAt: now })
-      .where(eq(refreshTokens.userId, userId));
+    await db.update(refreshTokens).set({ revokedAt: now }).where(eq(refreshTokens.userId, userId));
   },
 });
 

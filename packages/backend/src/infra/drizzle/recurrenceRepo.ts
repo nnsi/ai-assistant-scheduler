@@ -1,9 +1,9 @@
+import type { DayOfWeek, EndType, Frequency } from "@ai-scheduler/shared";
 import { eq, inArray } from "drizzle-orm";
-import type { Database } from "./client";
-import { recurrenceRules, type RecurrenceRuleRow } from "./schema";
 import type { RecurrenceRepo } from "../../domain/infra/recurrenceRepo";
 import type { RecurrenceRuleEntity } from "../../domain/model/recurrence";
-import type { DayOfWeek, Frequency, EndType } from "@ai-scheduler/shared";
+import type { Database } from "./client";
+import { type RecurrenceRuleRow, recurrenceRules } from "./schema";
 
 export const createRecurrenceRepo = (db: Database): RecurrenceRepo => ({
   findByScheduleId: async (scheduleId) => {
@@ -28,10 +28,7 @@ export const createRecurrenceRepo = (db: Database): RecurrenceRepo => ({
   },
 
   update: async (rule) => {
-    await db
-      .update(recurrenceRules)
-      .set(toRow(rule))
-      .where(eq(recurrenceRules.id, rule.id));
+    await db.update(recurrenceRules).set(toRow(rule)).where(eq(recurrenceRules.id, rule.id));
   },
 
   delete: async (id) => {
@@ -49,7 +46,7 @@ const toEntity = (row: RecurrenceRuleRow): RecurrenceRuleEntity => ({
   scheduleId: row.scheduleId,
   frequency: row.frequency as Frequency,
   interval: row.intervalValue,
-  daysOfWeek: row.daysOfWeek ? JSON.parse(row.daysOfWeek) as DayOfWeek[] : null,
+  daysOfWeek: row.daysOfWeek ? (JSON.parse(row.daysOfWeek) as DayOfWeek[]) : null,
   dayOfMonth: row.dayOfMonth,
   weekOfMonth: row.weekOfMonth,
   endType: row.endType as EndType,

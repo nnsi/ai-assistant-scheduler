@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SearchResults } from "./SearchResults";
 import { fn } from "@storybook/test";
+import { SearchResults } from "./SearchResults";
 
 const meta = {
   title: "AI/SearchResults",

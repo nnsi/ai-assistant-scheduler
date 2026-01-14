@@ -1,18 +1,15 @@
+import type { RecurrenceRule } from "@ai-scheduler/shared";
 import type { RecurrenceRepo } from "../../../domain/infra/recurrenceRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import { toPublicRecurrenceRule } from "../../../domain/model/recurrence";
-import type { RecurrenceRule } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createGetRecurrenceUseCase = (
   recurrenceRepo: RecurrenceRepo,
   scheduleRepo: ScheduleRepo
 ) => {
-  return async (
-    scheduleId: string,
-    userId: string
-  ): Promise<Result<RecurrenceRule | null>> => {
+  return async (scheduleId: string, userId: string): Promise<Result<RecurrenceRule | null>> => {
     try {
       // スケジュールの存在と所有権を確認
       const schedule = await scheduleRepo.findByIdAndUserId(scheduleId, userId);

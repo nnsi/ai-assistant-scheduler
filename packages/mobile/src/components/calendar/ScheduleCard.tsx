@@ -1,11 +1,10 @@
+import type { CalendarResponse, Schedule } from "@ai-scheduler/shared";
+import { MaterialIcons } from "@expo/vector-icons";
+import { format } from "date-fns";
 /**
  * スケジュールカードコンポーネント
  */
-import { View, Text, Pressable } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import type { Schedule, CalendarResponse } from "@ai-scheduler/shared";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
+import { Pressable, Text, View } from "react-native";
 
 interface ScheduleCardProps {
   schedule: Schedule;
@@ -14,12 +13,7 @@ interface ScheduleCardProps {
   compact?: boolean;
 }
 
-export function ScheduleCard({
-  schedule,
-  calendar,
-  onPress,
-  compact = false,
-}: ScheduleCardProps) {
+export function ScheduleCard({ schedule, calendar, onPress, compact = false }: ScheduleCardProps) {
   const startTime = new Date(schedule.startAt);
   const endTime = schedule.endAt ? new Date(schedule.endAt) : startTime;
   const calendarColor = calendar?.color || "#3b82f6";
@@ -33,23 +27,16 @@ export function ScheduleCard({
         onPress={onPress}
         className="flex-row items-center rounded-lg bg-white p-3 active:bg-gray-50"
       >
-        <View
-          className="mr-3 h-full w-1 rounded-full"
-          style={{ backgroundColor: calendarColor }}
-        />
+        <View className="mr-3 h-full w-1 rounded-full" style={{ backgroundColor: calendarColor }} />
         <View className="flex-1">
           <Text className="font-medium text-gray-900" numberOfLines={1}>
             {schedule.title}
           </Text>
           <Text className="text-sm text-gray-500">
-            {isAllDay
-              ? "終日"
-              : `${format(startTime, "HH:mm")} - ${format(endTime, "HH:mm")}`}
+            {isAllDay ? "終日" : `${format(startTime, "HH:mm")} - ${format(endTime, "HH:mm")}`}
           </Text>
         </View>
-        {hasRecurrence && (
-          <MaterialIcons name="repeat" size={18} color="#9ca3af" />
-        )}
+        {hasRecurrence && <MaterialIcons name="repeat" size={18} color="#9ca3af" />}
       </Pressable>
     );
   }
@@ -65,16 +52,12 @@ export function ScheduleCard({
     >
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-gray-900">
-            {schedule.title}
-          </Text>
+          <Text className="text-lg font-semibold text-gray-900">{schedule.title}</Text>
 
           <View className="mt-2 flex-row items-center">
             <MaterialIcons name="access-time" size={16} color="#6b7280" />
             <Text className="ml-1 text-sm text-gray-600">
-              {isAllDay
-                ? "終日"
-                : `${format(startTime, "HH:mm")} - ${format(endTime, "HH:mm")}`}
+              {isAllDay ? "終日" : `${format(startTime, "HH:mm")} - ${format(endTime, "HH:mm")}`}
             </Text>
           </View>
 
@@ -90,13 +73,10 @@ export function ScheduleCard({
         </View>
 
         <View className="ml-2 flex-row items-center">
-          {hasRecurrence && (
-            <MaterialIcons name="repeat" size={20} color="#9ca3af" />
-          )}
+          {hasRecurrence && <MaterialIcons name="repeat" size={20} color="#9ca3af" />}
           <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
         </View>
       </View>
-
     </Pressable>
   );
 }

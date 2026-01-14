@@ -1,19 +1,15 @@
 import type { ShopList } from "@ai-scheduler/shared";
-import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
+import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import { selectShops } from "../../../domain/model/supplement";
-import { type Result, ok, err } from "../../../shared/result";
-import { createNotFoundError, createForbiddenError } from "../../../shared/errors";
+import { createForbiddenError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createSelectShopsUseCase = (
   supplementRepo: SupplementRepo,
   scheduleRepo: ScheduleRepo
 ) => {
-  return async (
-    scheduleId: string,
-    shops: ShopList,
-    userId: string
-  ): Promise<Result<void>> => {
+  return async (scheduleId: string, shops: ShopList, userId: string): Promise<Result<void>> => {
     // スケジュールの存在確認と所有者チェック
     const schedule = await scheduleRepo.findById(scheduleId);
     if (!schedule) {

@@ -8,10 +8,7 @@ export type RefreshTokenEntity = {
   revokedAt: string | null;
 };
 
-export const createRefreshToken = (
-  userId: string,
-  expiresAt: Date
-): RefreshTokenEntity => {
+export const createRefreshToken = (userId: string, expiresAt: Date): RefreshTokenEntity => {
   const now = new Date().toISOString();
   return {
     id: nanoid(),

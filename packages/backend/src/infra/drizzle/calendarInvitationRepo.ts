@@ -1,12 +1,10 @@
-import { eq, and, gt, or, isNull, lt, sql } from "drizzle-orm";
-import type { Database } from "./client";
-import { calendarInvitations, type CalendarInvitationRow } from "./schema";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import type { CalendarInvitationRepo } from "../../domain/infra/calendarInvitationRepo";
 import type { CalendarInvitationEntity } from "../../domain/model/calendar";
+import type { Database } from "./client";
+import { type CalendarInvitationRow, calendarInvitations } from "./schema";
 
-export const createCalendarInvitationRepo = (
-  db: Database
-): CalendarInvitationRepo => ({
+export const createCalendarInvitationRepo = (db: Database): CalendarInvitationRepo => ({
   create: async (invitation) => {
     await db.insert(calendarInvitations).values(toRow(invitation));
   },
@@ -30,10 +28,7 @@ export const createCalendarInvitationRepo = (
   },
 
   findById: async (id) => {
-    const rows = await db
-      .select()
-      .from(calendarInvitations)
-      .where(eq(calendarInvitations.id, id));
+    const rows = await db.select().from(calendarInvitations).where(eq(calendarInvitations.id, id));
     return rows[0] ? toInvitation(rows[0]) : null;
   },
 
@@ -67,9 +62,7 @@ export const createCalendarInvitationRepo = (
   },
 
   delete: async (id) => {
-    await db
-      .delete(calendarInvitations)
-      .where(eq(calendarInvitations.id, id));
+    await db.delete(calendarInvitations).where(eq(calendarInvitations.id, id));
   },
 });
 
@@ -87,9 +80,7 @@ const toInvitation = (row: CalendarInvitationRow): CalendarInvitationEntity => (
 });
 
 // Entity → Row 変換
-const toRow = (
-  invitation: CalendarInvitationEntity
-): CalendarInvitationRow => ({
+const toRow = (invitation: CalendarInvitationEntity): CalendarInvitationRow => ({
   id: invitation.id,
   calendarId: invitation.calendarId,
   token: invitation.token,

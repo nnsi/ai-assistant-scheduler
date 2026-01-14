@@ -1,13 +1,13 @@
+import type { RecurrenceRule } from "@ai-scheduler/shared";
 import type { RecurrenceRepo } from "../../../domain/infra/recurrenceRepo";
 import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import {
-  updateRecurrenceRule,
-  toPublicRecurrenceRule,
   type UpdateRecurrenceRuleInput,
+  toPublicRecurrenceRule,
+  updateRecurrenceRule,
 } from "../../../domain/model/recurrence";
-import type { RecurrenceRule } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError, createNotFoundError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createUpdateRecurrenceUseCase = (
   recurrenceRepo: RecurrenceRepo,

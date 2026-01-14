@@ -1,7 +1,4 @@
-import type {
-  UserProfile,
-  UpdateProfileConditionsRequest,
-} from "@ai-scheduler/shared";
+import type { UpdateProfileConditionsRequest, UserProfile } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 
 // Re-export types from shared
@@ -34,12 +31,9 @@ export const updateProfile = (
 ): ProfileEntity => {
   return {
     ...existingProfile,
-    requiredConditions:
-      updates.requiredConditions ?? existingProfile.requiredConditions,
-    preferredConditions:
-      updates.preferredConditions ?? existingProfile.preferredConditions,
-    subjectiveConditions:
-      updates.subjectiveConditions ?? existingProfile.subjectiveConditions,
+    requiredConditions: updates.requiredConditions ?? existingProfile.requiredConditions,
+    preferredConditions: updates.preferredConditions ?? existingProfile.preferredConditions,
+    subjectiveConditions: updates.subjectiveConditions ?? existingProfile.subjectiveConditions,
     updatedAt: new Date().toISOString(),
   };
 };

@@ -1,5 +1,5 @@
-import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
+import { forwardRef } from "react";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   error?: boolean;

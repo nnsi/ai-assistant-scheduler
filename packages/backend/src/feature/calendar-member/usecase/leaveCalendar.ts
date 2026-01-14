@@ -1,11 +1,11 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createLeaveCalendarUseCase = (
   calendarRepo: CalendarRepo,
@@ -28,10 +28,7 @@ export const createLeaveCalendarUseCase = (
       }
 
       // メンバーかどうか確認
-      const member = await calendarMemberRepo.findByUserIdAndCalendarId(
-        userId,
-        calendarId
-      );
+      const member = await calendarMemberRepo.findByUserIdAndCalendarId(userId, calendarId);
       if (!member) {
         return err(createNotFoundError("メンバーシップ"));
       }

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import type { Schedule, SearchScheduleInput } from "@ai-scheduler/shared";
+import { useQuery } from "@tanstack/react-query";
 import { searchSchedules } from "../api";
 
 /**
@@ -9,7 +9,12 @@ import { searchSchedules } from "../api";
  * TanStack Queryでキャッシュ管理を行う。
  */
 export const useScheduleSearch = (params: SearchScheduleInput, enabled = true) => {
-  const { data: schedules = [], isLoading, error, refetch } = useQuery<Schedule[]>({
+  const {
+    data: schedules = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<Schedule[]>({
     queryKey: [
       "search-schedules",
       params.query,

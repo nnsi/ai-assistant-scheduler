@@ -4,14 +4,14 @@
  */
 import "../global.css";
 
-import { useEffect } from "react";
-import { Stack, useRouter, useSegments } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
 import { useAuth } from "@ai-scheduler/core";
+import { useFonts } from "expo-font";
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { AppProviders } from "../src/lib/providers";
-import { View, Text, ActivityIndicator } from "react-native";
 
 // スプラッシュスクリーンを自動非表示にしない
 SplashScreen.preventAutoHideAsync();

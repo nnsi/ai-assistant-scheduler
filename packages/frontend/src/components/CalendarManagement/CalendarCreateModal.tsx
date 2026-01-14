@@ -18,10 +18,7 @@ const PRESET_COLORS = [
   "#6366F1", // Indigo
 ];
 
-export const CalendarCreateModal = ({
-  isOpen,
-  onClose,
-}: CalendarCreateModalProps) => {
+export const CalendarCreateModal = ({ isOpen, onClose }: CalendarCreateModalProps) => {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const createCalendar = useCreateCalendar();
@@ -46,9 +43,7 @@ export const CalendarCreateModal = ({
     <Modal isOpen={isOpen} onClose={handleClose} title="新しいカレンダー">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            カレンダー名
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">カレンダー名</label>
           <input
             type="text"
             value={name}
@@ -61,9 +56,7 @@ export const CalendarCreateModal = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            カラー
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">カラー</label>
           <div className="flex gap-2 flex-wrap">
             {PRESET_COLORS.map((presetColor) => (
               <button

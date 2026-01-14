@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { loginWithDevAuth, cleanupTestData } from "./test-constants";
+import { expect, test } from "@playwright/test";
+import { cleanupTestData, loginWithDevAuth } from "./test-constants";
 
 /**
  * AI機能のE2Eテスト
@@ -41,7 +41,9 @@ test.describe("AI Features", () => {
     await expect(page.getByText("キーワード選択")).toBeVisible({ timeout: 30000 });
 
     // キーワードボタンが表示されること（具体的なキーワードはAIの出力次第なので、ボタンが存在することを確認）
-    const keywordButtons = page.locator('[role="dialog"] button').filter({ hasText: /^[^ス検キ閉]/ });
+    const keywordButtons = page
+      .locator('[role="dialog"] button')
+      .filter({ hasText: /^[^ス検キ閉]/ });
     await expect(keywordButtons.first()).toBeVisible();
   });
 
@@ -77,7 +79,9 @@ test.describe("AI Features", () => {
       await searchButton.click();
 
       // 検索結果画面が表示されること（モーダルタイトルで確認）
-      await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({ timeout: 60000 });
+      await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({
+        timeout: 60000,
+      });
     }
   });
 
@@ -140,7 +144,9 @@ test.describe("AI Features", () => {
       await searchButton.click();
 
       // 検索結果画面が表示されるまで待機（モーダルタイトルで確認）
-      await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({ timeout: 60000 });
+      await expect(page.getByRole("heading", { name: "検索結果", level: 2 })).toBeVisible({
+        timeout: 60000,
+      });
 
       // 閉じる/終了するボタンをクリック（検索結果は自動保存されるので閉じるだけ）
       await page.getByRole("button", { name: /閉じる|終了する/ }).click();

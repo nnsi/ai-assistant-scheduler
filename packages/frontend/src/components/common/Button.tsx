@@ -23,17 +23,8 @@ export const Button = ({
       "focus:ring-blue-300",
       "shadow-sm hover:shadow-md"
     ),
-    secondary: cn(
-      "bg-stone-100 text-stone-700",
-      "hover:bg-stone-200",
-      "focus:ring-stone-300"
-    ),
-    danger: cn(
-      "bg-red-500 text-white",
-      "hover:bg-red-600",
-      "focus:ring-red-300",
-      "shadow-sm"
-    ),
+    secondary: cn("bg-stone-100 text-stone-700", "hover:bg-stone-200", "focus:ring-stone-300"),
+    danger: cn("bg-red-500 text-white", "hover:bg-red-600", "focus:ring-red-300", "shadow-sm"),
     ghost: cn(
       "bg-transparent text-stone-600",
       "hover:bg-stone-100 hover:text-stone-900",

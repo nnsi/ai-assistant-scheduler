@@ -1,5 +1,5 @@
+import type { ApiError, ErrorCode } from "@ai-scheduler/shared";
 import type { ZodError } from "zod";
-import type { ErrorCode, ApiError } from "@ai-scheduler/shared";
 
 // Re-export types from shared
 export type { ErrorCode, ApiError };

@@ -53,10 +53,7 @@ export type UpdateCalendarInput = {
 };
 
 // ファクトリ関数
-export const createCalendar = (
-  input: CreateCalendarInput,
-  ownerId: string
-): CalendarEntity => {
+export const createCalendar = (input: CreateCalendarInput, ownerId: string): CalendarEntity => {
   const now = new Date().toISOString();
   return {
     id: generateId(),
@@ -120,17 +117,12 @@ const roleHierarchy: Record<CalendarRole, number> = {
   viewer: 1,
 };
 
-export const hasRequiredRole = (
-  userRole: CalendarRole,
-  required: CalendarRole
-): boolean => {
+export const hasRequiredRole = (userRole: CalendarRole, required: CalendarRole): boolean => {
   return roleHierarchy[userRole] >= roleHierarchy[required];
 };
 
-export const canEdit = (role: CalendarRole): boolean =>
-  hasRequiredRole(role, "editor");
+export const canEdit = (role: CalendarRole): boolean => hasRequiredRole(role, "editor");
 
-export const canManageMembers = (role: CalendarRole): boolean =>
-  hasRequiredRole(role, "admin");
+export const canManageMembers = (role: CalendarRole): boolean => hasRequiredRole(role, "admin");
 
 export const isOwner = (role: CalendarRole): boolean => role === "owner";

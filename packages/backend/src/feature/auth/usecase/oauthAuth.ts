@@ -1,21 +1,14 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
-import type { UserRepo } from "../../../domain/infra/userRepo";
-import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { OAuthProvider } from "../../../infra/auth/oauth";
-import {
-  type JwtService,
-  REFRESH_TOKEN_EXPIRY_SECONDS,
-} from "../../../infra/auth/jwt";
-import {
-  createUser,
-  updateUserFromOAuth,
-  type UserEntity,
-} from "../../../domain/model/user";
-import { createRefreshToken } from "../../../domain/model/refreshToken";
-import { createCalendar } from "../../../domain/model/calendar";
 import type { AuthResponse } from "@ai-scheduler/shared";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { RefreshTokenRepo } from "../../../domain/infra/refreshTokenRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
+import { createCalendar } from "../../../domain/model/calendar";
+import { createRefreshToken } from "../../../domain/model/refreshToken";
+import { type UserEntity, createUser, updateUserFromOAuth } from "../../../domain/model/user";
+import { type JwtService, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../../infra/auth/jwt";
+import type { OAuthProvider } from "../../../infra/auth/oauth";
+import type { AppError } from "../../../shared/errors";
+import type { Result } from "../../../shared/result";
 
 export type OAuthAuthUseCase = (
   code: string,
@@ -32,10 +25,7 @@ export const createOAuthAuthUseCase =
   ): OAuthAuthUseCase =>
   async (code, redirectUri) => {
     // 1. 認証コードからアクセストークンを取得
-    const tokenResult = await oauthProvider.exchangeCodeForToken(
-      code,
-      redirectUri
-    );
+    const tokenResult = await oauthProvider.exchangeCodeForToken(code, redirectUri);
     if (!tokenResult.ok) {
       return tokenResult;
     }
@@ -50,10 +40,7 @@ export const createOAuthAuthUseCase =
 
     // 3. 既存ユーザーを検索（または新規作成）
     let user: UserEntity;
-    const existingUser = await userRepo.findByProviderId(
-      oauthProvider.type,
-      oauthUser.id
-    );
+    const existingUser = await userRepo.findByProviderId(oauthProvider.type, oauthUser.id);
 
     if (existingUser) {
       // 既存ユーザー: OAuth情報で更新
@@ -65,17 +52,12 @@ export const createOAuthAuthUseCase =
       await userRepo.save(user);
 
       // デフォルトカレンダーを作成
-      const defaultCalendar = createCalendar(
-        { name: "マイカレンダー", color: "#3B82F6" },
-        user.id
-      );
+      const defaultCalendar = createCalendar({ name: "マイカレンダー", color: "#3B82F6" }, user.id);
       await calendarRepo.create(defaultCalendar);
     }
 
     // 4. リフレッシュトークンをDBに保存
-    const expiresAt = new Date(
-      Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000
-    );
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_SECONDS * 1000);
     const refreshTokenEntity = createRefreshToken(user.id, expiresAt);
     await refreshTokenRepo.save(refreshTokenEntity);
 

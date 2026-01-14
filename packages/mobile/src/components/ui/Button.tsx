@@ -1,8 +1,8 @@
+import type { ReactNode } from "react";
 /**
  * 共通ボタンコンポーネント
  */
-import { Pressable, Text, ActivityIndicator, type ViewStyle } from "react-native";
-import type { ReactNode } from "react";
+import { ActivityIndicator, Pressable, Text, type ViewStyle } from "react-native";
 
 interface ButtonProps {
   onPress: () => void;
@@ -76,9 +76,7 @@ export function Button({
           color={variant === "primary" || variant === "danger" ? "#ffffff" : "#6b7280"}
         />
       ) : typeof children === "string" ? (
-        <Text className={`font-medium ${sizeStyle.text} ${variantStyle.text}`}>
-          {children}
-        </Text>
+        <Text className={`font-medium ${sizeStyle.text} ${variantStyle.text}`}>{children}</Text>
       ) : (
         children
       )}

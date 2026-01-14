@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useRef, useState } from "react";
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 const OAUTH_STATE_KEY = "oauth_state";
@@ -48,8 +48,7 @@ export function AuthCallback() {
         // ログイン成功後、メインページにリダイレクト
         window.location.href = "/";
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "ログインに失敗しました";
+        const message = err instanceof Error ? err.message : "ログインに失敗しました";
         setError(message);
         // 3秒後にログインページにリダイレクト
         setTimeout(() => {

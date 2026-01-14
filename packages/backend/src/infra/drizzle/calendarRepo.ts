@@ -1,8 +1,8 @@
-import { eq, and, isNull } from "drizzle-orm";
-import type { Database } from "./client";
-import { calendars, calendarMembers, type CalendarRow } from "./schema";
+import { and, eq, isNull } from "drizzle-orm";
 import type { CalendarRepo } from "../../domain/infra/calendarRepo";
 import type { CalendarEntity } from "../../domain/model/calendar";
+import type { Database } from "./client";
+import { type CalendarRow, calendarMembers, calendars } from "./schema";
 
 export const createCalendarRepo = (db: Database): CalendarRepo => ({
   create: async (calendar) => {
@@ -10,10 +10,7 @@ export const createCalendarRepo = (db: Database): CalendarRepo => ({
   },
 
   findById: async (id) => {
-    const rows = await db
-      .select()
-      .from(calendars)
-      .where(eq(calendars.id, id));
+    const rows = await db.select().from(calendars).where(eq(calendars.id, id));
     return rows[0] ? toCalendar(rows[0]) : null;
   },
 
@@ -29,12 +26,7 @@ export const createCalendarRepo = (db: Database): CalendarRepo => ({
       .select({ calendar: calendars })
       .from(calendarMembers)
       .innerJoin(calendars, eq(calendarMembers.calendarId, calendars.id))
-      .where(
-        and(
-          eq(calendarMembers.userId, userId),
-          isNull(calendars.deletedAt)
-        )
-      );
+      .where(and(eq(calendarMembers.userId, userId), isNull(calendars.deletedAt)));
 
     const allCalendars = [
       ...ownerCalendars.map(toCalendar),
@@ -64,10 +56,7 @@ export const createCalendarRepo = (db: Database): CalendarRepo => ({
   },
 
   update: async (calendar) => {
-    await db
-      .update(calendars)
-      .set(toRow(calendar))
-      .where(eq(calendars.id, calendar.id));
+    await db.update(calendars).set(toRow(calendar)).where(eq(calendars.id, calendar.id));
   },
 
   delete: async (id) => {

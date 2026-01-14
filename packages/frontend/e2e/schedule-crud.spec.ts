@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { loginWithDevAuth, cleanupTestData } from "./test-constants";
+import { expect, test } from "@playwright/test";
+import { cleanupTestData, loginWithDevAuth } from "./test-constants";
 
 /**
  * スケジュールCRUD操作のE2Eテスト
@@ -143,7 +143,7 @@ test.describe("Schedule View/Edit/Delete", () => {
         startAt: `${scheduleDateStr}T10:00:00+09:00`,
         endAt: `${scheduleDateStr}T11:00:00+09:00`,
         isAllDay: false,
-        calendarId: calendarId,  // ユーザーのカレンダーに紐付け
+        calendarId: calendarId, // ユーザーのカレンダーに紐付け
       },
     });
 
@@ -231,7 +231,9 @@ test.describe("Schedule View/Edit/Delete", () => {
     }
 
     // スケジュールが「10:00 - 11:00」形式で表示されること
-    await expect(page.getByRole("button", { name: /10:00 - 11:00.*テスト予定/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: /10:00 - 11:00.*テスト予定/ })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 

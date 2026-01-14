@@ -1,8 +1,8 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
 import type { ProfileEntity } from "../../../domain/model/profile";
 import { createProfile } from "../../../domain/model/profile";
+import type { AppError } from "../../../shared/errors";
+import type { Result } from "../../../shared/result";
 
 export type GetProfileConditionsUseCase = (
   userId: string

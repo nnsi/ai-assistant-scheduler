@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from "react";
-import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { router } from "./router";
+import React, { useEffect, useRef } from "react";
+import ReactDOM from "react-dom/client";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CalendarProvider } from "./contexts/CalendarContext";
+import { router } from "./router";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -25,21 +25,13 @@ function InnerApp() {
   useEffect(() => {
     const prev = prevAuthRef.current;
     // isLoadingがfalseになった時、または認証状態が変化した時にルーターを再評価
-    if (
-      (prev.isLoading && !isLoading) ||
-      prev.isAuthenticated !== isAuthenticated
-    ) {
+    if ((prev.isLoading && !isLoading) || prev.isAuthenticated !== isAuthenticated) {
       router.invalidate();
     }
     prevAuthRef.current = { isAuthenticated, isLoading };
   }, [isAuthenticated, isLoading]);
 
-  return (
-    <RouterProvider
-      router={router}
-      context={{ isAuthenticated, isLoading }}
-    />
-  );
+  return <RouterProvider router={router} context={{ isAuthenticated, isLoading }} />;
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

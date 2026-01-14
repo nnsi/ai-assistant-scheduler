@@ -4,6 +4,7 @@
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    "types": ["@cloudflare/workers-types", "jest"],
     "paths": {
       "@/*": [
         "./src/*"

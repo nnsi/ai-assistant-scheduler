@@ -1,11 +1,11 @@
 import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import { softDeleteCalendar } from "../../../domain/model/calendar";
-import { type Result, ok, err } from "../../../shared/result";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createDeleteCalendarUseCase = (calendarRepo: CalendarRepo) => {
   return async (calendarId: string, userId: string): Promise<Result<void>> => {

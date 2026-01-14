@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { KeywordSuggestions } from "./KeywordSuggestions";
 import { fn } from "@storybook/test";
+import { KeywordSuggestions } from "./KeywordSuggestions";
 
 const meta = {
   title: "AI/KeywordSuggestions",
@@ -57,12 +57,7 @@ export const Loading: Story = {
 
 export const WithConditions: Story = {
   args: {
-    keywords: [
-      "営業時間",
-      "予約可能",
-      "クレジットカード",
-      "Wi-Fi完備",
-    ],
+    keywords: ["営業時間", "予約可能", "クレジットカード", "Wi-Fi完備"],
     isLoading: false,
     hasConditions: true,
   },
@@ -120,12 +115,7 @@ export const FewKeywords: Story = {
 
 export const Searching: Story = {
   args: {
-    keywords: [
-      "子連れOK",
-      "ベビーカーOK",
-      "個室あり",
-      "駐車場あり",
-    ],
+    keywords: ["子連れOK", "ベビーカーOK", "個室あり", "駐車場あり"],
     isLoading: false,
     isSearching: true,
     hasConditions: false,
@@ -141,12 +131,7 @@ export const Searching: Story = {
 
 export const Regenerating: Story = {
   args: {
-    keywords: [
-      "子連れOK",
-      "ベビーカーOK",
-      "個室あり",
-      "駐車場あり",
-    ],
+    keywords: ["子連れOK", "ベビーカーOK", "個室あり", "駐車場あり"],
     isLoading: false,
     isRegenerating: true,
     hasConditions: false,

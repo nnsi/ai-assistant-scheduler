@@ -1,9 +1,9 @@
 import {
-  type Supplement,
   type SaveSupplementInput,
-  type UpdateMemoInput,
   type SelectShopsInput,
   type ShopList,
+  type Supplement,
+  type UpdateMemoInput,
 } from "@ai-scheduler/shared";
 import { generateId } from "../../shared/id";
 
@@ -11,9 +11,7 @@ import { generateId } from "../../shared/id";
 export type { Supplement, SaveSupplementInput, UpdateMemoInput, SelectShopsInput };
 
 // ファクトリ関数
-export const createSupplement = (
-  input: SaveSupplementInput & { aiResult: string }
-): Supplement => {
+export const createSupplement = (input: SaveSupplementInput & { aiResult: string }): Supplement => {
   const now = new Date().toISOString();
   return {
     id: generateId(),
@@ -30,10 +28,7 @@ export const createSupplement = (
 };
 
 // お店選択関数（複数対応）
-export const selectShops = (
-  supplement: Supplement,
-  shops: ShopList
-): Supplement => {
+export const selectShops = (supplement: Supplement, shops: ShopList): Supplement => {
   return {
     ...supplement,
     selectedShops: shops,
@@ -42,10 +37,7 @@ export const selectShops = (
 };
 
 // メモ専用のsupplement作成関数（AI検索なしの予定用）
-export const createSupplementForMemo = (
-  scheduleId: string,
-  userMemo: string
-): Supplement => {
+export const createSupplementForMemo = (scheduleId: string, userMemo: string): Supplement => {
   const now = new Date().toISOString();
   return {
     id: generateId(),

@@ -1,5 +1,5 @@
-import type { UserEntity } from "../model/user";
 import type { OAuthProviderType } from "../../infra/auth/oauth";
+import type { UserEntity } from "../model/user";
 
 // ユーザーリポジトリ型定義
 export type UserRepo = {

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/common/Button";
+import { useAuth } from "@/contexts/AuthContext";
 import { CalendarDays, Code2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
@@ -92,12 +92,8 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-accent-dark shadow-medium mb-6">
             <CalendarDays className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-display text-stone-900 mb-2">
-            AI Scheduler
-          </h1>
-          <p className="text-stone-500">
-            スケジュール管理をAIがサポートします
-          </p>
+          <h1 className="text-3xl font-display text-stone-900 mb-2">AI Scheduler</h1>
+          <p className="text-stone-500">スケジュール管理をAIがサポートします</p>
         </div>
 
         {/* Login Card */}

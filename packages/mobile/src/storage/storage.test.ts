@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { storage, secureStorage, initializeStorage } from "./index";
 import * as SecureStore from "expo-secure-store";
+import { initializeStorage, secureStorage, storage } from "./index";
 
 // Jestがモックを適用する
 jest.mock("@react-native-async-storage/async-storage", () =>

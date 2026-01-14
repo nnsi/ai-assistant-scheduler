@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
-import { cn } from "@/lib/cn";
+import { Modal } from "@/components/common/Modal";
 import { useCategories } from "@/hooks/useCategories";
+import { cn } from "@/lib/cn";
 import { CATEGORY_COLORS, type Category } from "@ai-scheduler/shared";
+import { useState } from "react";
 
 type CategoryModalProps = {
   isOpen: boolean;
@@ -89,9 +89,7 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
               {isLoading ? (
                 <div className="text-center py-4 text-stone-500">読み込み中...</div>
               ) : categories.length === 0 ? (
-                <div className="text-center py-4 text-stone-500">
-                  カテゴリがありません
-                </div>
+                <div className="text-center py-4 text-stone-500">カテゴリがありません</div>
               ) : (
                 categories.map((category) => (
                   <div
@@ -135,9 +133,7 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
               <Button variant="ghost" onClick={handleClose}>
                 閉じる
               </Button>
-              <Button onClick={handleStartCreate}>
-                新規作成
-              </Button>
+              <Button onClick={handleStartCreate}>新規作成</Button>
             </div>
           </>
         )}
@@ -169,9 +165,7 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                カラー
-              </label>
+              <label className="block text-sm font-medium text-stone-700 mb-2">カラー</label>
               <div className="flex flex-wrap gap-2">
                 {CATEGORY_COLORS.map((c) => (
                   <button
@@ -195,11 +189,7 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
               <Button variant="ghost" onClick={handleCancel}>
                 キャンセル
               </Button>
-              <Button
-                onClick={handleSave}
-                isLoading={isSaving}
-                disabled={!name.trim()}
-              >
+              <Button onClick={handleSave} isLoading={isSaving} disabled={!name.trim()}>
                 {editingCategory ? "更新" : "作成"}
               </Button>
             </div>

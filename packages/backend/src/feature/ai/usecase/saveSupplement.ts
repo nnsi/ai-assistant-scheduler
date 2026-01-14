@@ -1,8 +1,8 @@
-import type { Shop, AgentType } from "@ai-scheduler/shared";
+import type { AgentType, Shop } from "@ai-scheduler/shared";
 import type { SupplementRepo } from "../../../domain/infra/supplementRepo";
 import { createSupplement } from "../../../domain/model/supplement";
-import { type Result, ok, err } from "../../../shared/result";
 import { createDatabaseError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createSaveSupplementUseCase = (supplementRepo: SupplementRepo) => {
   return async (

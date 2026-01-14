@@ -1,30 +1,34 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import {
   googleAuthCallbackSchema,
-  updateEmailSchema,
   reconnectGoogleSchema,
+  updateEmailSchema,
 } from "@ai-scheduler/shared";
-import { createDb } from "../../infra/drizzle/client";
-import { createUserRepo } from "../../infra/drizzle/userRepo";
-import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
-import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { createCalendar } from "../../domain/model/calendar";
+import { createRefreshToken } from "../../domain/model/refreshToken";
+import type { UserEntity } from "../../domain/model/user";
 import { createGoogleAuthService } from "../../infra/auth/google";
-import { createJwtService, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../infra/auth/jwt";
-import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
-import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
-import { createRefreshTokenUseCase } from "./usecase/refreshToken";
-import { createLogoutUseCase } from "./usecase/logout";
-import { createUpdateEmailUseCase } from "./usecase/updateEmail";
-import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
-import { createValidationError, createUnauthorizedError, createNotFoundError } from "../../shared/errors";
+import { REFRESH_TOKEN_EXPIRY_SECONDS, createJwtService } from "../../infra/auth/jwt";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { createDb } from "../../infra/drizzle/client";
+import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
+import { createUserRepo } from "../../infra/drizzle/userRepo";
+import { authRateLimitMiddleware } from "../../middleware/rateLimit";
+import {
+  createNotFoundError,
+  createUnauthorizedError,
+  createValidationError,
+} from "../../shared/errors";
 import { getStatusCode } from "../../shared/http";
 import { validateRedirectUri } from "../../shared/redirectUri";
-import { authRateLimitMiddleware } from "../../middleware/rateLimit";
-import { createRefreshToken } from "../../domain/model/refreshToken";
-import { createCalendar } from "../../domain/model/calendar";
-import type { UserEntity } from "../../domain/model/user";
+import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
+import { createLogoutUseCase } from "./usecase/logout";
+import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
+import { createReconnectOAuthUseCase } from "./usecase/reconnectOAuth";
+import { createRefreshTokenUseCase } from "./usecase/refreshToken";
+import { createUpdateEmailUseCase } from "./usecase/updateEmail";
 
 // 開発環境テストユーザー設定
 const DEV_USER = {
@@ -132,10 +136,13 @@ export const authRoute = app
       });
 
       // レスポンスにはアクセストークンとユーザー情報のみ返す（リフレッシュトークンは除外）
-      return c.json({
-        accessToken: result.value.accessToken,
-        user: result.value.user,
-      }, 200);
+      return c.json(
+        {
+          accessToken: result.value.accessToken,
+          user: result.value.user,
+        },
+        200
+      );
     }
   )
   // GET /auth/me - 現在のユーザー情報を取得
@@ -202,9 +209,12 @@ export const authRoute = app
     });
 
     // レスポンスにはアクセストークンのみ返す
-    return c.json({
-      accessToken: result.value.accessToken,
-    }, 200);
+    return c.json(
+      {
+        accessToken: result.value.accessToken,
+      },
+      200
+    );
   })
   // POST /auth/logout - ログアウト（リフレッシュトークンを無効化）
   .post("/logout", async (c) => {
@@ -333,10 +343,7 @@ export const authRoute = app
       user = newUser;
 
       // デフォルトカレンダーを作成
-      const defaultCalendar = createCalendar(
-        { name: "マイカレンダー", color: "#3B82F6" },
-        user.id
-      );
+      const defaultCalendar = createCalendar({ name: "マイカレンダー", color: "#3B82F6" }, user.id);
       await calendarRepo.create(defaultCalendar);
     }
 
@@ -358,13 +365,16 @@ export const authRoute = app
       maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
-    return c.json({
-      accessToken: tokens.accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        picture: user.picture,
+    return c.json(
+      {
+        accessToken: tokens.accessToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          picture: user.picture,
+        },
       },
-    }, 200);
+      200
+    );
   });

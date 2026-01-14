@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp } from "../../test/app";
 import {
+  type TestDb,
   createTestDb,
   createTestSchedule,
   createTestSupplement,
   createTestUser,
   resetDatabase,
-  type TestDb,
 } from "../../test/helpers";
 
 describe("Supplement API Integration Tests", () => {
@@ -32,14 +32,11 @@ describe("Supplement API Integration Tests", () => {
         aiResult: "AI結果",
       });
 
-      const res = await app.request(
-        `/api/supplements/${schedule.id}/memo`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "ユーザーメモを追加" }),
-        }
-      );
+      const res = await app.request(`/api/supplements/${schedule.id}/memo`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMemo: "ユーザーメモを追加" }),
+      });
       expect(res.status).toBe(200);
 
       const data = (await res.json()) as { userMemo: string };
@@ -53,14 +50,11 @@ describe("Supplement API Integration Tests", () => {
         userMemo: "元のメモ",
       });
 
-      const res = await app.request(
-        `/api/supplements/${schedule.id}/memo`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "更新されたメモ" }),
-        }
-      );
+      const res = await app.request(`/api/supplements/${schedule.id}/memo`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMemo: "更新されたメモ" }),
+      });
       expect(res.status).toBe(200);
 
       const data = (await res.json()) as { userMemo: string };
@@ -74,14 +68,11 @@ describe("Supplement API Integration Tests", () => {
         userMemo: "メモあり",
       });
 
-      const res = await app.request(
-        `/api/supplements/${schedule.id}/memo`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "" }),
-        }
-      );
+      const res = await app.request(`/api/supplements/${schedule.id}/memo`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMemo: "" }),
+      });
       expect(res.status).toBe(200);
 
       const data = (await res.json()) as { userMemo: string };
@@ -92,14 +83,11 @@ describe("Supplement API Integration Tests", () => {
       // スケジュールはあるがサプリメントがない場合、新規作成する
       await createTestSchedule(db, testUserId, { id: "memo-4" });
 
-      const res = await app.request(
-        "/api/supplements/memo-4/memo",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "新規メモ" }),
-        }
-      );
+      const res = await app.request("/api/supplements/memo-4/memo", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMemo: "新規メモ" }),
+      });
       expect(res.status).toBe(200);
 
       const data = (await res.json()) as { userMemo: string; scheduleId: string };
@@ -110,14 +98,11 @@ describe("Supplement API Integration Tests", () => {
     it("should return 403 when schedule does not exist or user has no access", async () => {
       // スケジュールが存在しない場合、所有権確認の結果として403を返す
       // （リソースの存在を隠すセキュリティ上の理由）
-      const res = await app.request(
-        "/api/supplements/non-existent/memo",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMemo: "メモ" }),
-        }
-      );
+      const res = await app.request("/api/supplements/non-existent/memo", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMemo: "メモ" }),
+      });
       expect(res.status).toBe(403);
 
       const data = (await res.json()) as { code: string };

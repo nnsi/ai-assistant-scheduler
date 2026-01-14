@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Calendar, Clock, Trash2, Edit, MapPin, ExternalLink, Store, Sparkles } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { formatDateString } from "@/lib/date";
-import { cn } from "@/lib/cn";
 import { useCalendarContext } from "@/contexts/CalendarContext";
+import { cn } from "@/lib/cn";
+import { formatDateString } from "@/lib/date";
 import type { ScheduleWithSupplement } from "@ai-scheduler/shared";
+import { Calendar, Clock, Edit, ExternalLink, MapPin, Sparkles, Store, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 type ScheduleDetailProps = {
   schedule: ScheduleWithSupplement;
@@ -40,9 +40,7 @@ export const ScheduleDetail = ({
     <div className="space-y-5">
       {/* タイトルと日時 */}
       <div>
-        <h3 className="text-xl sm:text-2xl font-display text-stone-900 mb-3">
-          {schedule.title}
-        </h3>
+        <h3 className="text-xl sm:text-2xl font-display text-stone-900 mb-3">{schedule.title}</h3>
         <div className="flex flex-wrap items-center gap-3 text-sm text-stone-600">
           <div className="flex items-center gap-2 bg-stone-100 rounded-lg px-3 py-1.5">
             <Calendar className="w-4 h-4 text-stone-500" />
@@ -99,13 +97,9 @@ export const ScheduleDetail = ({
                   index > 0 && "border-t border-emerald-100"
                 )}
               >
-                <p className="font-medium text-base text-stone-900">
-                  {shop.name}
-                </p>
+                <p className="font-medium text-base text-stone-900">{shop.name}</p>
                 {shop.summary && (
-                  <p className="text-sm text-stone-600 line-clamp-2 mt-1">
-                    {shop.summary}
-                  </p>
+                  <p className="text-sm text-stone-600 line-clamp-2 mt-1">{shop.summary}</p>
                 )}
                 <div className="text-sm text-stone-500 space-y-1.5 mt-2">
                   {shop.businessHours && (
@@ -183,10 +177,7 @@ export const ScheduleDetail = ({
             AI検索結果を表示
           </summary>
           <div className="px-4 pb-4 pt-1 border-t border-violet-100">
-            <MarkdownRenderer
-              content={schedule.supplement.aiResult}
-              className="text-sm"
-            />
+            <MarkdownRenderer content={schedule.supplement.aiResult} className="text-sm" />
           </div>
         </details>
       )}
@@ -223,11 +214,7 @@ export const ScheduleDetail = ({
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingMemo(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setIsEditingMemo(false)}>
                 キャンセル
               </Button>
               <Button size="sm" onClick={handleSaveMemo} isLoading={isSavingMemo}>
@@ -244,12 +231,7 @@ export const ScheduleDetail = ({
 
       {/* アクションボタン */}
       <div className="flex justify-between pt-4 border-t border-stone-100">
-        <Button
-          variant="danger"
-          size="sm"
-          onClick={onDelete}
-          isLoading={isDeleting}
-        >
+        <Button variant="danger" size="sm" onClick={onDelete} isLoading={isDeleting}>
           <Trash2 className="w-4 h-4" />
           <span className="ml-1 hidden sm:inline">削除</span>
         </Button>

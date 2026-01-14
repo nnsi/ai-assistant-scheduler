@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
 import type { ShopList } from "@ai-scheduler/shared";
+import { useCallback, useRef, useState } from "react";
 import * as api from "../api";
 import type { AgentType, ScheduleContext } from "../api";
 
@@ -60,7 +60,13 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchWithKeywords(title, startAt, selectedKeywords, agentTypes, scheduleContext);
+      const result = await api.searchWithKeywords(
+        title,
+        startAt,
+        selectedKeywords,
+        agentTypes,
+        scheduleContext
+      );
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -83,7 +89,14 @@ export const useAI = () => {
     setIsLoadingSearch(true);
     setError(null);
     try {
-      const result = await api.searchAndSave(scheduleId, title, startAt, selectedKeywords, agentTypes, scheduleContext);
+      const result = await api.searchAndSave(
+        scheduleId,
+        title,
+        startAt,
+        selectedKeywords,
+        agentTypes,
+        scheduleContext
+      );
       setSearchResult(result.result);
       setShopCandidates(result.shopCandidates);
       return result;
@@ -97,30 +110,30 @@ export const useAI = () => {
   };
 
   // ストリーミング検索（共通処理）
-  const executeStream = useCallback(async (
-    streamFn: (onEvent: (event: api.StreamEvent) => void, signal: AbortSignal) => Promise<void>
-  ): Promise<api.SearchResult | null> => {
-    // 既存のストリーミングがあれば中断
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const executeStream = useCallback(
+    async (
+      streamFn: (onEvent: (event: api.StreamEvent) => void, signal: AbortSignal) => Promise<void>
+    ): Promise<api.SearchResult | null> => {
+      // 既存のストリーミングがあれば中断
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
-    setIsStreaming(true);
-    setIsLoadingSearch(true);
-    setSearchResult("");
-    setShopCandidates(undefined);
-    setStatusMessage(null);
-    setError(null);
+      setIsStreaming(true);
+      setIsLoadingSearch(true);
+      setSearchResult("");
+      setShopCandidates(undefined);
+      setStatusMessage(null);
+      setError(null);
 
-    let fullText = "";
-    let finalShopCandidates: ShopList | undefined;
+      let fullText = "";
+      let finalShopCandidates: ShopList | undefined;
 
-    try {
-      await streamFn(
-        (event) => {
+      try {
+        await streamFn((event) => {
           if (event.type === "text") {
             fullText += event.content;
             setSearchResult(fullText);
@@ -135,50 +148,73 @@ export const useAI = () => {
           } else if (event.type === "error") {
             setError(new Error(event.message));
           }
-        },
-        abortController.signal
-      );
+        }, abortController.signal);
 
-      return { result: fullText, shopCandidates: finalShopCandidates };
-    } catch (e) {
-      if (e instanceof Error && e.name === "AbortError") {
-        // 中断された場合は現在の結果を返す
         return { result: fullText, shopCandidates: finalShopCandidates };
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") {
+          // 中断された場合は現在の結果を返す
+          return { result: fullText, shopCandidates: finalShopCandidates };
+        }
+        const error = e instanceof Error ? e : new Error(String(e));
+        setError(error);
+        return null;
+      } finally {
+        setIsStreaming(false);
+        setIsLoadingSearch(false);
+        abortControllerRef.current = null;
       }
-      const error = e instanceof Error ? e : new Error(String(e));
-      setError(error);
-      return null;
-    } finally {
-      setIsStreaming(false);
-      setIsLoadingSearch(false);
-      abortControllerRef.current = null;
-    }
-  }, []);
+    },
+    []
+  );
 
   // ストリーミング検索
-  const searchStream = useCallback(async (
-    title: string,
-    startAt: string,
-    selectedKeywords: string[],
-    scheduleContext?: ScheduleContext
-  ): Promise<api.SearchResult | null> => {
-    return executeStream((onEvent, signal) =>
-      api.searchWithKeywordsStream(title, startAt, selectedKeywords, agentTypes, onEvent, signal, scheduleContext)
-    );
-  }, [executeStream, agentTypes]);
+  const searchStream = useCallback(
+    async (
+      title: string,
+      startAt: string,
+      selectedKeywords: string[],
+      scheduleContext?: ScheduleContext
+    ): Promise<api.SearchResult | null> => {
+      return executeStream((onEvent, signal) =>
+        api.searchWithKeywordsStream(
+          title,
+          startAt,
+          selectedKeywords,
+          agentTypes,
+          onEvent,
+          signal,
+          scheduleContext
+        )
+      );
+    },
+    [executeStream, agentTypes]
+  );
 
   // ストリーミング検索＋保存
-  const searchAndSaveStream = useCallback(async (
-    scheduleId: string,
-    title: string,
-    startAt: string,
-    selectedKeywords: string[],
-    scheduleContext?: ScheduleContext
-  ): Promise<api.SearchResult | null> => {
-    return executeStream((onEvent, signal) =>
-      api.searchAndSaveStream(scheduleId, title, startAt, selectedKeywords, agentTypes, onEvent, signal, scheduleContext)
-    );
-  }, [executeStream, agentTypes]);
+  const searchAndSaveStream = useCallback(
+    async (
+      scheduleId: string,
+      title: string,
+      startAt: string,
+      selectedKeywords: string[],
+      scheduleContext?: ScheduleContext
+    ): Promise<api.SearchResult | null> => {
+      return executeStream((onEvent, signal) =>
+        api.searchAndSaveStream(
+          scheduleId,
+          title,
+          startAt,
+          selectedKeywords,
+          agentTypes,
+          onEvent,
+          signal,
+          scheduleContext
+        )
+      );
+    },
+    [executeStream, agentTypes]
+  );
 
   // ストリーミングを中断
   const abortStream = useCallback(() => {

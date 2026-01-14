@@ -1,18 +1,18 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { CalendarResponse, CalendarRole } from "@ai-scheduler/shared";
 import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
 import type { UserRepo } from "../../../domain/infra/userRepo";
 import {
-  updateCalendar as updateCalendarEntity,
   type UpdateCalendarInput,
   hasRequiredRole,
+  updateCalendar as updateCalendarEntity,
 } from "../../../domain/model/calendar";
-import type { CalendarResponse, CalendarRole } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createUpdateCalendarUseCase = (
   calendarRepo: CalendarRepo,
@@ -35,10 +35,7 @@ export const createUpdateCalendarUseCase = (
       if (calendar.ownerId === userId) {
         role = "owner";
       } else {
-        const member = await calendarMemberRepo.findByUserIdAndCalendarId(
-          userId,
-          calendarId
-        );
+        const member = await calendarMemberRepo.findByUserIdAndCalendarId(userId, calendarId);
         if (!member) {
           return err(createForbiddenError("このカレンダーへのアクセス権がありません"));
         }

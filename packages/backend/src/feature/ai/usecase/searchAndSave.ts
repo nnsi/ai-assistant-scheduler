@@ -1,8 +1,8 @@
 import type { AgentType } from "@ai-scheduler/shared";
-import type { SearchResult, ScheduleContext } from "../../../domain/infra/aiService";
-import type { SearchWithKeywordsUseCase } from "./searchWithKeywords";
+import type { ScheduleContext, SearchResult } from "../../../domain/infra/aiService";
+import { type Result, err, ok } from "../../../shared/result";
 import type { SaveSupplementUseCase } from "./saveSupplement";
-import { type Result, ok, err } from "../../../shared/result";
+import type { SearchWithKeywordsUseCase } from "./searchWithKeywords";
 
 export const createSearchAndSaveUseCase = (
   searchWithKeywords: SearchWithKeywordsUseCase,

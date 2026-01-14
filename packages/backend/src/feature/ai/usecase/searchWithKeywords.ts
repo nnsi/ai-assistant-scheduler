@@ -1,13 +1,15 @@
 import type { AgentType } from "@ai-scheduler/shared";
-import type { AiService, UserConditions, SearchResult, ScheduleContext } from "../../../domain/infra/aiService";
+import type {
+  AiService,
+  ScheduleContext,
+  SearchResult,
+  UserConditions,
+} from "../../../domain/infra/aiService";
 import type { ProfileRepo } from "../../../domain/infra/profileRepo";
-import { type Result, ok, err } from "../../../shared/result";
 import { createAiError } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
-export const createSearchWithKeywordsUseCase = (
-  aiService: AiService,
-  profileRepo: ProfileRepo
-) => {
+export const createSearchWithKeywordsUseCase = (aiService: AiService, profileRepo: ProfileRepo) => {
   return async (
     userId: string,
     title: string,

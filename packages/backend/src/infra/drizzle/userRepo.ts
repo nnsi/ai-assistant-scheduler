@@ -1,9 +1,9 @@
-import { eq, and } from "drizzle-orm";
-import type { Database } from "./client";
-import { users, type UserRow } from "./schema";
+import { and, eq } from "drizzle-orm";
 import type { UserRepo } from "../../domain/infra/userRepo";
 import type { UserEntity } from "../../domain/model/user";
 import type { OAuthProviderType } from "../auth/oauth";
+import type { Database } from "./client";
+import { type UserRow, users } from "./schema";
 
 export const createUserRepo = (db: Database): UserRepo => ({
   findById: async (id) => {

@@ -35,9 +35,7 @@ export function createApp() {
 
     // その他のエラーは500 Internal Server Error
     console.error("Unhandled error:", err);
-    const internalError = createInternalError(
-      err instanceof Error ? err.message : "Unknown error"
-    );
+    const internalError = createInternalError(err instanceof Error ? err.message : "Unknown error");
     return c.json(internalError, 500);
   });
 

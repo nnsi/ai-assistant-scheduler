@@ -1,8 +1,8 @@
-import type { Result } from "../../../shared/result";
-import type { AppError } from "../../../shared/errors";
-import type { UserRepo } from "../../../domain/infra/userRepo";
-import { createConflictError, createNotFoundError } from "../../../shared/errors";
 import type { User } from "@ai-scheduler/shared";
+import type { UserRepo } from "../../../domain/infra/userRepo";
+import type { AppError } from "../../../shared/errors";
+import { createConflictError, createNotFoundError } from "../../../shared/errors";
+import type { Result } from "../../../shared/result";
 
 export type UpdateEmailUseCase = (
   userId: string,

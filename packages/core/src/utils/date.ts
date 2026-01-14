@@ -1,30 +1,29 @@
 import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  startOfWeek,
-  endOfWeek,
-  isSameMonth,
-  isSameDay,
-  addMonths,
-  subMonths,
-  addWeeks,
-  subWeeks,
   addDays,
-  subDays,
+  addMonths,
+  addWeeks,
   addYears,
-  parseISO,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDay,
   getHours,
   getMinutes,
-  getDay,
-  isBefore,
   isAfter,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks,
 } from "date-fns";
 import { ja } from "date-fns/locale";
 
-export const formatDate = (date: Date, pattern: string) =>
-  format(date, pattern, { locale: ja });
+export const formatDate = (date: Date, pattern: string) => format(date, pattern, { locale: ja });
 
 export const formatDateString = (dateString: string, pattern: string) =>
   formatDate(parseISO(dateString), pattern);
@@ -35,20 +34,11 @@ export const getCalendarDays = (month: Date): Date[] => {
   return eachDayOfInterval({ start, end });
 };
 
-export const getMonthLabel = (date: Date): string =>
-  formatDate(date, "yyyy年M月");
+export const getMonthLabel = (date: Date): string => formatDate(date, "yyyy年M月");
 
 export const getDayLabel = (date: Date): string => formatDate(date, "d");
 
-export const getWeekDayLabels = (): string[] => [
-  "日",
-  "月",
-  "火",
-  "水",
-  "木",
-  "金",
-  "土",
-];
+export const getWeekDayLabels = (): string[] => ["日", "月", "火", "水", "木", "金", "土"];
 
 export {
   isSameMonth,
@@ -84,8 +74,7 @@ export const getWeekLabel = (date: Date): string => {
   return `${formatDate(start, "M/d")} - ${formatDate(end, "M/d")}`;
 };
 
-export const getDayFullLabel = (date: Date): string =>
-  formatDate(date, "yyyy年M月d日 (E)");
+export const getDayFullLabel = (date: Date): string => formatDate(date, "yyyy年M月d日 (E)");
 
 /**
  * ブラウザのタイムゾーンオフセットを取得する

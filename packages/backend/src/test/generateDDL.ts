@@ -9,9 +9,9 @@
  * 同期しているかを検証します。
  */
 
+import Database from "better-sqlite3";
 import { getTableConfig } from "drizzle-orm/sqlite-core";
 import * as schema from "../infra/drizzle/schema";
-import Database from "better-sqlite3";
 
 // スキーマからテーブル名とカラム名を抽出
 function extractSchemaInfo() {

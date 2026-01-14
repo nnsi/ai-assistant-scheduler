@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { CalendarDay } from "./CalendarDay";
-import { fn } from "@storybook/test";
 import type { Schedule } from "@ai-scheduler/shared";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "@storybook/test";
+import { CalendarDay } from "./CalendarDay";
 
 const meta = {
   title: "Calendar/CalendarDay",
@@ -137,10 +137,7 @@ export const WithManySchedules: Story = {
 export const TodayWithSchedules: Story = {
   args: {
     date: new Date(2026, 0, 15),
-    schedules: [
-      createSchedule("1", "今日の予定"),
-      createSchedule("2", "ミーティング"),
-    ],
+    schedules: [createSchedule("1", "今日の予定"), createSchedule("2", "ミーティング")],
     isToday: true,
     isCurrentMonth: true,
   },
@@ -164,10 +161,7 @@ export const WeekView: Story = {
               day === 15
                 ? [createSchedule("1", "今日の予定")]
                 : day === 17
-                  ? [
-                      createSchedule("2", "ランチ"),
-                      createSchedule("3", "カフェ"),
-                    ]
+                  ? [createSchedule("2", "ランチ"), createSchedule("3", "カフェ")]
                   : []
             }
             isToday={day === 15}

@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
 import type { Schedule } from "@ai-scheduler/shared";
-import { useScheduleSearch } from "./useScheduleSearch";
+import { useCallback, useMemo, useState } from "react";
 import { useCategories } from "./useCategories";
+import { useScheduleSearch } from "./useScheduleSearch";
 
 export type UseSearchModalConfig = {
   /** スケジュールがクリックされた時のコールバック */

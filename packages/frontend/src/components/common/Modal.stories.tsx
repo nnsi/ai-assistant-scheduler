@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Modal } from "./Modal";
 import { Button } from "./Button";
+import { Modal } from "./Modal";
 
 const meta = {
   title: "Common/Modal",
@@ -34,17 +34,8 @@ const ModalDemo = ({
   return (
     <>
       <Button onClick={() => setIsOpen(true)}>モーダルを開く</Button>
-      <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={title}
-        size={size}
-      >
-        {children || (
-          <p className="text-gray-600">
-            モーダルの内容がここに表示されます。
-          </p>
-        )}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={title} size={size}>
+        {children || <p className="text-gray-600">モーダルの内容がここに表示されます。</p>}
       </Modal>
     </>
   );
@@ -76,9 +67,7 @@ export const WithoutTitle: Story = {
   render: () => (
     <ModalDemo>
       <div className="text-center py-4">
-        <p className="text-gray-600 mb-4">
-          タイトルなしのモーダルです。
-        </p>
+        <p className="text-gray-600 mb-4">タイトルなしのモーダルです。</p>
         <Button variant="secondary">閉じる</Button>
       </div>
     </ModalDemo>
@@ -90,9 +79,7 @@ export const WithForm: Story = {
     <ModalDemo title="予定を追加">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            タイトル
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
           <input
             type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -100,9 +87,7 @@ export const WithForm: Story = {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            日時
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">日時</label>
           <input
             type="datetime-local"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"

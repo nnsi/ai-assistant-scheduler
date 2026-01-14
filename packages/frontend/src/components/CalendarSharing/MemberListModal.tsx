@@ -1,13 +1,13 @@
+import type { CalendarMemberResponse, MemberRole } from "@ai-scheduler/shared";
 import { useState } from "react";
-import { Modal } from "../common/Modal";
 import {
   useCalendarMembers,
-  useUpdateCalendarMemberRole,
   useRemoveCalendarMember,
   useTransferCalendarOwnership,
+  useUpdateCalendarMemberRole,
 } from "../../hooks/useCalendarMembers";
 import { useCalendar } from "../../hooks/useCalendars";
-import type { CalendarMemberResponse, MemberRole } from "@ai-scheduler/shared";
+import { Modal } from "../common/Modal";
 
 interface MemberListModalProps {
   calendarId: string | null;
@@ -24,11 +24,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ASSIGNABLE_ROLES: MemberRole[] = ["admin", "editor", "viewer"];
 
-export const MemberListModal = ({
-  calendarId,
-  isOpen,
-  onClose,
-}: MemberListModalProps) => {
+export const MemberListModal = ({ calendarId, isOpen, onClose }: MemberListModalProps) => {
   const { data: calendar } = useCalendar(calendarId ?? "");
   const { data: members, isLoading } = useCalendarMembers(calendarId ?? "");
   const updateRole = useUpdateCalendarMemberRole();
@@ -41,8 +37,7 @@ export const MemberListModal = ({
 
   if (!calendarId) return null;
 
-  const canManageMembers =
-    calendar?.role === "owner" || calendar?.role === "admin";
+  const canManageMembers = calendar?.role === "owner" || calendar?.role === "admin";
 
   const handleRoleChange = async (userId: string, role: MemberRole) => {
     await updateRole.mutateAsync({
@@ -100,9 +95,7 @@ export const MemberListModal = ({
                   ? handleRemove(confirmAction.member)
                   : handleTransfer(confirmAction.member)
               }
-              disabled={
-                removeMember.isPending || transferOwnership.isPending
-              }
+              disabled={removeMember.isPending || transferOwnership.isPending}
               className={`px-4 py-2 text-sm text-white rounded-md disabled:opacity-50 ${
                 confirmAction.type === "remove"
                   ? "bg-red-600 hover:bg-red-700"
@@ -122,9 +115,7 @@ export const MemberListModal = ({
       ) : isLoading ? (
         <div className="py-4 text-center text-gray-500">読み込み中...</div>
       ) : !members?.length ? (
-        <div className="py-4 text-center text-gray-500">
-          メンバーがいません
-        </div>
+        <div className="py-4 text-center text-gray-500">メンバーがいません</div>
       ) : (
         <div className="space-y-2">
           {members.map((member) => (
@@ -133,23 +124,15 @@ export const MemberListModal = ({
               className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
             >
               {member.user.picture ? (
-                <img
-                  src={member.user.picture}
-                  alt=""
-                  className="w-10 h-10 rounded-full"
-                />
+                <img src={member.user.picture} alt="" className="w-10 h-10 rounded-full" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
                   {member.user.name.charAt(0)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">
-                  {member.user.name}
-                </div>
-                <div className="text-xs text-gray-500 truncate">
-                  {member.user.email}
-                </div>
+                <div className="font-medium text-sm truncate">{member.user.name}</div>
+                <div className="text-xs text-gray-500 truncate">{member.user.email}</div>
               </div>
               {member.role === "owner" ? (
                 <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">
@@ -158,9 +141,7 @@ export const MemberListModal = ({
               ) : canManageMembers ? (
                 <select
                   value={member.role}
-                  onChange={(e) =>
-                    handleRoleChange(member.userId, e.target.value as MemberRole)
-                  }
+                  onChange={(e) => handleRoleChange(member.userId, e.target.value as MemberRole)}
                   disabled={updateRole.isPending}
                   className="text-sm border border-gray-300 rounded-md px-2 py-1"
                 >
@@ -171,17 +152,13 @@ export const MemberListModal = ({
                   ))}
                 </select>
               ) : (
-                <span className="text-xs text-gray-500">
-                  {ROLE_LABELS[member.role]}
-                </span>
+                <span className="text-xs text-gray-500">{ROLE_LABELS[member.role]}</span>
               )}
               {canManageMembers && member.role !== "owner" && (
                 <div className="flex gap-1">
                   {calendar?.role === "owner" && (
                     <button
-                      onClick={() =>
-                        setConfirmAction({ type: "transfer", member })
-                      }
+                      onClick={() => setConfirmAction({ type: "transfer", member })}
                       className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
                       title="オーナー移譲"
                     >
@@ -189,9 +166,7 @@ export const MemberListModal = ({
                     </button>
                   )}
                   <button
-                    onClick={() =>
-                      setConfirmAction({ type: "remove", member })
-                    }
+                    onClick={() => setConfirmAction({ type: "remove", member })}
                     className="text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded"
                     title="メンバー削除"
                   >

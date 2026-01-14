@@ -1,13 +1,13 @@
-import {
-  createRouter,
-  createRootRouteWithContext,
-  createRoute,
-  redirect,
-  Outlet,
-} from "@tanstack/react-router";
-import { AuthCallback, ReconnectCallback, LoginPage } from "@/components/Auth";
+import { AuthCallback, LoginPage, ReconnectCallback } from "@/components/Auth";
 import { InvitationAcceptPage } from "@/components/CalendarSharing";
 import { MainApp } from "@/components/MainApp";
+import {
+  Outlet,
+  createRootRouteWithContext,
+  createRoute,
+  createRouter,
+  redirect,
+} from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
 
 // 認証コンテキストの型定義

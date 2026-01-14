@@ -11,11 +11,7 @@ export type SearchOptions = {
 // リポジトリ型定義
 export type ScheduleRepo = {
   findAllByUserId: (userId: string) => Promise<ScheduleEntity[]>;
-  findByMonthAndUserId: (
-    year: number,
-    month: number,
-    userId: string
-  ) => Promise<ScheduleEntity[]>;
+  findByMonthAndUserId: (year: number, month: number, userId: string) => Promise<ScheduleEntity[]>;
   findByCalendarIdsOrUserId: (calendarIds: string[], userId: string) => Promise<ScheduleEntity[]>;
   findByMonthAndCalendarIdsOrUserId: (
     year: number,

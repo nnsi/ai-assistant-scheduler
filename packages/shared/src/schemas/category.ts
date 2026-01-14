@@ -26,7 +26,10 @@ export type CreateCategoryInput = z.infer<typeof createCategoryInputSchema>;
 
 export const updateCategoryInputSchema = z.object({
   name: z.string().min(1).max(50).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
 });
 
 export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>;

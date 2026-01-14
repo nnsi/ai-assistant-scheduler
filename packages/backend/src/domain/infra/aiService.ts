@@ -9,8 +9,8 @@ export type UserConditions = {
 
 // スケジュールの追加コンテキスト（オプション）
 export type ScheduleContext = {
-  endAt?: string;           // 終了日時（ISO 8601形式）
-  userMemo?: string;        // ユーザーメモ
+  endAt?: string; // 終了日時（ISO 8601形式）
+  userMemo?: string; // ユーザーメモ
   recurrenceSummary?: string; // 繰り返しの説明（例：「毎週月曜日」）
 };
 

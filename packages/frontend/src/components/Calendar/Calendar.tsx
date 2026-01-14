@@ -1,13 +1,7 @@
+import { formatDate, getCalendarDays, getWeekDayLabels, isSameDay, isSameMonth } from "@/lib/date";
+import type { Schedule } from "@ai-scheduler/shared";
 import { useMemo } from "react";
 import { CalendarDay } from "./CalendarDay";
-import {
-  getCalendarDays,
-  getWeekDayLabels,
-  isSameMonth,
-  isSameDay,
-  formatDate,
-} from "@/lib/date";
-import type { Schedule } from "@ai-scheduler/shared";
 
 type CalendarProps = {
   currentMonth: Date;
@@ -52,11 +46,7 @@ export const Calendar = ({
           <div
             key={day}
             className={`py-2 sm:py-3 text-center text-xs sm:text-sm font-medium ${
-              index === 0
-                ? "text-rose-500"
-                : index === 6
-                ? "text-sky-500"
-                : "text-stone-600"
+              index === 0 ? "text-rose-500" : index === 6 ? "text-sky-500" : "text-stone-600"
             }`}
           >
             {day}

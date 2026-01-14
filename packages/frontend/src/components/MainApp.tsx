@@ -1,38 +1,37 @@
-import { useState, useEffect, useMemo } from "react";
+import { ProfileSettingsModal } from "@/components/Auth";
 import { Calendar } from "@/components/Calendar/Calendar";
+import { CalendarDayView } from "@/components/Calendar/CalendarDayView";
 import { CalendarHeader, type CalendarViewMode } from "@/components/Calendar/CalendarHeader";
 import { CalendarWeekView } from "@/components/Calendar/CalendarWeekView";
-import { CalendarDayView } from "@/components/Calendar/CalendarDayView";
-import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
-import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
-import { ScheduleEditModal } from "@/components/Schedule/ScheduleEditModal";
-import { CategoryModal } from "@/components/Category/CategoryModal";
-import { SearchModal } from "@/components/Schedule/SearchModal";
-import { ProfileSettingsModal } from "@/components/Auth";
-import { ConditionsModal } from "@/components/Profile";
 import {
   CalendarCreateModal,
-  CalendarSettingsModal,
   CalendarManagementModal,
+  CalendarSettingsModal,
 } from "@/components/CalendarManagement";
-import {
-  MemberListModal,
-  InviteMemberModal,
-  InviteLinkModal,
-} from "@/components/CalendarSharing";
-import { useSchedules } from "@/hooks/useSchedules";
-import { useModalManager } from "@/hooks/useModalManager";
+import { InviteLinkModal, InviteMemberModal, MemberListModal } from "@/components/CalendarSharing";
+import { CategoryModal } from "@/components/Category/CategoryModal";
+import { ConditionsModal } from "@/components/Profile";
+import { ScheduleEditModal } from "@/components/Schedule/ScheduleEditModal";
+import { ScheduleFormModal } from "@/components/Schedule/ScheduleFormModal";
+import { SchedulePopup } from "@/components/Schedule/SchedulePopup";
+import { SearchModal } from "@/components/Schedule/SearchModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCalendarContext } from "@/contexts/CalendarContext";
-import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "@/lib/date";
-import { CalendarDays, X } from "lucide-react";
+import { useModalManager } from "@/hooks/useModalManager";
+import { useSchedules } from "@/hooks/useSchedules";
+import { addDays, addMonths, addWeeks, subDays, subMonths, subWeeks } from "@/lib/date";
 import type { Schedule, UpdateScheduleInput } from "@ai-scheduler/shared";
+import { CalendarDays, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 export function MainApp() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const modal = useModalManager();
 
@@ -42,10 +41,10 @@ export function MainApp() {
     const success = params.get("success");
     const error = params.get("error");
     if (success) {
-      setNotification({ type: 'success', message: decodeURIComponent(success) });
+      setNotification({ type: "success", message: decodeURIComponent(success) });
       window.history.replaceState({}, "", window.location.pathname);
     } else if (error) {
-      setNotification({ type: 'error', message: decodeURIComponent(error) });
+      setNotification({ type: "error", message: decodeURIComponent(error) });
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -67,9 +66,7 @@ export function MainApp() {
   // 選択されたカレンダーの予定のみ表示
   const filteredSchedules = useMemo(() => {
     if (selectedCalendarIds.length === 0) return schedules;
-    return schedules.filter(
-      (s) => s.calendarId && selectedCalendarIds.includes(s.calendarId)
-    );
+    return schedules.filter((s) => s.calendarId && selectedCalendarIds.includes(s.calendarId));
   }, [schedules, selectedCalendarIds]);
 
   const handlePrevious = () => {
@@ -149,9 +146,7 @@ export function MainApp() {
       {notification && (
         <div
           className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center animate-slide-up ${
-            notification.type === 'success'
-              ? 'bg-emerald-500 text-white'
-              : 'bg-red-500 text-white'
+            notification.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
           }`}
         >
           <span className="font-medium">{notification.message}</span>
@@ -173,9 +168,7 @@ export function MainApp() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center shadow-sm">
                 <CalendarDays className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-lg sm:text-xl font-display text-stone-900">
-                AI Scheduler
-              </h1>
+              <h1 className="text-lg sm:text-xl font-display text-stone-900">AI Scheduler</h1>
             </div>
 
             {/* User Menu */}
@@ -192,9 +185,7 @@ export function MainApp() {
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-accent">
-                      {user.name.charAt(0)}
-                    </span>
+                    <span className="text-sm font-medium text-accent">{user.name.charAt(0)}</span>
                   </div>
                 )}
                 <span className="hidden sm:block text-sm font-medium text-stone-700">

@@ -1,6 +1,6 @@
 import type { User } from "@ai-scheduler/shared";
+import type { OAuthProviderType, OAuthUserInfo } from "../../infra/auth/oauth";
 import { generateId } from "../../shared/id";
-import type { OAuthUserInfo, OAuthProviderType } from "../../infra/auth/oauth";
 
 // Re-export types from shared
 export type { User };
@@ -14,10 +14,7 @@ export type UserEntity = User & {
 };
 
 // ファクトリ関数
-export const createUser = (
-  oauthUser: OAuthUserInfo,
-  provider: OAuthProviderType
-): UserEntity => {
+export const createUser = (oauthUser: OAuthUserInfo, provider: OAuthProviderType): UserEntity => {
   const now = new Date().toISOString();
   return {
     id: generateId(),

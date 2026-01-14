@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-import { createGetSchedulesUseCase } from "./getSchedules";
-import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
+import { describe, expect, it, vi } from "vitest";
 import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { ScheduleEntity } from "../../../domain/model/schedule";
+import type { ScheduleRepo } from "../../../domain/infra/scheduleRepo";
 import type { CalendarEntity } from "../../../domain/model/calendar";
+import type { ScheduleEntity } from "../../../domain/model/schedule";
+import { createGetSchedulesUseCase } from "./getSchedules";
 
 describe("getSchedulesUseCase", () => {
   const testUserId = "test-user-id";
@@ -97,7 +97,12 @@ describe("getSchedulesUseCase", () => {
 
     expect(result.ok).toBe(true);
     expect(mockCalendarRepo.findByUserId).toHaveBeenCalledWith(testUserId);
-    expect(mockRepo.findByMonthAndCalendarIdsOrUserId).toHaveBeenCalledWith(2025, 1, [testCalendarId], testUserId);
+    expect(mockRepo.findByMonthAndCalendarIdsOrUserId).toHaveBeenCalledWith(
+      2025,
+      1,
+      [testCalendarId],
+      testUserId
+    );
   });
 
   it("should return schedules even when user has no calendars (legacy data)", async () => {

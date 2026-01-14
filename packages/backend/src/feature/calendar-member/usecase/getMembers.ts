@@ -1,23 +1,20 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import type { UserRepo } from "../../../domain/infra/userRepo";
 import type { CalendarMemberResponse } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import type { UserRepo } from "../../../domain/infra/userRepo";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createGetMembersUseCase = (
   calendarRepo: CalendarRepo,
   calendarMemberRepo: CalendarMemberRepo,
   userRepo: UserRepo
 ) => {
-  return async (
-    calendarId: string,
-    userId: string
-  ): Promise<Result<CalendarMemberResponse[]>> => {
+  return async (calendarId: string, userId: string): Promise<Result<CalendarMemberResponse[]>> => {
     try {
       const calendar = await calendarRepo.findById(calendarId);
       if (!calendar || calendar.deletedAt) {
@@ -27,10 +24,7 @@ export const createGetMembersUseCase = (
       // アクセス権チェック
       const isOwner = calendar.ownerId === userId;
       if (!isOwner) {
-        const member = await calendarMemberRepo.findByUserIdAndCalendarId(
-          userId,
-          calendarId
-        );
+        const member = await calendarMemberRepo.findByUserIdAndCalendarId(userId, calendarId);
         if (!member) {
           return err(createForbiddenError("このカレンダーへのアクセス権がありません"));
         }

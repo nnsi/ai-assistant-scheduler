@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
+import { useState } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -82,11 +82,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
         {/* ユーザー情報 */}
         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
           {user?.picture && (
-            <img
-              src={user.picture}
-              alt={user.name}
-              className="w-16 h-16 rounded-full"
-            />
+            <img src={user.picture} alt={user.name} className="w-16 h-16 rounded-full" />
           )}
           <div>
             <div className="font-medium text-gray-900">{user?.name}</div>
@@ -111,9 +107,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
           </div>
 
           {emailError && (
-            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-              {emailError}
-            </div>
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{emailError}</div>
           )}
 
           {emailSuccess && (
@@ -133,9 +127,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
 
         {/* Google認証再設定 */}
         <div className="border-t pt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">
-            Googleアカウント連携
-          </h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Googleアカウント連携</h3>
           <p className="text-sm text-gray-500 mb-4">
             別のGoogleアカウントに紐づけ直すことができます。現在の認証情報は新しいアカウントに置き換わります。
           </p>

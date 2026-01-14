@@ -1,5 +1,5 @@
-import type { Result } from "../../shared/result";
 import type { AppError } from "../../shared/errors";
+import type { Result } from "../../shared/result";
 
 // サポートするプロバイダの種類
 export type OAuthProviderType = "google" | "github" | "microsoft";
@@ -17,10 +17,7 @@ export type OAuthProvider = {
   readonly type: OAuthProviderType;
 
   // 認証コードからアクセストークンを取得
-  exchangeCodeForToken: (
-    code: string,
-    redirectUri: string
-  ) => Promise<Result<string, AppError>>;
+  exchangeCodeForToken: (code: string, redirectUri: string) => Promise<Result<string, AppError>>;
 
   // アクセストークンからユーザー情報を取得
   getUserInfo: (accessToken: string) => Promise<Result<OAuthUserInfo, AppError>>;

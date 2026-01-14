@@ -1,27 +1,19 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
-import { Hono } from "hono";
+import { googleAuthCallbackSchema, logoutSchema, refreshTokenSchema } from "@ai-scheduler/shared";
 import { zValidator } from "@hono/zod-validator";
-import {
-  googleAuthCallbackSchema,
-  refreshTokenSchema,
-  logoutSchema,
-} from "@ai-scheduler/shared";
-import {
-  createTestDb,
-  resetDatabase,
-  type TestDb,
-} from "../../test/helpers";
-import { createUserRepo } from "../../infra/drizzle/userRepo";
-import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
-import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { Hono } from "hono";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createJwtService } from "../../infra/auth/jwt";
-import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
-import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
-import { createRefreshTokenUseCase } from "./usecase/refreshToken";
-import { createLogoutUseCase } from "./usecase/logout";
-import { createValidationError, createUnauthorizedError } from "../../shared/errors";
-import { getStatusCode } from "../../shared/http";
 import type { OAuthProvider } from "../../infra/auth/oauth";
+import { createCalendarRepo } from "../../infra/drizzle/calendarRepo";
+import { createRefreshTokenRepo } from "../../infra/drizzle/refreshTokenRepo";
+import { createUserRepo } from "../../infra/drizzle/userRepo";
+import { createUnauthorizedError, createValidationError } from "../../shared/errors";
+import { getStatusCode } from "../../shared/http";
+import { type TestDb, createTestDb, resetDatabase } from "../../test/helpers";
+import { createGetCurrentUserUseCase } from "./usecase/getCurrentUser";
+import { createLogoutUseCase } from "./usecase/logout";
+import { createOAuthAuthUseCase } from "./usecase/oauthAuth";
+import { createRefreshTokenUseCase } from "./usecase/refreshToken";
 
 // モック用のOAuthProvider
 const createMockOAuthProvider = (): OAuthProvider => ({
@@ -42,10 +34,7 @@ const createMockOAuthProvider = (): OAuthProvider => ({
 });
 
 // テスト用のAuthアプリを作成
-const createTestAuthApp = (
-  db: TestDb,
-  oauthProvider: OAuthProvider
-) => {
+const createTestAuthApp = (db: TestDb, oauthProvider: OAuthProvider) => {
   const app = new Hono();
   // biome-ignore lint/suspicious/noExplicitAny: TestDb to D1Database compatibility
   const userRepo = createUserRepo(db as any);

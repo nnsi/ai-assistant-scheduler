@@ -1,15 +1,19 @@
-import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
-import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
-import type { CalendarInvitationRepo } from "../../../domain/infra/calendarInvitationRepo";
-import { hasRequiredRole, type CalendarRole, type CalendarInvitationEntity } from "../../../domain/model/calendar";
-import { generateId, generateSecureToken } from "../../../shared/id";
 import type { CreateInvitationInput, CreateInvitationResponse } from "@ai-scheduler/shared";
-import { type Result, ok, err } from "../../../shared/result";
+import type { CalendarInvitationRepo } from "../../../domain/infra/calendarInvitationRepo";
+import type { CalendarMemberRepo } from "../../../domain/infra/calendarMemberRepo";
+import type { CalendarRepo } from "../../../domain/infra/calendarRepo";
+import {
+  type CalendarInvitationEntity,
+  type CalendarRole,
+  hasRequiredRole,
+} from "../../../domain/model/calendar";
 import {
   createDatabaseError,
-  createNotFoundError,
   createForbiddenError,
+  createNotFoundError,
 } from "../../../shared/errors";
+import { generateId, generateSecureToken } from "../../../shared/id";
+import { type Result, err, ok } from "../../../shared/result";
 
 export const createCreateInvitationUseCase = (
   calendarRepo: CalendarRepo,
@@ -49,9 +53,7 @@ export const createCreateInvitationUseCase = (
 
       // 招待リンクを作成
       const now = new Date();
-      const expiresAt = new Date(
-        now.getTime() + (input.expiresInDays ?? 7) * 24 * 60 * 60 * 1000
-      );
+      const expiresAt = new Date(now.getTime() + (input.expiresInDays ?? 7) * 24 * 60 * 60 * 1000);
       const token = generateSecureToken();
 
       const invitation: CalendarInvitationEntity = {

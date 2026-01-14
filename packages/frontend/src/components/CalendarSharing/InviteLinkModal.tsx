@@ -1,15 +1,12 @@
+import type { InvitationListItemResponse, InvitationRole } from "@ai-scheduler/shared";
+import { format } from "date-fns";
 import { useState } from "react";
-import { Modal } from "../common/Modal";
 import {
   useCalendarInvitations,
   useCreateCalendarInvitation,
   useRevokeCalendarInvitation,
 } from "../../hooks/useCalendarInvitations";
-import type {
-  InvitationRole,
-  InvitationListItemResponse,
-} from "@ai-scheduler/shared";
-import { format } from "date-fns";
+import { Modal } from "../common/Modal";
 
 interface InviteLinkModalProps {
   calendarId: string | null;
@@ -22,14 +19,8 @@ const ROLE_OPTIONS: { value: InvitationRole; label: string }[] = [
   { value: "viewer", label: "閲覧者" },
 ];
 
-export const InviteLinkModal = ({
-  calendarId,
-  isOpen,
-  onClose,
-}: InviteLinkModalProps) => {
-  const { data: invitations, isLoading } = useCalendarInvitations(
-    calendarId ?? ""
-  );
+export const InviteLinkModal = ({ calendarId, isOpen, onClose }: InviteLinkModalProps) => {
+  const { data: invitations, isLoading } = useCalendarInvitations(calendarId ?? "");
   const createInvitation = useCreateCalendarInvitation();
   const revokeInvitation = useRevokeCalendarInvitation();
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -103,9 +94,7 @@ export const InviteLinkModal = ({
       ) : newInviteUrl ? (
         <div className="space-y-4">
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-700 mb-2">
-              招待リンクを作成しました
-            </p>
+            <p className="text-sm text-green-700 mb-2">招待リンクを作成しました</p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -133,9 +122,7 @@ export const InviteLinkModal = ({
       ) : showCreateForm ? (
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              権限
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">権限</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as InvitationRole)}
@@ -150,9 +137,7 @@ export const InviteLinkModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              有効期限
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">有効期限</label>
             <select
               value={expiresInDays}
               onChange={(e) => setExpiresInDays(Number(e.target.value))}
@@ -167,14 +152,10 @@ export const InviteLinkModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              使用回数制限
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">使用回数制限</label>
             <select
               value={maxUses ?? ""}
-              onChange={(e) =>
-                setMaxUses(e.target.value ? Number(e.target.value) : null)
-              }
+              onChange={(e) => setMaxUses(e.target.value ? Number(e.target.value) : null)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             >
               <option value="">無制限</option>
@@ -216,24 +197,19 @@ export const InviteLinkModal = ({
           {isLoading ? (
             <div className="py-4 text-center text-gray-500">読み込み中...</div>
           ) : !invitations?.length ? (
-            <div className="py-4 text-center text-gray-500">
-              招待リンクがありません
-            </div>
+            <div className="py-4 text-center text-gray-500">招待リンクがありません</div>
           ) : (
             <div className="space-y-2">
               {invitations.map((invitation) => {
                 const expired = isExpired(invitation.expiresAt);
                 const exhausted =
-                  invitation.maxUses !== null &&
-                  invitation.useCount >= invitation.maxUses;
+                  invitation.maxUses !== null && invitation.useCount >= invitation.maxUses;
 
                 return (
                   <div
                     key={invitation.id}
                     className={`p-3 border rounded-lg ${
-                      expired || exhausted
-                        ? "border-gray-200 bg-gray-50"
-                        : "border-gray-200"
+                      expired || exhausted ? "border-gray-200 bg-gray-50" : "border-gray-200"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
