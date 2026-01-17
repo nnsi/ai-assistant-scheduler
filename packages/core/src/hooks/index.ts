@@ -56,6 +56,7 @@ export {
   useScheduleFormModal,
   type ScheduleFormData,
   type ScheduleFormStep,
+  type ScheduleFormError,
   type UseScheduleFormModalConfig,
 } from "./useScheduleFormModal";
 

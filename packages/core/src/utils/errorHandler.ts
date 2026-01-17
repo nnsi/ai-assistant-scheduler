@@ -17,6 +17,42 @@ export type AppError = {
 };
 
 /**
+ * ApiClientErrorかどうかを判定する
+ */
+export function isApiClientError(
+  error: unknown
+): error is { name: "ApiClientError"; code: AppErrorCode; message: string; details?: unknown } {
+  return (
+    error instanceof Error &&
+    error.name === "ApiClientError" &&
+    "code" in error &&
+    typeof (error as { code: unknown }).code === "string"
+  );
+}
+
+/**
+ * エラーコードに対応するユーザー向けメッセージを取得
+ *
+ * 各メッセージには「何が起きたか」と「次に何をすべきか」を含める
+ */
+function getMessageForCode(code: AppErrorCode): string {
+  switch (code) {
+    case "NETWORK_ERROR":
+      return "ネットワークに接続できませんでした。インターネット接続を確認して、再度お試しください。";
+    case "AUTH_ERROR":
+      return "ログインの有効期限が切れました。お手数ですが、再度ログインしてください。";
+    case "NOT_FOUND":
+      return "お探しのデータが見つかりませんでした。削除された可能性があります。一覧画面に戻って確認してください。";
+    case "SERVER_ERROR":
+      return "サーバーで問題が発生しました。しばらく時間をおいてから再度お試しください。問題が続く場合はサポートにお問い合わせください。";
+    case "VALIDATION_ERROR":
+      return "入力内容に誤りがあります。赤く表示されている項目を確認して、修正してください。";
+    default:
+      return "予期しないエラーが発生しました。ページを再読み込みするか、しばらく時間をおいてから再度お試しください。";
+  }
+}
+
+/**
  * 任意のエラーをAppError形式に変換する
  */
 export function toAppError(error: unknown): AppError {
@@ -25,40 +61,22 @@ export function toAppError(error: unknown): AppError {
     return error;
   }
 
+  // ApiClientErrorの場合（構造化されたエラー情報を直接利用）
+  if (isApiClientError(error)) {
+    return {
+      code: error.code,
+      message: error.message || getMessageForCode(error.code),
+      originalError: error,
+    };
+  }
+
   // Errorオブジェクトの場合
   if (error instanceof Error) {
     // ネットワークエラーの判定
     if (error.name === "TypeError" && error.message.includes("fetch")) {
       return {
         code: "NETWORK_ERROR",
-        message: "ネットワークエラーが発生しました。接続を確認してください。",
-        originalError: error,
-      };
-    }
-
-    // 認証エラーの判定
-    if (error.message.includes("401") || error.message.includes("Unauthorized")) {
-      return {
-        code: "AUTH_ERROR",
-        message: "認証エラーが発生しました。再度ログインしてください。",
-        originalError: error,
-      };
-    }
-
-    // 404エラーの判定
-    if (error.message.includes("404") || error.message.includes("Not Found")) {
-      return {
-        code: "NOT_FOUND",
-        message: "リソースが見つかりませんでした。",
-        originalError: error,
-      };
-    }
-
-    // 500系エラーの判定
-    if (error.message.includes("500") || error.message.includes("Server Error")) {
-      return {
-        code: "SERVER_ERROR",
-        message: "サーバーエラーが発生しました。しばらく待ってから再試行してください。",
+        message: getMessageForCode("NETWORK_ERROR"),
         originalError: error,
       };
     }

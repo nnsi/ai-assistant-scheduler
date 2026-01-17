@@ -31,6 +31,7 @@ export function MainApp() {
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
+    onRetry?: () => void;
   } | null>(null);
 
   const modal = useModalManager();
@@ -59,10 +60,11 @@ export function MainApp() {
     }
   }, []);
 
-  // 通知を5秒後に自動で消す
+  // 通知を自動で消す（エラー: 10秒、成功: 5秒）
   useEffect(() => {
     if (notification) {
-      const timer = setTimeout(() => setNotification(null), 5000);
+      const duration = notification.type === "error" ? 10000 : 5000;
+      const timer = setTimeout(() => setNotification(null), duration);
       return () => clearTimeout(timer);
     }
   }, [notification]);

@@ -33,6 +33,7 @@ export const ScheduleEditModal = ({
   onSave,
 }: ScheduleEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { categories } = useCategories();
   const {
     recurrence,
@@ -44,6 +45,7 @@ export const ScheduleEditModal = ({
     if (!schedule) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       // スケジュールを更新
       await onSave(schedule.id, {
@@ -59,30 +61,46 @@ export const ScheduleEditModal = ({
         // 新しい繰り返しルールを作成（既存があれば置き換え）
         try {
           await createRecurrence(schedule.id, data.recurrence);
-        } catch (error) {
+        } catch (recurrenceError) {
           logger.error(
             "Failed to create/update recurrence",
             { category: "api", scheduleId: schedule.id },
-            error
+            recurrenceError
           );
+          setError("繰り返しルールの設定に失敗しました");
+          return;
         }
       } else if (recurrence) {
         // 繰り返しルールが無効化された場合は削除
         try {
           await removeRecurrence(schedule.id);
-        } catch (error) {
+        } catch (recurrenceError) {
           logger.error(
             "Failed to delete recurrence",
             { category: "api", scheduleId: schedule.id },
-            error
+            recurrenceError
           );
+          setError("繰り返しルールの削除に失敗しました");
+          return;
         }
       }
 
       onClose();
+    } catch (saveError) {
+      logger.error(
+        "Failed to update schedule",
+        { category: "api", scheduleId: schedule.id },
+        saveError
+      );
+      setError("予定の更新に失敗しました");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleClose = () => {
+    setError(null);
+    onClose();
   };
 
   if (!schedule) return null;
@@ -102,7 +120,22 @@ export const ScheduleEditModal = ({
     : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="予定を編集">
+    <Modal isOpen={isOpen} onClose={handleClose} title="予定を編集">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center justify-between">
+          <span className="text-sm text-red-700">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-2 text-red-500 hover:text-red-700"
+            aria-label="エラーを閉じる"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
       <ScheduleForm
         key={schedule.id}
         initialValues={{
@@ -115,7 +148,7 @@ export const ScheduleEditModal = ({
         }}
         categories={categories}
         onSubmit={handleSubmit}
-        onCancel={onClose}
+        onCancel={handleClose}
         isLoading={isLoading}
         submitLabel="保存"
         mode="edit"

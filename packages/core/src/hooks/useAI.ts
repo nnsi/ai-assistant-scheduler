@@ -146,6 +146,10 @@ export const useAI = () => {
             }
             setStatusMessage(null); // 完了時にステータスをクリア
           } else if (event.type === "error") {
+            // エラー発生時は即座にローディング状態を解除
+            setIsStreaming(false);
+            setIsLoadingSearch(false);
+            setStatusMessage(null);
             setError(new Error(event.message));
           }
         }, abortController.signal);
@@ -235,6 +239,10 @@ export const useAI = () => {
     excludedKeywordsRef.current = [];
   };
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     isLoadingKeywords,
     isLoadingSearch,
@@ -253,5 +261,6 @@ export const useAI = () => {
     searchAndSaveStream,
     abortStream,
     reset,
+    clearError,
   };
 };

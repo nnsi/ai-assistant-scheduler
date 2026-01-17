@@ -18,12 +18,14 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
   const [color, setColor] = useState<string>(CATEGORY_COLORS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
     setName("");
     setColor(CATEGORY_COLORS[0]);
     setEditingCategory(null);
     setIsCreating(false);
+    setError(null);
   };
 
   const handleStartCreate = () => {
@@ -31,6 +33,7 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     setEditingCategory(null);
     setName("");
     setColor(CATEGORY_COLORS[0]);
+    setError(null);
   };
 
   const handleStartEdit = (category: Category) => {
@@ -38,12 +41,14 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     setIsCreating(false);
     setName(category.name);
     setColor(category.color);
+    setError(null);
   };
 
   const handleSave = async () => {
     if (!name.trim()) return;
 
     setIsSaving(true);
+    setError(null);
     try {
       if (editingCategory) {
         await update(editingCategory.id, { name: name.trim(), color });
@@ -51,6 +56,8 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
         await create({ name: name.trim(), color });
       }
       resetForm();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "保存に失敗しました");
     } finally {
       setIsSaving(false);
     }
@@ -58,11 +65,14 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
 
   const handleDelete = async (id: string) => {
     setIsDeleting(true);
+    setError(null);
     try {
       await remove(id);
       if (editingCategory?.id === id) {
         resetForm();
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "削除に失敗しました");
     } finally {
       setIsDeleting(false);
     }
@@ -129,6 +139,22 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
               )}
             </div>
 
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                <span className="text-sm text-red-700">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="ml-2 text-red-500 hover:text-red-700"
+                  aria-label="エラーを閉じる"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-4 border-t border-stone-200">
               <Button variant="ghost" onClick={handleClose}>
                 閉じる
@@ -184,6 +210,22 @@ export const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
                 ))}
               </div>
             </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                <span className="text-sm text-red-700">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="ml-2 text-red-500 hover:text-red-700"
+                  aria-label="エラーを閉じる"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-stone-200">
               <Button variant="ghost" onClick={handleCancel}>

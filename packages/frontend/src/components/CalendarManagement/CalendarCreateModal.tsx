@@ -21,21 +21,33 @@ const PRESET_COLORS = [
 export const CalendarCreateModal = ({ isOpen, onClose }: CalendarCreateModalProps) => {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [error, setError] = useState<string | null>(null);
   const createCalendar = useCreateCalendar();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!name.trim()) return;
 
-    await createCalendar.mutateAsync({ name: name.trim(), color });
-    setName("");
-    setColor(PRESET_COLORS[0]);
-    onClose();
+    try {
+      await createCalendar.mutateAsync({ name: name.trim(), color });
+      setName("");
+      setColor(PRESET_COLORS[0]);
+      onClose();
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "カレンダーの作成に失敗しました");
+      } else {
+        setError("カレンダーの作成に失敗しました");
+      }
+    }
   };
 
   const handleClose = () => {
     setName("");
     setColor(PRESET_COLORS[0]);
+    setError(null);
     onClose();
   };
 
@@ -73,6 +85,22 @@ export const CalendarCreateModal = ({ isOpen, onClose }: CalendarCreateModalProp
             ))}
           </div>
         </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center justify-between">
+            <span className="text-sm text-red-700">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="ml-2 text-red-500 hover:text-red-700"
+              aria-label="エラーを閉じる"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

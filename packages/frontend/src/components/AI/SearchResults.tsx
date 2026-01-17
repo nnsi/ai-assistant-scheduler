@@ -11,9 +11,11 @@ type SearchResultsProps = {
   isLoading?: boolean;
   isStreaming?: boolean;
   isSelectingShops?: boolean;
+  error?: Error | null;
   onClose: () => void;
   onBack: () => void;
   onSelectShops?: (shops: ShopList) => Promise<void>;
+  onClearError?: () => void;
 };
 
 // お店カードコンポーネント
@@ -120,9 +122,11 @@ export const SearchResults = ({
   isLoading = false,
   isStreaming = false,
   isSelectingShops = false,
+  error,
   onClose,
   onBack,
   onSelectShops,
+  onClearError,
 }: SearchResultsProps) => {
   const [selectedShopNames, setSelectedShopNames] = useState<Set<string>>(new Set());
   const streamingContainerRef = useRef<HTMLDivElement>(null);
@@ -164,6 +168,25 @@ export const SearchResults = ({
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center justify-between">
+          <span className="text-sm text-red-700">
+            検索に失敗しました。再度お試しください。
+          </span>
+          {onClearError && (
+            <button
+              type="button"
+              onClick={onClearError}
+              className="ml-2 text-red-500 hover:text-red-700"
+              aria-label="エラーを閉じる"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
           検索結果

@@ -181,9 +181,11 @@ export const SchedulePopup = ({
               isLoading={ai.isLoadingKeywords}
               isSearching={ai.isLoadingSearch}
               isRegenerating={ai.isLoadingKeywords}
+              error={ai.error}
               onSelect={handleKeywordSelect}
               onSkip={handleBack}
               onRegenerate={handleRegenerateKeywords}
+              onClearError={ai.clearError}
             />
           )}
           {step === "results" && (
@@ -194,9 +196,11 @@ export const SchedulePopup = ({
               isLoading={ai.isLoadingSearch}
               isStreaming={ai.isStreaming}
               isSelectingShops={isSelectingShops}
+              error={ai.error}
               onClose={handleClose}
               onBack={handleBack}
               onSelectShops={handleSelectShops}
+              onClearError={ai.clearError}
             />
           )}
         </>

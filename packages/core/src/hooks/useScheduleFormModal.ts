@@ -89,6 +89,11 @@ export type UseScheduleFormModalConfig = {
   onClose: () => void;
 };
 
+export type ScheduleFormError = {
+  message: string;
+  type: "create" | "recurrence" | "keywords" | "search" | "shops";
+};
+
 /**
  * ScheduleFormModal の UI ロジックを管理するカスタムフック
  *
@@ -107,6 +112,9 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSimpleSaving, setIsSimpleSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // エラー状態
+  const [error, setError] = useState<ScheduleFormError | null>(null);
 
   // ビジネスロジックHooks
   const { create: createSchedule } = useSchedules();
@@ -169,12 +177,16 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
 
         setCreatedSchedule(schedule);
         setStep("keywords");
-      } catch (error) {
+      } catch (err) {
         logger.error(
           "Failed to create schedule or get keyword suggestions",
           { category: "api", title: data.title },
-          error
+          err
         );
+        setError({
+          message: "予定の作成に失敗しました。再度お試しください。",
+          type: "create",
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -208,8 +220,12 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
 
         onScheduleCreated(schedule);
         onClose();
-      } catch (error) {
-        logger.error("Failed to create schedule", { category: "api", title: data.title }, error);
+      } catch (err) {
+        logger.error("Failed to create schedule", { category: "api", title: data.title }, err);
+        setError({
+          message: "予定の作成に失敗しました。再度お試しください。",
+          type: "create",
+        });
       } finally {
         setIsSimpleSaving(false);
       }
@@ -317,9 +333,17 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
     setFormData(null);
     setCreatedSchedule(null);
     setIsRegenerating(false);
+    setError(null);
     ai.reset();
     onClose();
   }, [ai, createdSchedule, onScheduleCreated, onClose]);
+
+  /**
+   * エラーをクリアする
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   /**
    * 現在のステップに応じたタイトル
@@ -340,6 +364,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
     step,
     formData,
     createdSchedule,
+    error,
 
     // ローディング状態
     isSubmitting,
@@ -352,6 +377,7 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
     searchResult: ai.searchResult,
     shopCandidates: ai.shopCandidates,
     statusMessage: ai.statusMessage,
+    aiError: ai.error,
     isLoadingKeywords: ai.isLoadingKeywords,
     isLoadingSearch: ai.isLoadingSearch,
     isStreaming: ai.isStreaming,
@@ -370,6 +396,8 @@ export function useScheduleFormModal(config: UseScheduleFormModalConfig) {
     handleCloseResult,
     handleBack,
     handleClose,
+    clearError,
+    clearAiError: ai.clearError,
 
     // 派生値
     title: getTitle(),

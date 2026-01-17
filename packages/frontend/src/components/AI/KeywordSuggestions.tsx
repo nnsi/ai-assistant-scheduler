@@ -9,9 +9,11 @@ type KeywordSuggestionsProps = {
   isSearching?: boolean;
   isRegenerating?: boolean;
   hasConditions?: boolean;
+  error?: Error | null;
   onSelect: (keywords: string[]) => void;
   onSkip: () => void;
   onRegenerate?: () => void;
+  onClearError?: () => void;
 };
 
 export const KeywordSuggestions = ({
@@ -20,9 +22,11 @@ export const KeywordSuggestions = ({
   isSearching = false,
   isRegenerating = false,
   hasConditions = false,
+  error,
   onSelect,
   onSkip,
   onRegenerate,
+  onClearError,
 }: KeywordSuggestionsProps) => {
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
 
@@ -51,6 +55,25 @@ export const KeywordSuggestions = ({
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center justify-between">
+          <span className="text-sm text-red-700">
+            キーワードの取得に失敗しました。再度お試しください。
+          </span>
+          {onClearError && (
+            <button
+              type="button"
+              onClick={onClearError}
+              className="ml-2 text-red-500 hover:text-red-700"
+              aria-label="エラーを閉じる"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">調べたいことを選択してください</h3>
         <p className="text-xs text-gray-500 mb-4">

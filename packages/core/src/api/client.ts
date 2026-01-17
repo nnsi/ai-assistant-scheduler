@@ -65,9 +65,11 @@ export const configureApiClient = (config: Partial<ApiClientConfig>) => {
   apiConfig = { ...apiConfig, ...config };
 };
 
-class ApiClientError extends Error {
+import type { AppErrorCode } from "../utils/errorHandler";
+
+export class ApiClientError extends Error {
   constructor(
-    public code: string,
+    public code: AppErrorCode,
     message: string,
     public details?: unknown
   ) {
@@ -154,22 +156,55 @@ type ResponseLike = {
   json: () => Promise<unknown>;
 };
 
+// HTTPステータスコードからAppErrorCodeを取得（フォールバック用）
+function getErrorCodeFromStatus(status: number): AppErrorCode {
+  if (status === 401) return "AUTH_ERROR";
+  if (status === 404) return "NOT_FOUND";
+  if (status >= 500) return "SERVER_ERROR";
+  return "UNKNOWN_ERROR";
+}
+
+// バックエンドのエラーコードをAppErrorCodeにマッピング
+function mapBackendCodeToAppErrorCode(backendCode: string, status: number): AppErrorCode {
+  // バックエンドのエラーコードがAppErrorCodeに該当する場合はそのまま使用
+  const appErrorCodes: AppErrorCode[] = [
+    "NETWORK_ERROR",
+    "AUTH_ERROR",
+    "VALIDATION_ERROR",
+    "NOT_FOUND",
+    "SERVER_ERROR",
+    "UNKNOWN_ERROR",
+  ];
+
+  if (appErrorCodes.includes(backendCode as AppErrorCode)) {
+    return backendCode as AppErrorCode;
+  }
+
+  // バックエンドの一般的なエラーコードをマッピング
+  switch (backendCode) {
+    case "UNAUTHORIZED":
+      return "AUTH_ERROR";
+    case "FORBIDDEN":
+      return "AUTH_ERROR";
+    case "INTERNAL_ERROR":
+    case "DATABASE_ERROR":
+      return "SERVER_ERROR";
+    default:
+      // マッピングできない場合はHTTPステータスベースのコードを使用
+      return getErrorCodeFromStatus(status);
+  }
+}
+
 // エラーレスポンスをパースしてスロー
 async function handleErrorResponse(res: ResponseLike): Promise<never> {
   try {
     const json: unknown = await res.json();
     const errorResult = apiErrorSchema.safeParse(json);
     if (errorResult.success) {
-      // 認証エラーの場合は特別なエラーコードを設定
-      if (res.status === 401) {
-        throw new ApiClientError(
-          "UNAUTHORIZED",
-          errorResult.data.message,
-          errorResult.data.details
-        );
-      }
+      // バックエンドのエラーコードを優先的にマッピング
+      const errorCode = mapBackendCodeToAppErrorCode(errorResult.data.code, res.status);
       throw new ApiClientError(
-        errorResult.data.code,
+        errorCode,
         errorResult.data.message,
         errorResult.data.details
       );
@@ -178,7 +213,11 @@ async function handleErrorResponse(res: ResponseLike): Promise<never> {
     if (e instanceof ApiClientError) throw e;
     // JSONパース失敗時はステータスコードベースのエラー
   }
-  throw new Error(`HTTP Error: ${res.status} ${res.statusText}`);
+  throw new ApiClientError(
+    getErrorCodeFromStatus(res.status),
+    "サーバーとの通信に失敗しました",
+    { status: res.status, statusText: res.statusText }
+  );
 }
 
 // レスポンスを処理してエラーならthrow、成功ならデータを返す
@@ -745,5 +784,3 @@ export const acceptInvitation = async (token: string): Promise<{ calendarId: str
   });
   return handleResponse(res, acceptInvitationResponseSchema);
 };
-
-export { ApiClientError };
