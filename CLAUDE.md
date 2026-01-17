@@ -10,10 +10,6 @@ pnpm monorepo project with backend (Hono/Cloudflare Workers) and frontend (React
 
 解決策が見つからない、同じ問題で3回以上試行錯誤している場合はCodexに依頼する。
 
-```
-mcp__codex__codex で別視点からの解決策を求める
-```
-
 自分だけで抱え込まず、早めに別のAIの視点を借りる。
 
 ## Claude Code on the Web

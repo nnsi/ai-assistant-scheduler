@@ -2,7 +2,7 @@ import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -39,6 +39,13 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState(false);
+
+  // userが変更されたらemailを同期
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user?.email]);
 
   const handleEmailUpdate = async (e: React.FormEvent) => {
     e.preventDefault();

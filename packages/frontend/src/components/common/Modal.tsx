@@ -72,6 +72,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }: ModalPr
                   "hover:text-stone-600 hover:bg-stone-100",
                   "transition-colors duration-200"
                 )}
+                aria-label="閉じる"
               >
                 <X className="w-5 h-5" />
               </button>

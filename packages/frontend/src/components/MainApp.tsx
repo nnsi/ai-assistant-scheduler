@@ -40,11 +40,21 @@ export function MainApp() {
     const params = new URLSearchParams(window.location.search);
     const success = params.get("success");
     const error = params.get("error");
-    if (success) {
-      setNotification({ type: "success", message: decodeURIComponent(success) });
-      window.history.replaceState({}, "", window.location.pathname);
-    } else if (error) {
-      setNotification({ type: "error", message: decodeURIComponent(error) });
+    try {
+      if (success) {
+        setNotification({ type: "success", message: decodeURIComponent(success) });
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (error) {
+        setNotification({ type: "error", message: decodeURIComponent(error) });
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } catch {
+      // 不正なURLエンコーディングの場合はそのまま表示
+      if (success) {
+        setNotification({ type: "success", message: success });
+      } else if (error) {
+        setNotification({ type: "error", message: error });
+      }
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -132,12 +142,25 @@ export function MainApp() {
   };
 
   const handleScheduleSave = async (id: string, input: UpdateScheduleInput): Promise<void> => {
-    await update(id, input);
-    refetch();
+    try {
+      await update(id, input);
+    } catch (error) {
+      setNotification({
+        type: "error",
+        message: "予定の更新に失敗しました。再度お試しください。",
+      });
+    }
   };
 
   const handleScheduleDelete = async (id: string): Promise<void> => {
-    await remove(id);
+    try {
+      await remove(id);
+    } catch (error) {
+      setNotification({
+        type: "error",
+        message: "予定の削除に失敗しました。再度お試しください。",
+      });
+    }
   };
 
   return (
@@ -153,6 +176,7 @@ export function MainApp() {
           <button
             onClick={() => setNotification(null)}
             className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label="通知を閉じる"
           >
             <X className="w-4 h-4" />
           </button>
